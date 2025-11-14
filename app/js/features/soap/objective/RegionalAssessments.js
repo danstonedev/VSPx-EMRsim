@@ -1,10 +1,11 @@
 /**
  * Regional Assessments Module
- * Unified module for streamlined ROM, MMT, and Special Tests assessment
+ * Unified module for streamlined ROM, MMT, RIMs, and Special Tests assessment
  */
 import { el } from '../../../ui/utils.js';
 import { createRomSection } from './RomSection.js';
 import { createMmtSection } from './MmtSection.js';
+import { createRimsSection } from './RimsSection.js';
 import { createSpecialTestsSection } from './SpecialTestsSection.js';
 import { createEditableTable } from './EditableTable.js';
 
@@ -21,6 +22,14 @@ export const regionalAssessments = {
       { joint: 'Lateral Flexion', normal: '15-20°', side: 'L' },
       { joint: 'Rotation', normal: '3-18°', side: 'R' },
       { joint: 'Rotation', normal: '3-18°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Lumbar Flexion', side: '' },
+      { joint: 'Lumbar Extension', side: '' },
+      { joint: 'Lateral Flexion', side: 'R' },
+      { joint: 'Lateral Flexion', side: 'L' },
+      { joint: 'Rotation', side: 'R' },
+      { joint: 'Rotation', side: 'L' },
     ],
     mmt: [
       { muscle: 'Hip Flexors', side: 'R', normal: '5/5' },
@@ -50,6 +59,14 @@ export const regionalAssessments = {
       { joint: 'Lateral Flexion', normal: '45°', side: 'L' },
       { joint: 'Rotation', normal: '60-80°', side: 'R' },
       { joint: 'Rotation', normal: '60-80°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Cervical Flexion', side: '' },
+      { joint: 'Cervical Extension', side: '' },
+      { joint: 'Lateral Flexion', side: 'R' },
+      { joint: 'Lateral Flexion', side: 'L' },
+      { joint: 'Rotation', side: 'R' },
+      { joint: 'Rotation', side: 'L' },
     ],
     mmt: [
       { muscle: 'Neck Flexors', side: '', normal: '5/5' },
@@ -81,6 +98,18 @@ export const regionalAssessments = {
       { joint: 'External Rotation', normal: '90°', side: 'R' },
       { joint: 'External Rotation', normal: '90°', side: 'L' },
     ],
+    rims: [
+      { joint: 'Shoulder Flexion', side: 'R' },
+      { joint: 'Shoulder Flexion', side: 'L' },
+      { joint: 'Shoulder Extension', side: 'R' },
+      { joint: 'Shoulder Extension', side: 'L' },
+      { joint: 'Shoulder Abduction', side: 'R' },
+      { joint: 'Shoulder Abduction', side: 'L' },
+      { joint: 'Internal Rotation', side: 'R' },
+      { joint: 'Internal Rotation', side: 'L' },
+      { joint: 'External Rotation', side: 'R' },
+      { joint: 'External Rotation', side: 'L' },
+    ],
     mmt: [
       { muscle: 'Deltoid Anterior', side: 'R', normal: '5/5' },
       { muscle: 'Deltoid Anterior', side: 'L', normal: '5/5' },
@@ -106,6 +135,12 @@ export const regionalAssessments = {
       { joint: 'Knee Flexion', normal: '135°', side: 'L' },
       { joint: 'Knee Extension', normal: '0°', side: 'R' },
       { joint: 'Knee Extension', normal: '0°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Knee Flexion', side: 'R' },
+      { joint: 'Knee Flexion', side: 'L' },
+      { joint: 'Knee Extension', side: 'R' },
+      { joint: 'Knee Extension', side: 'L' },
     ],
     mmt: [
       { muscle: 'Quadriceps', side: 'R', normal: '5/5' },
@@ -139,6 +174,20 @@ export const regionalAssessments = {
       { joint: 'Hip Internal Rotation', normal: '45°', side: 'L' },
       { joint: 'Hip External Rotation', normal: '45°', side: 'R' },
       { joint: 'Hip External Rotation', normal: '45°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Hip Flexion', side: 'R' },
+      { joint: 'Hip Flexion', side: 'L' },
+      { joint: 'Hip Extension', side: 'R' },
+      { joint: 'Hip Extension', side: 'L' },
+      { joint: 'Hip Abduction', side: 'R' },
+      { joint: 'Hip Abduction', side: 'L' },
+      { joint: 'Hip Adduction', side: 'R' },
+      { joint: 'Hip Adduction', side: 'L' },
+      { joint: 'Hip Internal Rotation', side: 'R' },
+      { joint: 'Hip Internal Rotation', side: 'L' },
+      { joint: 'Hip External Rotation', side: 'R' },
+      { joint: 'Hip External Rotation', side: 'L' },
     ],
     mmt: [
       { muscle: 'Hip Flexors', side: 'R', normal: '5/5' },
@@ -175,6 +224,16 @@ export const regionalAssessments = {
       { joint: 'Ankle Eversion', normal: '15°', side: 'R' },
       { joint: 'Ankle Eversion', normal: '15°', side: 'L' },
     ],
+    rims: [
+      { joint: 'Ankle Dorsiflexion', side: 'R' },
+      { joint: 'Ankle Dorsiflexion', side: 'L' },
+      { joint: 'Ankle Plantarflexion', side: 'R' },
+      { joint: 'Ankle Plantarflexion', side: 'L' },
+      { joint: 'Ankle Inversion', side: 'R' },
+      { joint: 'Ankle Inversion', side: 'L' },
+      { joint: 'Ankle Eversion', side: 'R' },
+      { joint: 'Ankle Eversion', side: 'L' },
+    ],
     mmt: [
       { muscle: 'Dorsiflexors (Tibialis Anterior)', side: 'R', normal: '5/5' },
       { muscle: 'Dorsiflexors (Tibialis Anterior)', side: 'L', normal: '5/5' },
@@ -205,6 +264,16 @@ export const regionalAssessments = {
       { joint: 'Forearm Pronation', normal: '80°', side: 'L' },
       { joint: 'Forearm Supination', normal: '80°', side: 'R' },
       { joint: 'Forearm Supination', normal: '80°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Elbow Flexion', side: 'R' },
+      { joint: 'Elbow Flexion', side: 'L' },
+      { joint: 'Elbow Extension', side: 'R' },
+      { joint: 'Elbow Extension', side: 'L' },
+      { joint: 'Forearm Pronation', side: 'R' },
+      { joint: 'Forearm Pronation', side: 'L' },
+      { joint: 'Forearm Supination', side: 'R' },
+      { joint: 'Forearm Supination', side: 'L' },
     ],
     mmt: [
       { muscle: 'Biceps (Elbow Flexion)', side: 'R', normal: '5/5' },
@@ -237,6 +306,16 @@ export const regionalAssessments = {
       { joint: 'Ulnar Deviation', normal: '35°', side: 'R' },
       { joint: 'Ulnar Deviation', normal: '35°', side: 'L' },
     ],
+    rims: [
+      { joint: 'Wrist Flexion', side: 'R' },
+      { joint: 'Wrist Flexion', side: 'L' },
+      { joint: 'Wrist Extension', side: 'R' },
+      { joint: 'Wrist Extension', side: 'L' },
+      { joint: 'Radial Deviation', side: 'R' },
+      { joint: 'Radial Deviation', side: 'L' },
+      { joint: 'Ulnar Deviation', side: 'R' },
+      { joint: 'Ulnar Deviation', side: 'L' },
+    ],
     mmt: [
       { muscle: 'Wrist Flexors', side: 'R', normal: '5/5' },
       { muscle: 'Wrist Flexors', side: 'L', normal: '5/5' },
@@ -264,6 +343,14 @@ export const regionalAssessments = {
       { joint: 'Lateral Flexion', normal: '20-40°', side: 'L' },
       { joint: 'Rotation', normal: '30-45°', side: 'R' },
       { joint: 'Rotation', normal: '30-45°', side: 'L' },
+    ],
+    rims: [
+      { joint: 'Thoracic Flexion', side: '' },
+      { joint: 'Thoracic Extension', side: '' },
+      { joint: 'Lateral Flexion', side: 'R' },
+      { joint: 'Lateral Flexion', side: 'L' },
+      { joint: 'Rotation', side: 'R' },
+      { joint: 'Rotation', side: 'L' },
     ],
     mmt: [
       { muscle: 'Thoracic Extensors', side: '', normal: '5/5' },
@@ -407,6 +494,7 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
   // Tables containers
   const promContainer = el('div', { class: 'prom-container', style: 'margin-bottom: 30px;' });
   const romContainer = el('div', { class: 'rom-container', style: 'margin-bottom: 30px;' });
+  const rimsContainer = el('div', { class: 'rims-container', style: 'margin-bottom: 30px;' });
   const mmtContainer = el('div', { class: 'mmt-container', style: 'margin-bottom: 30px;' });
   const specialTestsContainer = el('div', {
     class: 'special-tests-container',
@@ -415,6 +503,7 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
   const tablesContainer = el('div', { class: 'tables-container' }, [
     promContainer,
     romContainer,
+    rimsContainer,
     mmtContainer,
     specialTestsContainer,
   ]);
@@ -427,6 +516,7 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
     onChange,
     promContainer,
     romContainer,
+    rimsContainer,
     mmtContainer,
     specialTestsContainer,
   });
@@ -447,6 +537,7 @@ function normalizeAllAssessmentData(data, onChange) {
   const d = data || {};
   d.selectedRegions = d.selectedRegions || [];
   d.rom = d.rom || {};
+  d.rims = d.rims || {};
   d.prom = d.prom || {};
   d.mmt = d.mmt || {};
   d.specialTests = d.specialTests || {};
@@ -544,10 +635,11 @@ function makeRefreshTables({
   onChange,
   promContainer,
   romContainer,
+  rimsContainer,
   mmtContainer,
   specialTestsContainer,
 }) {
-  let promTable, romSection, mmtSection, specialTestsSection;
+  let promTable, romSection, rimsSection, mmtSection, specialTestsSection;
   const buildCombined = (key) => {
     const out = [];
     getSelectedRegions().forEach((regionKey) => {
@@ -562,6 +654,7 @@ function makeRefreshTables({
   return () => {
     const combinedPromData = buildCombined('rom');
     const combinedRomData = buildCombined('rom');
+    const combinedRimsData = buildCombined('rims');
     const combinedMmtData = buildCombined('mmt');
     const combinedSpecialTestsData = buildCombined('specialTests');
 
@@ -662,6 +755,32 @@ function makeRefreshTables({
               'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
           },
           'Select regions above to display Range of Motion assessments',
+        ),
+      );
+    }
+
+    // RIMs
+    rimsContainer.replaceChildren();
+    if (combinedRimsData.length > 0) {
+      rimsSection = createRimsSection(
+        'multi-region',
+        { name: 'Resisted Isometric Movement', rims: combinedRimsData },
+        allAssessmentData.rims,
+        (rimsData) => {
+          allAssessmentData.rims = rimsData;
+          onChange(allAssessmentData);
+        },
+      );
+      rimsContainer.appendChild(rimsSection.element);
+    } else {
+      rimsContainer.appendChild(
+        el(
+          'div',
+          {
+            style:
+              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
+          },
+          'Select regions above to display Resisted Isometric Movement (RIMs) assessments',
         ),
       );
     }

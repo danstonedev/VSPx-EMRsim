@@ -5,6 +5,7 @@
 // This avoids relying on UI-only computed fields and ensures consistent names/normals
 /* global docx */
 import { regionalAssessments } from '../features/soap/objective/RegionalAssessments.js';
+import { getRimsLabel } from '../features/soap/objective/RimsSection.js';
 
 /* eslint-disable complexity */
 export function exportToWord(caseData, draft) {
@@ -954,6 +955,46 @@ export function exportToWord(caseData, draft) {
         let headers = ['Active Range of Motion (AROM)', 'Left', 'Right'];
         let alignments = ['left', 'right', 'right'];
         let rowsData = aromRows.map((r) => [r[0], formatRom(r[1]), formatRom(r[2])]);
+        let widths = computeWidthsNoNotes();
+        elements.push(
+          createWebLikeTable(rowsData, headers, widths, alignments, {
+            indentLeft: FORMAT.indent.level2,
+            simulateIndent: true,
+            simulateIndentWidth: 360,
+          }),
+        );
+        elements.push(createSpacer(0, 160));
+      }
+    }
+
+    // RIMs (Resisted Isometric Movement) export: reconstruct from selected regions and saved indices
+    const rimsSaved = ra.rims || {};
+    if (selected.length) {
+      // Build groups with left/right index positions (no normal values for RIMs)
+      const rimsGroups = {};
+      selected.forEach((regionKey) => {
+        const region = regionalAssessments[regionKey];
+        (region?.rims || []).forEach((item, idx) => {
+          const baseName = item.name || item.joint || item.muscle;
+          if (!rimsGroups[baseName])
+            rimsGroups[baseName] = { left: null, right: null, bilateral: null };
+          if (item.side === 'L') rimsGroups[baseName].left = idx;
+          else if (item.side === 'R') rimsGroups[baseName].right = idx;
+          else rimsGroups[baseName].bilateral = idx;
+        });
+      });
+
+      const rimsRows = Object.keys(rimsGroups).map((name) => {
+        const g = rimsGroups[name];
+        const leftVal = g.left != null ? rimsSaved[g.left] || '' : '';
+        const rightVal = g.right != null ? rimsSaved[g.right] || '' : '';
+        return [name, leftVal, rightVal];
+      });
+
+      if (rimsRows.length) {
+        let headers = ['Resisted Isometric Movement (RIMs)', 'Left', 'Right'];
+        let alignments = ['left', 'left', 'left'];
+        let rowsData = rimsRows.map((r) => [r[0], getRimsLabel(r[1]), getRimsLabel(r[2])]);
         let widths = computeWidthsNoNotes();
         elements.push(
           createWebLikeTable(rowsData, headers, widths, alignments, {
