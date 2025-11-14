@@ -175,9 +175,11 @@ function buildTextAreaSection(id, title, label, value, onChange) {
 }
 
 function buildRegionalSection(regionalAssessments, onChange) {
+  console.log('=== BUILD REGIONAL SECTION CALLED ===', regionalAssessments);
   const regionalSection = el('div', { id: 'regional-assessment', class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, 'Regional Assessment'),
   ]);
+  console.log('=== ABOUT TO CALL createMultiRegionalAssessment ===');
   const multiAssessment = createMultiRegionalAssessment(regionalAssessments, onChange);
   regionalSection.append(multiAssessment.element);
   return regionalSection;

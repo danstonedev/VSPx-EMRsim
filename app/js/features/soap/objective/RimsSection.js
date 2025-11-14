@@ -32,7 +32,7 @@ export function createRimsSection(regionKey, region, rimsData, onChange) {
     data: rimsData,
     onChange,
     valueType: 'select',
-    valueOptions: rimsOptions,
+    options: rimsOptions,
     normalValues: false,
     embedNormalInName: false,
     notesColumn: false,

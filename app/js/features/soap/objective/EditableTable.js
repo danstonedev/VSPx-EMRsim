@@ -3,6 +3,7 @@
  * Consolidated table helper for all assessment tables
  */
 import { el, textareaAutoResize } from '../../../ui/utils.js';
+import { createCustomSelect } from '../../../ui/CustomSelect.js';
 
 // ---- Bilateral helpers (extracted to reduce function complexity) ----
 function groupBilateralItems(items) {
@@ -125,12 +126,8 @@ function ensureEmptyOption(options) {
 }
 
 function buildSelectInput(column, value, onChange) {
-  const input = el('select', {
-    class: 'editable-table__select form-input-standard',
-    onchange: (e) => onChange(String(e.target.value)),
-  });
   const rawOptions = ensureEmptyOption(column.options);
-  rawOptions.forEach((option) => {
+  const options = rawOptions.map((option) => {
     const isObj = option && typeof option === 'object';
     const optValue = isObj
       ? Object.prototype.hasOwnProperty.call(option, 'value')
@@ -138,9 +135,16 @@ function buildSelectInput(column, value, onChange) {
         : (option.label ?? '')
       : option;
     const optLabel = isObj ? (option.label ?? String(optValue)) : String(optValue);
-    input.appendChild(el('option', { value: String(optValue) }, optLabel));
+    return { value: String(optValue), label: optLabel };
   });
-  input.value = String(value ?? '');
+
+  const input = createCustomSelect({
+    options: options,
+    value: String(value ?? ''),
+    className: 'editable-table__select form-input-standard',
+    onChange: (newValue) => onChange(String(newValue)),
+  }).element;
+
   return input;
 }
 

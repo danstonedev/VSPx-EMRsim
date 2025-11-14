@@ -68,7 +68,7 @@
 .table th .sort-icon {
   display: inline-flex;
   align-items: center;
-  margin-left: 6px;
+  margin-left: 0.375rem;
 }
 .table th .sort-icon svg {
   width: 0.75rem; /* 12px */
@@ -108,7 +108,7 @@
 /* Simple status labels used in Draft Status column */
 .cases-table .status {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 0.25rem 0.625rem;
   border-radius: 999px;
   font-size: var(--font-xs, 0.75rem); /* 12px */
   font-weight: 600;
@@ -145,7 +145,7 @@
   margin: var(--space-2) 0;
   font-size: var(--font-xs, 0.75rem); /* 12px */
 }
-.regional-assessment .table th {
+.regional-assessment .table:not(.combined-rom-table) th {
   background: var(--bg2);
   padding: var(--ra-cell-pad-y) var(--ra-cell-pad-x);
   text-align: left;
@@ -158,7 +158,7 @@
   border-bottom: none;
   line-height: var(--ra-line-height);
 }
-.regional-assessment .table td {
+.regional-assessment .table:not(.combined-rom-table) td {
   padding: var(--ra-cell-pad-y) var(--ra-cell-pad-x);
   border: none;
   vertical-align: middle;
@@ -166,11 +166,11 @@
   color: var(--text);
   line-height: var(--ra-line-height);
 }
-.regional-assessment .table tr:nth-child(even) td {
+.regional-assessment .table:not(.combined-rom-table) tr:nth-child(even) td {
   background: var(--surface-muted);
 }
-.regional-assessment .table input,
-.regional-assessment .table select {
+.regional-assessment .table:not(.combined-rom-table) input,
+.regional-assessment .table:not(.combined-rom-table) select {
   border: 1px solid var(--input-border);
   padding: var(--ra-input-pad-y) var(--ra-cell-pad-x);
   font-size: 0.75rem; /* 12px */
@@ -178,13 +178,13 @@
   background: var(--input-bg);
   color: var(--input-text);
 }
-.regional-assessment .table select {
+.regional-assessment .table:not(.combined-rom-table) select {
   background: var(--select-bg);
   color: var(--select-text);
   border-color: var(--select-border);
 }
-.regional-assessment .table input:focus,
-.regional-assessment .table select:focus {
+.regional-assessment .table:not(.combined-rom-table) input:focus,
+.regional-assessment .table:not(.combined-rom-table) select:focus {
   border-color: var(--und-green);
 }
 
@@ -212,7 +212,7 @@
   margin-top: 2px;
 }
 .editable-table__add-btn {
-  font-size: 12px;
+  font-size: 0.75rem;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
   border: none;
@@ -320,7 +320,7 @@
   }
   .regional-assessment .bilateral-table .editable-table__head th,
   .multi-regional-assessment .bilateral-table .editable-table__head th {
-    padding: 2px 6px; /* tighter header */
+    padding: 0.125rem 0.375rem; /* tighter header */
     font-size: 0.8125rem; /* 13px */
     white-space: nowrap;
   }
@@ -342,15 +342,15 @@
   }
   .regional-assessment .bilateral-table .editable-table__body td,
   .multi-regional-assessment .bilateral-table .editable-table__body td {
-    padding: 2px 6px; /* denser rows on mobile */
+    padding: 0.125rem 0.375rem; /* denser rows on mobile */
   }
   /* Slightly tighter horizontal padding for L/R cells to maximize input width */
   .regional-assessment .bilateral-table .editable-table__cell--left,
   .regional-assessment .bilateral-table .editable-table__cell--right,
   .multi-regional-assessment .bilateral-table .editable-table__cell--left,
   .multi-regional-assessment .bilateral-table .editable-table__cell--right {
-    padding-left: 2px; /* reclaim a couple pixels per column */
-    padding-right: 2px;
+    padding-left: 0.125rem; /* reclaim a couple pixels per column */
+    padding-right: 0.125rem;
   }
   .regional-assessment .bilateral-table .editable-table__cell--name,
   .multi-regional-assessment .bilateral-table .editable-table__cell--name {
@@ -389,11 +389,11 @@
   }
   .bilateral-table .editable-table__cell--actions .remove-btn {
     transform: none;
-    width: 28px;
-    height: 28px;
-    line-height: 24px;
+    width: 1.75rem;
+    height: 1.75rem;
+    line-height: 1.5rem;
     border-radius: 999px;
-    font-size: 16px;
+    font-size: 1rem;
   }
   /* Prefix only the Normal cell with a tiny label to save space */
   .regional-assessment .bilateral-table .editable-table__cell--normal::before,
@@ -401,7 +401,7 @@
     display: inline-block;
     font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-right: 6px;
+    margin-right: 0.375rem;
     content: 'Normal:';
   }
   /* Inputs fill width */
@@ -418,9 +418,9 @@
   /* Keep inputs legible and avoid iOS zoom */
   .regional-assessment .bilateral-table .editable-table__body input,
   .regional-assessment .bilateral-table .editable-table__body select {
-    font-size: 16px;
+    font-size: 1rem;
     line-height: 1.1;
-    padding: 6px 6px;
+    padding: 0.375rem 0.375rem;
     text-align: center; /* numeric values easier to scan */
   }
 }
@@ -518,8 +518,8 @@
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  padding: 2px var(--space-1);
-  font-size: 12px;
+  padding: 0.125rem var(--space-1);
+  font-size: 0.75rem;
   color: var(--input-text);
   border-radius: var(--input-radius);
   transition:
@@ -580,11 +580,11 @@ html[data-theme='dark'] .editable-table__select option:checked {
 .editable-table__textarea {
   resize: none;
   overflow: hidden;
-  min-height: 32px;
+  min-height: 2rem;
 }
 .editable-table__textarea {
-  padding-right: calc(var(--space-1) + 10px);
-  padding-bottom: calc(var(--space-1) + 6px);
+  padding-right: calc(var(--space-1) + 0.625rem);
+  padding-bottom: calc(var(--space-1) + 0.375rem);
 }
 /* Read-only label value used for compact Normal column */
 .editable-table__label {
@@ -595,7 +595,7 @@ html[data-theme='dark'] .editable-table__select option:checked {
 /* Special Tests selects: compact fit on small screens */
 @media (max-width: 1024px) {
   .special-tests-table .editable-table__select {
-    min-width: 72px;
+    min-width: 4.5rem;
   }
 }
 
@@ -603,13 +603,13 @@ html[data-theme='dark'] .editable-table__select option:checked {
 .goals-table .editable-table__input,
 .goals-table .editable-table__select,
 .goals-table .editable-table__textarea {
-  padding: 12px var(--space-3);
+  padding: 0.75rem var(--space-3);
   font-size: 1rem;
 }
 .goals-table .editable-table__textarea {
-  min-height: 44px; /* one line like standard inputs */
-  padding-right: calc(var(--space-3) + 10px);
-  padding-bottom: calc(var(--space-3) + 6px);
+  min-height: 2.75rem; /* one line like standard inputs */
+  padding-right: calc(var(--space-3) + 0.625rem);
+  padding-bottom: calc(var(--space-3) + 0.375rem);
 }
 .editable-table__input:focus,
 .editable-table__select:focus,
@@ -703,8 +703,8 @@ html[data-theme='dark'] .editable-table__select option:checked {
     --ra-line-height: 1.2;
   }
   /* Keep inputs/selects comfortably tappable but tighter vertically inside table context */
-  .regional-assessment .table input,
-  .regional-assessment .table select {
+  .regional-assessment .table:not(.combined-rom-table) input,
+  .regional-assessment .table:not(.combined-rom-table) select {
     min-height: 32px; /* denser than 40–44px, but within table grid it's acceptable */
   }
 }

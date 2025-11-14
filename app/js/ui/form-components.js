@@ -4,6 +4,7 @@
  */
 
 import { el, textareaAutoResize } from './utils.js';
+import { createCustomSelect } from './CustomSelect.js';
 
 // --- Core Form Components ---
 
@@ -344,6 +345,21 @@ function buildSelectFieldContainer({ label, id, required, node, hint, error, dis
   const wrapper = buildInputWrapper(node, hint, error);
   fieldElements.push(wrapper);
   return buildFieldContainer('select', disabled, error, fieldElements);
+}
+
+/**
+ * Create a custom select dropdown (non-native with full styling control)
+ * @param {Object} config - Configuration object
+ * @param {Array<{value: string, label: string}>} config.options - Options array
+ * @param {string} [config.value] - Currently selected value
+ * @param {Function} [config.onChange] - Change handler
+ * @param {string} [config.className] - Additional CSS class
+ * @param {string} [config.placeholder] - Placeholder text
+ * @param {Object} [config.dataAttrs] - Data attributes
+ * @returns {Object} - Custom select instance with { element, getValue, setValue, destroy }
+ */
+export function customSelect(config) {
+  return createCustomSelect(config);
 }
 
 // Unused form components removed for better tree shaking:

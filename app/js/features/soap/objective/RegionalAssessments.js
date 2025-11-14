@@ -8,6 +8,27 @@ import { createMmtSection } from './MmtSection.js';
 import { createRimsSection } from './RimsSection.js';
 import { createSpecialTestsSection } from './SpecialTestsSection.js';
 import { createEditableTable } from './EditableTable.js';
+import { createCombinedRomSection } from './CombinedRomSection.js';
+
+// Debug utilities: controlled by URL `?debug=1` flag
+function isDebug() {
+  try {
+    if (typeof window === 'undefined' || !window.location) return false;
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('debug') === '1';
+  } catch {
+    return false;
+  }
+}
+function debugLog(...args) {
+  if (isDebug()) console.warn(...args);
+}
+function debugWarn(...args) {
+  if (isDebug()) console.warn(...args);
+}
+function debugError(...args) {
+  if (isDebug()) console.error(...args);
+}
 
 /**
  * Regional assessment data - consolidated and standardized
@@ -374,7 +395,7 @@ export const regionalAssessments = {
 export function createRegionalAssessment(regionKey, assessmentData, onChange) {
   const region = regionalAssessments[regionKey];
   if (!region) {
-    console.error(`Unknown region: ${regionKey}`);
+    debugError(`Unknown region: ${regionKey}`);
     return el('div', {}, `Unknown region: ${regionKey}`);
   }
 
@@ -459,6 +480,7 @@ export function createRegionalAssessment(regionKey, assessmentData, onChange) {
  * Users can select multiple regions which populate the ROM, MMT, and Special Tests tables
  */
 export function createMultiRegionalAssessment(allAssessmentData, onChange) {
+  debugLog('=== CREATE MULTI REGIONAL ASSESSMENT ===');
   const container = el('div', { class: 'multi-regional-assessment' });
 
   // Normalize and restore state
@@ -492,6 +514,10 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
   container.appendChild(selectorEl);
 
   // Tables containers
+  const combinedRomContainer = el('div', {
+    class: 'combined-rom-container',
+    style: 'margin-bottom: 30px;',
+  });
   const promContainer = el('div', { class: 'prom-container', style: 'margin-bottom: 30px;' });
   const romContainer = el('div', { class: 'rom-container', style: 'margin-bottom: 30px;' });
   const rimsContainer = el('div', { class: 'rims-container', style: 'margin-bottom: 30px;' });
@@ -501,6 +527,7 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
     style: 'margin-bottom: 30px;',
   });
   const tablesContainer = el('div', { class: 'tables-container' }, [
+    combinedRomContainer,
     promContainer,
     romContainer,
     rimsContainer,
@@ -511,9 +538,11 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
 
   // Build refresh function
   const refreshTables = makeRefreshTables({
-    getSelectedRegions: () => selectedRegions,
+    // Always expose selected regions as an array for downstream consumers
+    getSelectedRegions: () => Array.from(selectedRegions),
     allAssessmentData,
     onChange,
+    combinedRomContainer,
     promContainer,
     romContainer,
     rimsContainer,
@@ -537,33 +566,38 @@ function normalizeAllAssessmentData(data, onChange) {
   const d = data || {};
   d.selectedRegions = d.selectedRegions || [];
   d.rom = d.rom || {};
+  d.arom = d.arom || {};
+  d.prom = d.prom || {};
   d.rims = d.rims || {};
   d.prom = d.prom || {};
   d.mmt = d.mmt || {};
   d.specialTests = d.specialTests || {};
   d.promExcluded = d.promExcluded || [];
-  if (!d._promEndfeelMigrated) {
-    try {
-      const promKeys = Object.keys(d.prom || {});
-      let changed = false;
-      promKeys.forEach((k) => {
-        const row = d.prom[k];
-        if (row && typeof row === 'object') {
-          const isCapsular =
-            typeof row.endfeel === 'string' && row.endfeel.toLowerCase() === 'capsular';
-          if (isCapsular) {
-            row.endfeel = '';
-            changed = true;
-          }
-        }
-      });
-      d._promEndfeelMigrated = true;
-      if (changed) onChange(d);
-    } catch {
-      d._promEndfeelMigrated = true;
-    }
-  }
+  migratePromEndfeel(d, onChange);
   return d;
+}
+
+function migratePromEndfeel(d, onChange) {
+  if (d._promEndfeelMigrated) return;
+  try {
+    const promKeys = Object.keys(d.prom || {});
+    let changed = false;
+    promKeys.forEach((k) => {
+      const row = d.prom[k];
+      if (row && typeof row === 'object') {
+        const isCapsular =
+          typeof row.endfeel === 'string' && row.endfeel.toLowerCase() === 'capsular';
+        if (isCapsular) {
+          row.endfeel = '';
+          changed = true;
+        }
+      }
+    });
+    d._promEndfeelMigrated = true;
+    if (changed) onChange(d);
+  } catch {
+    d._promEndfeelMigrated = true;
+  }
 }
 
 function filterInvalidRegions(regions, onChange, dataRef) {
@@ -575,7 +609,7 @@ function filterInvalidRegions(regions, onChange, dataRef) {
           typeof window !== 'undefined' &&
           window.location &&
           (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        if (isDev) console.warn(`Regional assessment: Invalid region "${regionKey}" filtered out.`);
+        if (isDev) debugWarn(`Regional assessment: Invalid region "${regionKey}" filtered out.`);
       } catch {}
     }
     return exists;
@@ -633,6 +667,7 @@ function makeRefreshTables({
   getSelectedRegions,
   allAssessmentData,
   onChange,
+  combinedRomContainer,
   promContainer,
   romContainer,
   rimsContainer,
@@ -640,6 +675,18 @@ function makeRefreshTables({
   specialTestsContainer,
 }) {
   let promTable, romSection, rimsSection, mmtSection, specialTestsSection;
+  const renderHint = (container, text) => {
+    container.replaceChildren(
+      el(
+        'div',
+        {
+          style:
+            'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
+        },
+        text,
+      ),
+    );
+  };
   const buildCombined = (key) => {
     const out = [];
     getSelectedRegions().forEach((regionKey) => {
@@ -657,6 +704,64 @@ function makeRefreshTables({
     const combinedRimsData = buildCombined('rims');
     const combinedMmtData = buildCombined('mmt');
     const combinedSpecialTestsData = buildCombined('specialTests');
+
+    debugLog('=== REFRESH TABLES DEBUG ===');
+    debugLog('combinedRomContainer exists:', !!combinedRomContainer);
+    debugLog('Selected regions:', getSelectedRegions());
+
+    // Combined ROM Table (AROM + PROM + RIMs)
+    combinedRomContainer.replaceChildren();
+    // Ensure array semantics for length/index access
+    const selectedRegions = Array.from(getSelectedRegions());
+    debugLog('Selected regions for combined ROM:', selectedRegions);
+    debugLog('Combined ROM data length:', combinedRomData.length);
+
+    if (selectedRegions.length > 0) {
+      // Add section title once
+      combinedRomContainer.appendChild(
+        el(
+          'h4',
+          { class: 'mb-16 text-accent', style: 'margin-top: 20px;' },
+          'Combined ROM Assessment',
+        ),
+      );
+      // Render a combined table per selected region (avoids cross-region confusion)
+      selectedRegions.forEach((regionKey) => {
+        const region = regionalAssessments[regionKey];
+        if (!region) return;
+        try {
+          // Region subheading removed; region appears in top-left cell of the table
+          const section = createCombinedRomSection(
+            regionKey,
+            region,
+            allAssessmentData.arom,
+            allAssessmentData.prom,
+            allAssessmentData.rims,
+            (aromsData) => {
+              allAssessmentData.arom = aromsData;
+              onChange(allAssessmentData);
+            },
+            (promsData) => {
+              allAssessmentData.prom = promsData;
+              onChange(allAssessmentData);
+            },
+            (rimsData) => {
+              allAssessmentData.rims = rimsData;
+              onChange(allAssessmentData);
+            },
+          );
+          combinedRomContainer.appendChild(section.element);
+        } catch (err) {
+          debugError('Error creating combined ROM section:', err);
+        }
+      });
+    } else {
+      // Add a user-facing hint when nothing is selected
+      renderHint(
+        combinedRomContainer,
+        'Select one or more regions above to use the Combined ROM Assessment table.',
+      );
+    }
 
     // PROM
     promContainer.replaceChildren();
@@ -721,15 +826,9 @@ function makeRefreshTables({
       });
       promContainer.appendChild(promTable.element);
     } else {
-      promContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
-          },
-          'Select regions above to display Passive Range of Motion (PROM) assessments',
-        ),
+      renderHint(
+        promContainer,
+        'Select regions above to display Passive Range of Motion (PROM) assessments',
       );
     }
 
@@ -747,16 +846,7 @@ function makeRefreshTables({
       );
       romContainer.appendChild(romSection.element);
     } else {
-      romContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
-          },
-          'Select regions above to display Range of Motion assessments',
-        ),
-      );
+      renderHint(romContainer, 'Select regions above to display Range of Motion assessments');
     }
 
     // RIMs
@@ -773,15 +863,9 @@ function makeRefreshTables({
       );
       rimsContainer.appendChild(rimsSection.element);
     } else {
-      rimsContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
-          },
-          'Select regions above to display Resisted Isometric Movement (RIMs) assessments',
-        ),
+      renderHint(
+        rimsContainer,
+        'Select regions above to display Resisted Isometric Movement (RIMs) assessments',
       );
     }
 
@@ -799,16 +883,7 @@ function makeRefreshTables({
       );
       mmtContainer.appendChild(mmtSection.element);
     } else {
-      mmtContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
-          },
-          'Select regions above to display Manual Muscle Testing assessments',
-        ),
-      );
+      renderHint(mmtContainer, 'Select regions above to display Manual Muscle Testing assessments');
     }
 
     // Special Tests
@@ -825,15 +900,9 @@ function makeRefreshTables({
       );
       specialTestsContainer.appendChild(specialTestsSection.element);
     } else {
-      specialTestsContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
-          },
-          'Select regions above to display Special Tests assessments',
-        ),
+      renderHint(
+        specialTestsContainer,
+        'Select regions above to display Special Tests assessments',
       );
     }
   };

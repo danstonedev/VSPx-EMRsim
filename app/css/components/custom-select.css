@@ -1,0 +1,223 @@
+/**
+ * Custom Select Component Styles
+ * Fully customizable dropdown with UND green branding
+ */
+
+.custom-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+/* Button (trigger) */
+.custom-select__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  transition: background-color 150ms ease-in-out;
+  min-height: 32px;
+}
+
+.custom-select__button:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+html[data-theme='dark'] .custom-select__button:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.custom-select:focus .custom-select__button {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+html[data-theme='dark'] .custom-select:focus .custom-select__button {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Button text */
+.custom-select__button-text {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-select__button-text--placeholder {
+  color: var(--text-subtle);
+}
+
+/* Arrow indicator */
+.custom-select__arrow {
+  font-size: 0.625rem;
+  color: var(--text-secondary);
+  transition: transform 150ms ease-in-out;
+  flex-shrink: 0;
+}
+
+.custom-select--open .custom-select__arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown container */
+.custom-select__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition:
+    opacity 150ms ease-in-out,
+    transform 150ms ease-in-out,
+    visibility 150ms;
+}
+
+.custom-select--open .custom-select__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Dropdown positioned above */
+.custom-select__dropdown--above {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
+  transform: translateY(8px);
+}
+
+.custom-select--open .custom-select__dropdown--above {
+  transform: translateY(0);
+}
+
+/* Dark theme dropdown shadow */
+html[data-theme='dark'] .custom-select__dropdown {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Options */
+.custom-select__option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-in-out,
+    color 150ms ease-in-out;
+  color: var(--text);
+  background: transparent;
+}
+
+/* Hover state with UND green */
+.custom-select__option:hover,
+.custom-select__option--active {
+  background-color: rgba(0, 154, 68, 0.12);
+  color: var(--text);
+}
+
+html[data-theme='dark'] .custom-select__option:hover,
+html[data-theme='dark'] .custom-select__option--active {
+  background-color: rgba(0, 154, 68, 0.2);
+  color: var(--white);
+}
+
+/* Selected state with UND green */
+.custom-select__option--selected {
+  background-color: #009a44;
+  color: var(--white);
+  font-weight: 600;
+}
+
+.custom-select__option--selected:hover,
+.custom-select__option--selected.custom-select__option--active {
+  background-color: #007a36; /* Darker UND green for hover on selected */
+  color: var(--white);
+}
+
+/* Scrollbar styling for dropdown */
+.custom-select__dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-select__dropdown::-webkit-scrollbar-track {
+  background: var(--neutral-100);
+}
+
+html[data-theme='dark'] .custom-select__dropdown::-webkit-scrollbar-track {
+  background: var(--neutral-850);
+}
+
+.custom-select__dropdown::-webkit-scrollbar-thumb {
+  background: var(--neutral-400);
+  border-radius: 4px;
+}
+
+.custom-select__dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-500);
+}
+
+html[data-theme='dark'] .custom-select__dropdown::-webkit-scrollbar-thumb {
+  background: var(--neutral-600);
+}
+
+html[data-theme='dark'] .custom-select__dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-500);
+}
+
+/* Focus visible for accessibility */
+.custom-select:focus-visible {
+  outline: 2px solid rgba(0, 154, 68, 0.5);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.custom-select--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .custom-select__dropdown,
+  .custom-select__arrow,
+  .custom-select__option {
+    transition: none;
+  }
+}
+
+/* Combined ROM specific integration */
+[data-component='combined-rom'] .custom-select {
+  font-size: 0.9375rem;
+}
+
+[data-component='combined-rom'] .custom-select__button {
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
+[data-component='combined-rom'] .custom-select__option {
+  padding: 6px 12px;
+  font-size: 0.9375rem;
+}

@@ -444,6 +444,176 @@ export function exportToWord(caseData, draft) {
         spacing: { before, after },
       });
 
+    // Specialized builder for Combined ROM table with grouped headers (Left/Right)
+    // Header layout:
+    // [ REGION ] [    Left (colspan 3)     ] [    Right (colspan 3)    ]
+    //             [ AROM | PROM | RIM ]       [ AROM | PROM | RIM ]
+    function createCombinedRomDocxTable(regionLabel, rowsData, columnWidths, alignments = []) {
+      const headerFill = FORMAT.colors.neutralHeader;
+      const headerTextColor = FORMAT.colors.white;
+
+      // Row 1: REGION (rowSpan=2), Left (colSpan=3), Right (colSpan=3)
+      const row1Cells = [
+        new TableCell({
+          rowSpan: 2,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun(regionLabel, {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+            }),
+          ],
+          width:
+            Array.isArray(columnWidths) && columnWidths[0]
+              ? { size: columnWidths[0], type: WidthType.DXA }
+              : undefined,
+        }),
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun('Left', {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun('Right', {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      ];
+
+      // Row 2: AROM, PROM, RIM, AROM, PROM, RIM
+      const headerLabels = [
+        'Left AROM',
+        'Left PROM',
+        'Left RIM',
+        'Right AROM',
+        'Right PROM',
+        'Right RIM',
+      ];
+      const row2Cells = headerLabels.map(
+        (lbl, i) =>
+          new TableCell({
+            shading: { fill: headerFill },
+            margins: { top: 30, bottom: 30, left: 100, right: 100 },
+            verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+            children: [
+              new Paragraph({
+                children: [
+                  createTextRun(lbl.replace('Left ', '').replace('Right ', ''), {
+                    bold: true,
+                    size: FORMAT.sizes.small,
+                    color: headerTextColor,
+                  }),
+                ],
+                spacing: { before: 0, after: 0 },
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+            width:
+              Array.isArray(columnWidths) && columnWidths[i + 1]
+                ? { size: columnWidths[i + 1], type: WidthType.DXA }
+                : undefined,
+          }),
+      );
+
+      const headerRows = [
+        new TableRow({ children: row1Cells, tableHeader: true }),
+        new TableRow({ children: row2Cells, tableHeader: true }),
+      ];
+
+      // Body rows
+      const bodyRows = rowsData.map((row, rIdx) => {
+        return new TableRow({
+          children: row.map(
+            (cell, cIdx) =>
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      createTextRun((cell ?? '').toString(), { size: FORMAT.sizes.small }),
+                    ],
+                    alignment:
+                      alignments[cIdx] === 'right'
+                        ? AlignmentType.RIGHT
+                        : alignments[cIdx] === 'center'
+                          ? AlignmentType.CENTER
+                          : AlignmentType.LEFT,
+                    spacing: { before: 0, after: 0 },
+                  }),
+                ],
+                margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                verticalAlign:
+                  typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+                shading: rIdx % 2 === 1 ? { fill: FORMAT.colors.zebra } : undefined,
+                width:
+                  Array.isArray(columnWidths) && columnWidths[cIdx]
+                    ? { size: columnWidths[cIdx], type: WidthType.DXA }
+                    : undefined,
+              }),
+          ),
+          cantSplit: true,
+        });
+      });
+
+      const tableOptions = {
+        rows: [...headerRows, ...bodyRows],
+        layout: typeof TableLayoutType !== 'undefined' ? TableLayoutType.FIXED : undefined,
+        width:
+          Array.isArray(columnWidths) && columnWidths.length
+            ? { size: columnWidths.reduce((a, b) => a + b, 0), type: WidthType.DXA }
+            : { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          bottom: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          left: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          right: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          insideHorizontal: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          insideVertical: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+        },
+        indent: { size: FORMAT.indent.level2, type: WidthType.DXA },
+      };
+
+      if (Array.isArray(columnWidths) && columnWidths.length) {
+        tableOptions.columnWidths = columnWidths;
+      }
+      return new Table(tableOptions);
+    }
+
     // Date formatting helper (e.g., Aug 20, 2025)
     const fmtDate = (d) => {
       try {
@@ -884,6 +1054,107 @@ export function exportToWord(caseData, draft) {
     }
 
     // PROM (Passive ROM) export: rebuild rows from canonical definitions + saved values
+    // Combined ROM export (AROM + PROM + RIMs in a single per-region table)
+    // Uses regionKey-prefixed keys introduced in CombinedRomSection for data isolation.
+    const aromNamespaced = ra.arom || {}; // New AROM storage (namespaced)
+    const promNamespaced = ra.prom || {}; // PROM already used; also namespaced now
+    const rimsNamespaced = ra.rims || {}; // RIMs namespaced keys
+
+    const readCombinedVal = (obj, regionKey, baseKey) => {
+      if (!obj) return '';
+      const pref = `${regionKey}:${baseKey}`;
+      if (Object.prototype.hasOwnProperty.call(obj, pref)) return obj[pref] || '';
+      // Legacy fallback (pre‑namespacing)
+      return obj[baseKey] || '';
+    };
+
+    if (selected.length) {
+      elements.push(
+        createSectionHeader('Combined ROM Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
+      );
+
+      selected.forEach((regionKey) => {
+        const region = regionalAssessments[regionKey];
+        if (!region || !Array.isArray(region.rom) || region.rom.length === 0) return;
+
+        // Region subheading removed per request; region now appears in top-left header cell
+
+        // Helper to drop region prefixes from joint names for cleaner movement labels
+        const motionLabelFromJoint = (rk, jointName) => {
+          const prefixMap = {
+            hip: ['Hip '],
+            knee: ['Knee '],
+            ankle: ['Ankle '],
+            shoulder: ['Shoulder '],
+            elbow: ['Elbow '],
+            'wrist-hand': ['Wrist ', 'Forearm '],
+            'cervical-spine': ['Cervical '],
+            'thoracic-spine': ['Thoracic '],
+            'lumbar-spine': ['Lumbar '],
+          };
+          const prefixes = prefixMap[rk] || [];
+          for (const p of prefixes)
+            if ((jointName || '').startsWith(p)) return jointName.slice(p.length);
+          return jointName;
+        };
+
+        // Group bilateral/midline motions similar to UI logic
+        const grouped = {};
+        region.rom.forEach((item) => {
+          const jointName = item.joint;
+          if (!grouped[jointName]) {
+            grouped[jointName] = {
+              name: jointName,
+              normal: item.normal,
+              left: null,
+              right: null,
+              midline: item.side === '',
+            };
+          }
+          if (item.side === 'L') grouped[jointName].left = item;
+          else if (item.side === 'R') grouped[jointName].right = item;
+          else grouped[jointName].midline = true;
+        });
+
+        // Build rows: Motion | L AROM | L PROM | L RIM | R AROM | R PROM | R RIM
+        const rows = Object.keys(grouped).map((jointName) => {
+          const g = grouped[jointName];
+          const motionName = motionLabelFromJoint(regionKey, jointName);
+          if (g.midline) {
+            const arom = formatRom(readCombinedVal(aromNamespaced, regionKey, jointName));
+            const prom = formatRom(readCombinedVal(promNamespaced, regionKey, jointName));
+            const rimRaw = readCombinedVal(rimsNamespaced, regionKey, jointName);
+            const rim = getRimsLabel(rimRaw);
+            return [motionName, arom, prom, rim, '—', '—', '—'];
+          }
+          const leftSuffix = `${jointName}_L`;
+          const rightSuffix = `${jointName}_R`;
+          const la = formatRom(readCombinedVal(aromNamespaced, regionKey, leftSuffix));
+          const lp = formatRom(readCombinedVal(promNamespaced, regionKey, leftSuffix));
+          const lr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, leftSuffix));
+          const ra = formatRom(readCombinedVal(aromNamespaced, regionKey, rightSuffix));
+          const rp = formatRom(readCombinedVal(promNamespaced, regionKey, rightSuffix));
+          const rr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, rightSuffix));
+          return [motionName, la, lp, lr, ra || '—', rp || '—', rr || '—'];
+        });
+
+        // Define headers; keep single-row header for docx simplicity
+        const alignments = ['left', 'right', 'right', 'left', 'right', 'right', 'left'];
+        // Fixed widths tuned so RIM columns fit one line
+        // [Motion, L AROM, L PROM, L RIM, R AROM, R PROM, R RIM]
+        const widths = [2400, 900, 1000, 1800, 900, 1000, 1800];
+        elements.push(
+          createCombinedRomDocxTable(
+            (region.name || '').toString().toUpperCase(),
+            rows,
+            widths,
+            alignments,
+          ),
+        );
+        elements.push(createSpacer(0, 160));
+      });
+    }
+
     const promSaved = ra.prom || {};
     if (selected.length) {
       const promGroups = {};

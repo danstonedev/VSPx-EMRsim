@@ -1,5 +1,6 @@
 // modal.js - extracted from ChartNavigation.js
 import { el } from '../../ui/utils.js';
+import { createCustomSelect } from '../../ui/CustomSelect.js';
 
 function computeAgeFromDob(dobStr) {
   if (!dobStr) return '';
@@ -107,69 +108,44 @@ export function openEditCaseModal(caseInfo, onSave) {
       if (computed) ageInput.value = computed;
     },
   });
-  const sexSelect = el('select', { id: 'edit-gender', class: 'instructor-form-input' }, [
-    el('option', { value: '' }, 'Select...'),
-    el('option', { value: 'male', selected: caseSex === 'male' ? '' : undefined }, 'Male'),
-    el('option', { value: 'female', selected: caseSex === 'female' ? '' : undefined }, 'Female'),
-    el('option', { value: 'other', selected: caseSex === 'other' ? '' : undefined }, 'Other'),
-    el(
-      'option',
-      { value: 'unspecified', selected: caseSex === 'unspecified' ? '' : undefined },
-      'Prefer not to say',
-    ),
-  ]);
-  const settingSelect = el(
-    'select',
-    { id: 'edit-setting', required: true, class: 'instructor-form-input' },
-    [
-      el('option', { value: '' }, 'Select setting...'),
-      el(
-        'option',
-        { value: 'Outpatient', selected: caseInfo.setting === 'Outpatient' ? '' : undefined },
-        'Outpatient',
-      ),
-      el(
-        'option',
-        { value: 'Inpatient', selected: caseInfo.setting === 'Inpatient' ? '' : undefined },
-        'Inpatient',
-      ),
-      el(
-        'option',
-        { value: 'Home Health', selected: caseInfo.setting === 'Home Health' ? '' : undefined },
-        'Home Health',
-      ),
-      el('option', { value: 'SNF', selected: caseInfo.setting === 'SNF' ? '' : undefined }, 'SNF'),
-      el(
-        'option',
-        { value: 'Acute Rehab', selected: caseInfo.setting === 'Acute Rehab' ? '' : undefined },
-        'Acute Rehabilitation',
-      ),
-      el(
-        'option',
-        { value: 'Other', selected: caseInfo.setting === 'Other' ? '' : undefined },
-        'Other',
-      ),
+  const sexSelect = createCustomSelect({
+    options: [
+      { value: '', label: 'Select...' },
+      { value: 'male', label: 'Male' },
+      { value: 'female', label: 'Female' },
+      { value: 'other', label: 'Other' },
+      { value: 'unspecified', label: 'Prefer not to say' },
     ],
-  );
-  const acuitySelect = el('select', { id: 'edit-acuity', class: 'instructor-form-input' }, [
-    el('option', { value: '' }, 'Select acuity...'),
-    el('option', { value: 'acute', selected: caseAcuity === 'acute' ? '' : undefined }, 'Acute'),
-    el(
-      'option',
-      { value: 'subacute', selected: caseAcuity === 'subacute' ? '' : undefined },
-      'Subacute',
-    ),
-    el(
-      'option',
-      { value: 'chronic', selected: caseAcuity === 'chronic' ? '' : undefined },
-      'Chronic',
-    ),
-    el(
-      'option',
-      { value: 'unspecified', selected: caseAcuity === 'unspecified' ? '' : undefined },
-      'Unspecified',
-    ),
-  ]);
+    value: caseSex || '',
+    className: 'instructor-form-input',
+    dataAttrs: { id: 'edit-gender' },
+  }).element;
+  const settingSelect = createCustomSelect({
+    options: [
+      { value: '', label: 'Select setting...' },
+      { value: 'Outpatient', label: 'Outpatient' },
+      { value: 'Inpatient', label: 'Inpatient' },
+      { value: 'Home Health', label: 'Home Health' },
+      { value: 'SNF', label: 'SNF' },
+      { value: 'Acute Rehab', label: 'Acute Rehabilitation' },
+      { value: 'Other', label: 'Other' },
+    ],
+    value: caseInfo.setting || '',
+    className: 'instructor-form-input',
+    dataAttrs: { id: 'edit-setting', required: 'true' },
+  }).element;
+  const acuitySelect = createCustomSelect({
+    options: [
+      { value: '', label: 'Select acuity...' },
+      { value: 'acute', label: 'Acute' },
+      { value: 'subacute', label: 'Subacute' },
+      { value: 'chronic', label: 'Chronic' },
+      { value: 'unspecified', label: 'Unspecified' },
+    ],
+    value: caseAcuity || '',
+    className: 'instructor-form-input',
+    dataAttrs: { id: 'edit-acuity' },
+  }).element;
 
   modal = el(
     'div',

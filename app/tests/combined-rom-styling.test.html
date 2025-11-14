@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Combined ROM Styling Test</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body {
+        padding: 2rem;
+        font-family: 'Inter', sans-serif;
+      }
+      .test-section {
+        margin-bottom: 3rem;
+        padding: 1.5rem;
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+      .test-section h2 {
+        margin-top: 0;
+        color: var(--und-green);
+      }
+      .test-result {
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: var(--radius-sm);
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+      }
+      .test-result.pass {
+        background: var(--success-light);
+        border: 1px solid var(--success);
+        color: var(--success-dark);
+      }
+      .test-result.fail {
+        background: var(--danger-light);
+        border: 1px solid var(--danger);
+        color: var(--danger-dark);
+      }
+      .test-result.info {
+        background: var(--bg-hover);
+        border: 1px solid var(--color-border);
+        color: var(--text);
+      }
+      .visual-test {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: var(--bg);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+      }
+      .expected-behavior {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background: var(--und-green-light);
+        border-left: 4px solid var(--und-green);
+        font-size: 0.875rem;
+      }
+      .expected-behavior strong {
+        color: var(--und-green);
+      }
+      code {
+        background: var(--bg-secondary);
+        padding: 0.125rem 0.375rem;
+        border-radius: 3px;
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Combined ROM Table Styling Tests</h1>
+    <p>
+      This test file validates that the Combined ROM table dropdown styling works correctly with
+      transparent backgrounds and underline-only interactions.
+    </p>
+
+    <!-- Test 1: Data Attributes Present -->
+    <div class="test-section">
+      <h2>Test 1: Data Attributes Present</h2>
+      <p>
+        Verify that Combined ROM elements have the correct data attributes for namespace isolation.
+      </p>
+      <div id="test1-container"></div>
+      <div id="test1-result" class="test-result"></div>
+    </div>
+
+    <!-- Test 2: CSS Selector Specificity -->
+    <div class="test-section">
+      <h2>Test 2: CSS Selector Specificity</h2>
+      <p>Verify that data attribute selectors are applied correctly.</p>
+      <div id="test2-result" class="test-result"></div>
+    </div>
+
+    <!-- Test 3: Visual Inspection - Transparent Dropdowns -->
+    <div class="test-section">
+      <h2>Test 3: Visual Inspection - Transparent Dropdowns</h2>
+      <p>Visual test for transparent dropdown appearance.</p>
+      <div class="expected-behavior">
+        <strong>Expected Behavior:</strong>
+        <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem">
+          <li>
+            RIM dropdown should have <code>transparent</code> background (not #FAFAFA or any visible
+            color)
+          </li>
+          <li>No visible border except bottom border</li>
+          <li>Bottom border should be <code>transparent</code> by default</li>
+          <li>On hover: bottom border becomes visible (subtle gray)</li>
+          <li>On focus: bottom border becomes green underline (2px)</li>
+          <li>No padding except vertical alignment (0.25rem 0)</li>
+        </ul>
+      </div>
+      <div class="visual-test">
+        <div id="test3-container"></div>
+      </div>
+    </div>
+
+    <!-- Test 4: Computed Styles Validation -->
+    <div class="test-section">
+      <h2>Test 4: Computed Styles Validation</h2>
+      <p>Verify that computed styles match expected values.</p>
+      <div id="test4-result" class="test-result"></div>
+    </div>
+
+    <!-- Test 5: Global Style Pollution Check -->
+    <div class="test-section">
+      <h2>Test 5: Global Style Pollution Check</h2>
+      <p>Verify that global form styles do NOT affect Combined ROM elements.</p>
+      <div id="test5-result" class="test-result"></div>
+    </div>
+
+    <!-- Test 6: Input Field Transparency -->
+    <div class="test-section">
+      <h2>Test 6: Input Field Transparency</h2>
+      <p>Verify that AROM/PROM inputs are also transparent.</p>
+      <div class="expected-behavior">
+        <strong>Expected Behavior:</strong> Input fields should blend into table cells with
+        transparent backgrounds and underline-only interactions.
+      </div>
+      <div class="visual-test">
+        <div id="test6-container"></div>
+      </div>
+      <div id="test6-result" class="test-result"></div>
+    </div>
+
+    <script type="module">
+      import { el } from '../js/ui/utils.js';
+      import { createCombinedRomSection } from '../js/features/soap/objective/CombinedRomSection.js';
+
+      // Mock region data for testing
+      const mockRegion = {
+        name: 'Shoulder',
+        rom: [
+          { joint: 'Shoulder Flexion', side: 'L', normal: '180' },
+          { joint: 'Shoulder Flexion', side: 'R', normal: '180' },
+          { joint: 'Shoulder Abduction', side: 'L', normal: '180' },
+          { joint: 'Shoulder Abduction', side: 'R', normal: '180' },
+        ],
+      };
+
+      const mockData = {};
+      const mockHandler = () => {};
+
+      // Test 1: Data Attributes
+      function test1() {
+        const container = document.getElementById('test1-container');
+        const result = document.getElementById('test1-result');
+
+        const section = createCombinedRomSection(
+          'shoulder',
+          mockRegion,
+          mockData,
+          mockData,
+          mockData,
+          mockHandler,
+          mockHandler,
+          mockHandler,
+        );
+
+        container.appendChild(section.element);
+
+        const table = container.querySelector('table');
+        const select = container.querySelector('select');
+        const input = container.querySelector('input');
+
+        const tests = [
+          {
+            name: 'Table has data-component',
+            pass: table?.getAttribute('data-component') === 'combined-rom',
+          },
+          {
+            name: 'Select has data-component',
+            pass: select?.getAttribute('data-component') === 'combined-rom',
+          },
+          {
+            name: 'Select has data-element',
+            pass: select?.getAttribute('data-element') === 'select',
+          },
+          {
+            name: 'Input has data-component',
+            pass: input?.getAttribute('data-component') === 'combined-rom',
+          },
+          { name: 'Input has data-element', pass: input?.getAttribute('data-element') === 'input' },
+        ];
+
+        const allPass = tests.every((t) => t.pass);
+        result.className = `test-result ${allPass ? 'pass' : 'fail'}`;
+        result.innerHTML = tests.map((t) => `${t.pass ? '✅' : '❌'} ${t.name}`).join('<br>');
+      }
+
+      // Test 2: CSS Selector Check
+      function test2() {
+        const result = document.getElementById('test2-result');
+        const rules = [];
+
+        // Check if combined-rom.css is loaded
+        const stylesheets = Array.from(document.styleSheets);
+        let foundCombinedRomCSS = false;
+
+        try {
+          for (const sheet of stylesheets) {
+            if (sheet.href && sheet.href.includes('combined-rom.css')) {
+              foundCombinedRomCSS = true;
+              const cssRules = Array.from(sheet.cssRules || []);
+              const dataAttrRules = cssRules.filter(
+                (rule) =>
+                  rule.selectorText &&
+                  rule.selectorText.includes('[data-component="combined-rom"]'),
+              );
+              rules.push(...dataAttrRules.map((r) => r.selectorText));
+            }
+          }
+        } catch (e) {
+          result.className = 'test-result fail';
+          result.innerHTML = `❌ Error accessing stylesheets: ${e.message}`;
+          return;
+        }
+
+        const hasSelectRule = rules.some((r) => r.includes('select[data-component'));
+        const hasInputRule = rules.some((r) => r.includes('input[data-component'));
+
+        result.className = `test-result ${foundCombinedRomCSS && hasSelectRule && hasInputRule ? 'pass' : 'fail'}`;
+        result.innerHTML = `
+        ${foundCombinedRomCSS ? '✅' : '❌'} combined-rom.css loaded<br>
+        ${hasSelectRule ? '✅' : '❌'} Data attribute selector for select found<br>
+        ${hasInputRule ? '✅' : '❌'} Data attribute selector for input found<br>
+        <details style="margin-top: 0.5rem;">
+          <summary style="cursor: pointer;">View all Combined ROM selectors (${rules.length})</summary>
+          <pre style="margin-top: 0.5rem; white-space: pre-wrap;">${rules.join('\n')}</pre>
+        </details>
+      `;
+      }
+
+      // Test 3: Visual Test
+      function test3() {
+        const container = document.getElementById('test3-container');
+
+        const section = createCombinedRomSection(
+          'shoulder',
+          mockRegion,
+          { 'shoulder:Shoulder Flexion_L': '175' },
+          { 'shoulder:Shoulder Flexion_L': '180' },
+          { 'shoulder:Shoulder Flexion_L': 'strong-painfree' },
+          mockHandler,
+          mockHandler,
+          mockHandler,
+        );
+
+        container.appendChild(section.element);
+      }
+
+      // Test 4: Computed Styles
+      function test4() {
+        const result = document.getElementById('test4-result');
+        const select = document.querySelector('select[data-component="combined-rom"]');
+
+        if (!select) {
+          result.className = 'test-result fail';
+          result.innerHTML = '❌ No select element found';
+          return;
+        }
+
+        const computed = window.getComputedStyle(select);
+        const tests = [
+          {
+            name: 'Background is transparent',
+            pass:
+              computed.background.includes('transparent') ||
+              computed.backgroundColor === 'rgba(0, 0, 0, 0)',
+          },
+          {
+            name: 'Border is 0 or transparent',
+            pass:
+              computed.border.includes('0px') ||
+              computed.borderWidth === '0px' ||
+              computed.borderBottomColor.includes('transparent'),
+          },
+          {
+            name: 'Min-height is unset/auto',
+            pass: computed.minHeight === '0px' || computed.minHeight === 'auto',
+          },
+          { name: 'No box-shadow', pass: computed.boxShadow === 'none' },
+        ];
+
+        const allPass = tests.every((t) => t.pass);
+        result.className = `test-result ${allPass ? 'pass' : 'fail'}`;
+        result.innerHTML =
+          tests.map((t) => `${t.pass ? '✅' : '❌'} ${t.name}`).join('<br>') +
+          `<details style="margin-top: 0.5rem;">
+          <summary style="cursor: pointer;">View computed styles</summary>
+          <pre style="margin-top: 0.5rem; font-size: 0.75rem;">
+background: ${computed.background}
+backgroundColor: ${computed.backgroundColor}
+border: ${computed.border}
+borderBottom: ${computed.borderBottom}
+minHeight: ${computed.minHeight}
+height: ${computed.height}
+padding: ${computed.padding}
+boxShadow: ${computed.boxShadow}
+          </pre>
+        </details>`;
+      }
+
+      // Test 5: Global Style Pollution
+      function test5() {
+        const result = document.getElementById('test5-result');
+        const select = document.querySelector('select[data-component="combined-rom"]');
+
+        if (!select) {
+          result.className = 'test-result fail';
+          result.innerHTML = '❌ No select element found';
+          return;
+        }
+
+        // Check that form-input-standard class is NOT present
+        const hasFormInputStandard = select.classList.contains('form-input-standard');
+
+        // Check matched CSS rules
+        const matchedRules = [];
+        try {
+          const stylesheets = Array.from(document.styleSheets);
+          for (const sheet of stylesheets) {
+            const cssRules = Array.from(sheet.cssRules || []);
+            for (const rule of cssRules) {
+              if (rule.selectorText && select.matches(rule.selectorText)) {
+                matchedRules.push(rule.selectorText);
+              }
+            }
+          }
+        } catch (e) {
+          // CORS may prevent access to some stylesheets
+        }
+
+        const hasGlobalFormRule = matchedRules.some(
+          (r) => r.includes('.form-input-standard') && !r.includes(':not'),
+        );
+
+        result.className = `test-result ${!hasFormInputStandard && !hasGlobalFormRule ? 'pass' : 'fail'}`;
+        result.innerHTML = `
+        ${!hasFormInputStandard ? '✅' : '❌'} Does NOT have form-input-standard class<br>
+        ${!hasGlobalFormRule ? '✅' : '❌'} NOT affected by global form rules<br>
+        <details style="margin-top: 0.5rem;">
+          <summary style="cursor: pointer;">View matched CSS rules (${matchedRules.length})</summary>
+          <pre style="margin-top: 0.5rem; white-space: pre-wrap;">${matchedRules.join('\n')}</pre>
+        </details>
+      `;
+      }
+
+      // Test 6: Input Transparency
+      function test6() {
+        const container = document.getElementById('test6-container');
+        const result = document.getElementById('test6-result');
+
+        const section = createCombinedRomSection(
+          'shoulder',
+          mockRegion,
+          mockData,
+          mockData,
+          mockData,
+          mockHandler,
+          mockHandler,
+          mockHandler,
+        );
+
+        container.appendChild(section.element);
+
+        const input = container.querySelector('input[data-component="combined-rom"]');
+
+        if (!input) {
+          result.className = 'test-result fail';
+          result.innerHTML = '❌ No input element found';
+          return;
+        }
+
+        const computed = window.getComputedStyle(input);
+        const tests = [
+          {
+            name: 'Input background is transparent',
+            pass:
+              computed.background.includes('transparent') ||
+              computed.backgroundColor === 'rgba(0, 0, 0, 0)',
+          },
+          {
+            name: 'Input has no visible border (except bottom)',
+            pass: computed.borderTop === '0px none' || computed.borderTopWidth === '0px',
+          },
+          { name: 'Input is right-aligned', pass: computed.textAlign === 'right' },
+        ];
+
+        const allPass = tests.every((t) => t.pass);
+        result.className = `test-result ${allPass ? 'pass' : 'fail'}`;
+        result.innerHTML = tests.map((t) => `${t.pass ? '✅' : '❌'} ${t.name}`).join('<br>');
+      }
+
+      // Run all tests
+      window.addEventListener('DOMContentLoaded', () => {
+        test1();
+        test2();
+        test3();
+        test4();
+        test5();
+        test6();
+      });
+    </script>
+  </body>
+</html>

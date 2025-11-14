@@ -2,6 +2,7 @@
 // Common physical therapy billing codes with time-based unit tracking
 
 import { el } from '../../../ui/utils.js';
+import { createCustomSelect } from '../../../ui/CustomSelect.js';
 
 /**
  * PT Billing Component - Professional billing with CPT codes
@@ -307,20 +308,17 @@ function createDiagnosisCodeRow(codeEntry, index, data, updateField, renderCallb
 
   // ICD-10 Code Selection with inline label
   const codeContainer = el('div', { style: 'position: relative;' });
-  const codeSelect = el('select', {
-    style: `
-      width: 100%;
-      padding: 4px 8px;
-  border: 1px solid var(--input-border);
-  border-radius: 4px;
-  font-size: 14px;
-  background: var(--input-bg);
-  color: var(--text);
-    `,
-    onchange: (e) => {
-      data.diagnosisCodes[index].code = e.target.value;
+  const codeSelect = createCustomSelect({
+    options: getPTICD10Codes().map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+    value: codeEntry.code || '',
+    className: 'billing-code-select',
+    onChange: (newValue) => {
+      data.diagnosisCodes[index].code = newValue;
       // Update both description and label based on selected code
-      const selectedOption = getPTICD10Codes().find((opt) => opt.value === e.target.value);
+      const selectedOption = getPTICD10Codes().find((opt) => opt.value === newValue);
       if (selectedOption) {
         data.diagnosisCodes[index].description = selectedOption.description;
         data.diagnosisCodes[index].label = selectedOption.label;
@@ -330,16 +328,7 @@ function createDiagnosisCodeRow(codeEntry, index, data, updateField, renderCallb
       }
       updateField('diagnosisCodes', data.diagnosisCodes);
     },
-  });
-
-  // Add ICD-10 options (no per-option selected flags)
-  getPTICD10Codes().forEach((option) => {
-    const opt = el('option', { value: option.value }, option.label);
-    codeSelect.append(opt);
-  });
-
-  // Assign current value; if none, will show the placeholder option from the list
-  codeSelect.value = codeEntry.code || '';
+  }).element;
 
   codeContainer.append(codeSelect);
 
@@ -391,32 +380,20 @@ function createOrderReferralRow(entry, index, data, updateField, renderCallback)
   row.onmouseout = () => (row.style.background = 'transparent');
 
   // Type select
-  const typeSelect = el('select', {
-    style: `
-      width: 100%;
-      padding: 4px 8px;
-      border: 1px solid var(--input-border);
-      border-radius: 4px;
-      font-size: 14px;
-      background: var(--input-bg);
-      color: var(--text);
-    `,
-    onchange: (e) => {
-      data.ordersReferrals[index].type = e.target.value;
+  const typeSelect = createCustomSelect({
+    options: [
+      { value: '', label: 'Select type...' },
+      { value: 'referral', label: 'Referral' },
+      { value: 'order', label: 'Order/Prescription' },
+      { value: 'consult', label: 'Consult' },
+    ],
+    value: entry.type || '',
+    className: 'order-type-select',
+    onChange: (newValue) => {
+      data.ordersReferrals[index].type = newValue;
       updateField('ordersReferrals', data.ordersReferrals);
     },
-  });
-
-  [
-    { value: '', label: 'Select type...' },
-    { value: 'referral', label: 'Referral' },
-    { value: 'order', label: 'Order/Prescription' },
-    { value: 'consult', label: 'Consult' },
-  ].forEach((optData) => {
-    const opt = el('option', { value: optData.value }, optData.label);
-    typeSelect.append(opt);
-  });
-  typeSelect.value = entry.type || '';
+  }).element;
 
   // Details input
   const detailsInput = el('input', {
@@ -480,13 +457,17 @@ function createBillingCodeRow(codeEntry, index, data, updateField, renderCallbac
   row.onmouseout = () => (row.style.background = 'transparent');
 
   // CPT Code Selection
-  const codeSelect = el('select', {
-    class: 'editable-table__select',
-    style: 'width: 100%;',
-    onchange: (e) => {
-      data.billingCodes[index].code = e.target.value;
+  const codeSelect = createCustomSelect({
+    options: getPTCPTCodes().map((option) => ({
+      value: option.value,
+      label: option.label,
+    })),
+    value: codeEntry.code || '',
+    className: 'editable-table__select billing-cpt-select',
+    onChange: (newValue) => {
+      data.billingCodes[index].code = newValue;
       // Update both description and label based on selected code
-      const selectedOption = getPTCPTCodes().find((opt) => opt.value === e.target.value);
+      const selectedOption = getPTCPTCodes().find((opt) => opt.value === newValue);
       if (selectedOption) {
         data.billingCodes[index].description = selectedOption.description;
         data.billingCodes[index].label = selectedOption.label;
@@ -497,16 +478,7 @@ function createBillingCodeRow(codeEntry, index, data, updateField, renderCallbac
       updateField('billingCodes', data.billingCodes);
       renderCallback();
     },
-  });
-
-  // Add CPT options (no per-option selected flags)
-  getPTCPTCodes().forEach((option) => {
-    const opt = el('option', { value: option.value }, option.label);
-    codeSelect.append(opt);
-  });
-
-  // Assign current value; if none, will show the placeholder option from the list
-  codeSelect.value = codeEntry.code || '';
+  }).element;
 
   // Units input (for time-based codes)
   const unitsInput = el('input', {

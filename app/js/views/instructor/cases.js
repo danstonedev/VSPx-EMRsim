@@ -5,6 +5,7 @@ import {
   getRoute as getUrlRoute,
   setQueryParams as setUrlQuery,
 } from '../../core/url.js';
+import { createCustomSelect } from '../../ui/CustomSelect.js';
 // Lazy-load store functions to avoid static/dynamic import mix warnings
 async function _listCases() {
   const store = await import('../../core/store.js');
@@ -436,13 +437,15 @@ function showPromptGenerationModal() {
                   'elbow',
                   'wrist',
                 ];
-                const sel = el('select', {
-                  id: 'gen-region',
-                  required: true,
-                  class: 'instructor-form-input',
-                });
-                sel.append(el('option', { value: '' }, 'Select region...'));
-                regions.forEach((r) => sel.append(el('option', { value: r }, r)));
+                const sel = createCustomSelect({
+                  options: [
+                    { value: '', label: 'Select region...' },
+                    ...regions.map((r) => ({ value: r, label: r })),
+                  ],
+                  value: '',
+                  className: 'instructor-form-input',
+                  dataAttrs: { id: 'gen-region' },
+                }).element;
                 return el('div', { class: 'flex-1 minw-200' }, [
                   el('div', { class: 'instructor-form-field' }, [
                     el(
@@ -476,18 +479,19 @@ function showPromptGenerationModal() {
             el('div', { class: 'd-flex gap-16 mb-16 flex-wrap' }, [
               // Setting
               (() => {
-                const sel = el('select', {
-                  id: 'gen-setting',
-                  class: 'instructor-form-input',
-                });
-                sel.append(
-                  el('option', { value: '' }, 'Select setting...'),
-                  el('option', { value: 'Outpatient' }, 'Outpatient'),
-                  el('option', { value: 'Inpatient' }, 'Inpatient'),
-                  el('option', { value: 'Home Health' }, 'Home Health'),
-                  el('option', { value: 'SNF' }, 'SNF'),
-                  el('option', { value: 'Acute Rehab' }, 'Acute Rehab'),
-                );
+                const sel = createCustomSelect({
+                  options: [
+                    { value: '', label: 'Select setting...' },
+                    { value: 'Outpatient', label: 'Outpatient' },
+                    { value: 'Inpatient', label: 'Inpatient' },
+                    { value: 'Home Health', label: 'Home Health' },
+                    { value: 'SNF', label: 'SNF' },
+                    { value: 'Acute Rehab', label: 'Acute Rehab' },
+                  ],
+                  value: '',
+                  className: 'instructor-form-input',
+                  dataAttrs: { id: 'gen-setting' },
+                }).element;
                 return el('div', { class: 'flex-1 minw-200' }, [
                   el('div', { class: 'instructor-form-field' }, [
                     el(
@@ -501,16 +505,17 @@ function showPromptGenerationModal() {
               })(),
               // Acuity
               (() => {
-                const sel = el('select', {
-                  id: 'gen-acuity',
-                  class: 'instructor-form-input',
-                });
-                sel.append(
-                  el('option', { value: '' }, 'Select acuity...'),
-                  el('option', { value: 'acute' }, 'Acute'),
-                  el('option', { value: 'subacute' }, 'Subacute'),
-                  el('option', { value: 'chronic' }, 'Chronic'),
-                );
+                const sel = createCustomSelect({
+                  options: [
+                    { value: '', label: 'Select acuity...' },
+                    { value: 'acute', label: 'Acute' },
+                    { value: 'subacute', label: 'Subacute' },
+                    { value: 'chronic', label: 'Chronic' },
+                  ],
+                  value: '',
+                  className: 'instructor-form-input',
+                  dataAttrs: { id: 'gen-acuity' },
+                }).element;
                 return el('div', { class: 'flex-1 minw-200' }, [
                   el('div', { class: 'instructor-form-field' }, [
                     el('label', { class: 'instructor-form-label', for: 'gen-acuity' }, 'Acuity *'),
@@ -539,17 +544,17 @@ function showPromptGenerationModal() {
                 el('div', { class: 'instructor-form-field' }, [
                   el('label', { class: 'instructor-form-label', for: 'gen-sex' }, 'Sex'),
                   (() => {
-                    const sel = el('select', {
-                      id: 'gen-sex',
-                      name: 'gen-sex',
-                      class: 'instructor-form-input',
-                    });
-                    sel.append(
-                      el('option', { value: '' }, 'Select...'),
-                      el('option', { value: 'female' }, 'Female'),
-                      el('option', { value: 'male' }, 'Male'),
-                      el('option', { value: 'unspecified' }, 'Unspecified'),
-                    );
+                    const sel = createCustomSelect({
+                      options: [
+                        { value: '', label: 'Select...' },
+                        { value: 'female', label: 'Female' },
+                        { value: 'male', label: 'Male' },
+                        { value: 'unspecified', label: 'Unspecified' },
+                      ],
+                      value: '',
+                      className: 'instructor-form-input',
+                      dataAttrs: { id: 'gen-sex', name: 'gen-sex' },
+                    }).element;
                     return sel;
                   })(),
                 ]),

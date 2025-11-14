@@ -1,6 +1,6 @@
 /*
 ==============================================================================
- Component-Specific CSS - Forms Module  
+ Component-Specific CSS - Forms Module
  - Form controls, input fields, validation styles
  - Lazy-loaded only when form components are rendered
 ==============================================================================
@@ -33,7 +33,7 @@ label {
 }
 
 input,
-select,
+select:not(.combined-rom-select),
 textarea {
   width: 100%;
   padding: 0.75rem;
@@ -46,7 +46,7 @@ textarea {
 }
 
 input:focus,
-select:focus,
+select:not(.combined-rom-select):focus,
 textarea:focus {
   outline: 2px solid var(--link);
   outline-offset: -2px;
@@ -54,7 +54,7 @@ textarea:focus {
 }
 
 input:invalid,
-select:invalid,
+select:not(.combined-rom-select):invalid,
 textarea:invalid {
   border-color: var(--error);
 }
