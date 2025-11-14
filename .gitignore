@@ -60,5 +60,5 @@ data/backups/
 # env/
 
 # Prevent accidentally embedding a nested repository clone
-pt-ehr-simulator/
+VSPx-EMRsim/
 hip-torque/

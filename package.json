@@ -37,15 +37,15 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/danstonedev/pt-ehr-simulator.git"
+    "url": "git+https://github.com/danstonedev/VSPx-EMRsim.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/danstonedev/pt-ehr-simulator/issues"
+    "url": "https://github.com/danstonedev/VSPx-EMRsim/issues"
   },
-  "homepage": "https://github.com/danstonedev/pt-ehr-simulator#readme",
+  "homepage": "https://github.com/danstonedev/VSPx-EMRsim#readme",
   "lint-staged": {
     "app/**/*.{js,jsx,css,html,json,md}": "prettier --write",
     "*.{json,md,yml,yaml}": "prettier --write",
