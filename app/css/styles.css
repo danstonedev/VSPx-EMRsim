@@ -17,6 +17,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap');
 /* Extracted modules (must appear before any style rules) - combined-rom.css loads FIRST for proper cascade */
 @import url('./components/combined-rom.css');
+@import url('./components/combined-neuroscreen.css');
 @import url('./components/custom-select.css');
 @import url('./buttons.css');
 @import url('./sidebar.css');

@@ -3,11 +3,8 @@
  * Unified module for streamlined ROM, MMT, RIMs, and Special Tests assessment
  */
 import { el } from '../../../ui/utils.js';
-import { createRomSection } from './RomSection.js';
 import { createMmtSection } from './MmtSection.js';
-import { createRimsSection } from './RimsSection.js';
 import { createSpecialTestsSection } from './SpecialTestsSection.js';
-import { createEditableTable } from './EditableTable.js';
 import { createCombinedRomSection } from './CombinedRomSection.js';
 
 // Debug utilities: controlled by URL `?debug=1` flag
@@ -439,13 +436,6 @@ export function createRegionalAssessment(regionKey, assessmentData, onChange) {
   if (!assessmentData.mmt) assessmentData.mmt = {};
   if (!assessmentData.specialTests) assessmentData.specialTests = {};
 
-  // ROM Section
-  const romSection = createRomSection(regionKey, region, assessmentData.rom, (romData) => {
-    assessmentData.rom = romData;
-    onChange(assessmentData);
-  });
-  container.appendChild(romSection.element);
-
   // MMT Section
   const mmtSection = createMmtSection(regionKey, region, assessmentData.mmt, (mmtData) => {
     assessmentData.mmt = mmtData;
@@ -467,7 +457,6 @@ export function createRegionalAssessment(regionKey, assessmentData, onChange) {
 
   return {
     element: container,
-    rom: romSection,
     mmt: mmtSection,
     specialTests: specialTestsSection,
     getData: () => assessmentData,
@@ -518,9 +507,6 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
     class: 'combined-rom-container',
     style: 'margin-bottom: 30px;',
   });
-  const promContainer = el('div', { class: 'prom-container', style: 'margin-bottom: 30px;' });
-  const romContainer = el('div', { class: 'rom-container', style: 'margin-bottom: 30px;' });
-  const rimsContainer = el('div', { class: 'rims-container', style: 'margin-bottom: 30px;' });
   const mmtContainer = el('div', { class: 'mmt-container', style: 'margin-bottom: 30px;' });
   const specialTestsContainer = el('div', {
     class: 'special-tests-container',
@@ -528,9 +514,6 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
   });
   const tablesContainer = el('div', { class: 'tables-container' }, [
     combinedRomContainer,
-    promContainer,
-    romContainer,
-    rimsContainer,
     mmtContainer,
     specialTestsContainer,
   ]);
@@ -543,9 +526,6 @@ export function createMultiRegionalAssessment(allAssessmentData, onChange) {
     allAssessmentData,
     onChange,
     combinedRomContainer,
-    promContainer,
-    romContainer,
-    rimsContainer,
     mmtContainer,
     specialTestsContainer,
   });
@@ -668,13 +648,10 @@ function makeRefreshTables({
   allAssessmentData,
   onChange,
   combinedRomContainer,
-  promContainer,
-  romContainer,
-  rimsContainer,
   mmtContainer,
   specialTestsContainer,
 }) {
-  let promTable, romSection, rimsSection, mmtSection, specialTestsSection;
+  let mmtSection, specialTestsSection;
   const renderHint = (container, text) => {
     container.replaceChildren(
       el(
@@ -699,9 +676,7 @@ function makeRefreshTables({
   };
 
   return () => {
-    const combinedPromData = buildCombined('rom');
     const combinedRomData = buildCombined('rom');
-    const combinedRimsData = buildCombined('rims');
     const combinedMmtData = buildCombined('mmt');
     const combinedSpecialTestsData = buildCombined('specialTests');
 
@@ -760,112 +735,6 @@ function makeRefreshTables({
       renderHint(
         combinedRomContainer,
         'Select one or more regions above to use the Combined ROM Assessment table.',
-      );
-    }
-
-    // PROM
-    promContainer.replaceChildren();
-    if (combinedPromData.length > 0) {
-      const groups = {};
-      combinedPromData.forEach((item) => {
-        const baseName = item.name || item.joint || item.muscle;
-        if (!groups[baseName])
-          groups[baseName] = { normal: item.normal, left: null, right: null, bilateral: null };
-        if (item.side === 'L') groups[baseName].left = true;
-        else if (item.side === 'R') groups[baseName].right = true;
-        else groups[baseName].bilateral = true;
-      });
-      const tableData = {};
-      const excludedSet = new Set(allAssessmentData.promExcluded || []);
-      Object.keys(groups).forEach((groupName) => {
-        const rowId = groupName.toLowerCase().replace(/\s+/g, '-');
-        if (excludedSet.has(rowId)) return;
-        const saved = allAssessmentData.prom[rowId] || {};
-        const displayName = groups[groupName].normal
-          ? `${groupName} (${groups[groupName].normal})`
-          : groupName;
-        tableData[rowId] = { name: displayName, left: saved.left || '', right: saved.right || '' };
-      });
-      promTable = createEditableTable({
-        columns: [
-          {
-            field: 'name',
-            label: 'Passive Range of Motion (PROM)',
-            short: 'PROM',
-            width: '50%',
-            type: 'label',
-          },
-          { field: 'left', label: 'Left', width: '25%' },
-          { field: 'right', label: 'Right', width: '25%' },
-        ],
-        data: tableData,
-        onChange: (newData) => {
-          const updated = { ...allAssessmentData.prom };
-          Object.keys(newData).forEach((rowId) => {
-            const row = newData[rowId];
-            updated[rowId] = { left: row.left || '', right: row.right || '' };
-          });
-          const currentRowIds = Object.keys(groups).map((n) =>
-            n.toLowerCase().replace(/\s+/g, '-'),
-          );
-          const newRowIds = Object.keys(newData);
-          const excluded = currentRowIds.filter((id) => !newRowIds.includes(id));
-          const existingExcluded = new Set(allAssessmentData.promExcluded || []);
-          const prunedExisting = Array.from(existingExcluded).filter((id) =>
-            currentRowIds.includes(id),
-          );
-          const mergedExcluded = Array.from(new Set([...prunedExisting, ...excluded]));
-          allAssessmentData.prom = updated;
-          allAssessmentData.promExcluded = mergedExcluded;
-          onChange(allAssessmentData);
-        },
-        showAddButton: false,
-        showDeleteButton: true,
-        actionsHeaderLabel: '',
-        className: 'bilateral-table',
-      });
-      promContainer.appendChild(promTable.element);
-    } else {
-      renderHint(
-        promContainer,
-        'Select regions above to display Passive Range of Motion (PROM) assessments',
-      );
-    }
-
-    // ROM
-    romContainer.replaceChildren();
-    if (combinedRomData.length > 0) {
-      romSection = createRomSection(
-        'multi-region',
-        { name: 'Range of Motion', rom: combinedRomData },
-        allAssessmentData.rom,
-        (romData) => {
-          allAssessmentData.rom = romData;
-          onChange(allAssessmentData);
-        },
-      );
-      romContainer.appendChild(romSection.element);
-    } else {
-      renderHint(romContainer, 'Select regions above to display Range of Motion assessments');
-    }
-
-    // RIMs
-    rimsContainer.replaceChildren();
-    if (combinedRimsData.length > 0) {
-      rimsSection = createRimsSection(
-        'multi-region',
-        { name: 'Resisted Isometric Movement', rims: combinedRimsData },
-        allAssessmentData.rims,
-        (rimsData) => {
-          allAssessmentData.rims = rimsData;
-          onChange(allAssessmentData);
-        },
-      );
-      rimsContainer.appendChild(rimsSection.element);
-    } else {
-      renderHint(
-        rimsContainer,
-        'Select regions above to display Resisted Isometric Movement (RIMs) assessments',
       );
     }
 

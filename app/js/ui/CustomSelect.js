@@ -173,10 +173,15 @@ export function createCustomSelect({
     });
 
     updateButtonText();
+
+    // Close immediately before triggering callback
     close();
 
-    // Trigger change callback
-    if (onChange) onChange(currentValue);
+    // Trigger change callback after closing
+    if (onChange) {
+      // Use microtask to ensure close completes first
+      Promise.resolve().then(() => onChange(currentValue));
+    }
   }
 
   // Handle click outside to close
@@ -188,6 +193,8 @@ export function createCustomSelect({
 
   // Handle option click
   function handleOptionClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
     const optEl = e.target.closest('.custom-select__option');
     if (!optEl) return;
     const newValue = optEl.getAttribute('data-value');
@@ -290,8 +297,15 @@ export function createCustomSelect({
   }
 
   // Event listeners
-  container.addEventListener('click', toggle);
-  dropdown.addEventListener('click', handleOptionClick);
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggle();
+  });
+  dropdown.addEventListener('click', (e) => {
+    e.stopImmediatePropagation();
+    handleOptionClick(e);
+  });
   container.addEventListener('keydown', handleKeyDown);
 
   // Initialize

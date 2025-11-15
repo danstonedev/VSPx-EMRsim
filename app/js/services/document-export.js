@@ -7,6 +7,49 @@
 import { regionalAssessments } from '../features/soap/objective/RegionalAssessments.js';
 import { getRimsLabel } from '../features/soap/objective/RimsSection.js';
 
+// Define NEUROSCREEN_REGIONS inline to avoid dynamic import issues
+const NEUROSCREEN_REGIONS = {
+  'lower-extremity': {
+    name: 'Lower Extremity',
+    items: [
+      { level: 'L1', reflex: null },
+      { level: 'L2', reflex: null },
+      { level: 'L3', reflex: 'Patellar' },
+      { level: 'L4', reflex: 'Patellar' },
+      { level: 'L5', reflex: null },
+      { level: 'S1', reflex: 'Achilles' },
+      { level: 'S2', reflex: null },
+    ],
+  },
+  'upper-extremity': {
+    name: 'Upper Extremity',
+    items: [
+      { level: 'C5', reflex: 'Biceps' },
+      { level: 'C6', reflex: 'Brachioradialis' },
+      { level: 'C7', reflex: 'Triceps' },
+      { level: 'C8', reflex: null },
+      { level: 'T1', reflex: null },
+    ],
+  },
+  'cranial-nerves': {
+    name: 'Cranial Nerves',
+    items: [
+      { level: 'CN I', reflex: null },
+      { level: 'CN II', reflex: 'Pupillary' },
+      { level: 'CN III', reflex: 'Pupillary' },
+      { level: 'CN IV', reflex: null },
+      { level: 'CN V', reflex: 'Corneal' },
+      { level: 'CN VI', reflex: null },
+      { level: 'CN VII', reflex: null },
+      { level: 'CN VIII', reflex: null },
+      { level: 'CN IX', reflex: 'Gag' },
+      { level: 'CN X', reflex: 'Gag' },
+      { level: 'CN XI', reflex: null },
+      { level: 'CN XII', reflex: null },
+    ],
+  },
+};
+
 /* eslint-disable complexity */
 export function exportToWord(caseData, draft) {
   try {
@@ -535,6 +578,175 @@ export function exportToWord(caseData, draft) {
               new Paragraph({
                 children: [
                   createTextRun(lbl.replace('Left ', '').replace('Right ', ''), {
+                    bold: true,
+                    size: FORMAT.sizes.small,
+                    color: headerTextColor,
+                  }),
+                ],
+                spacing: { before: 0, after: 0 },
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+            width:
+              Array.isArray(columnWidths) && columnWidths[i + 1]
+                ? { size: columnWidths[i + 1], type: WidthType.DXA }
+                : undefined,
+          }),
+      );
+
+      const headerRows = [
+        new TableRow({ children: row1Cells, tableHeader: true }),
+        new TableRow({ children: row2Cells, tableHeader: true }),
+      ];
+
+      // Body rows
+      const bodyRows = rowsData.map((row, rIdx) => {
+        return new TableRow({
+          children: row.map(
+            (cell, cIdx) =>
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      createTextRun((cell ?? '').toString(), { size: FORMAT.sizes.small }),
+                    ],
+                    alignment:
+                      alignments[cIdx] === 'right'
+                        ? AlignmentType.RIGHT
+                        : alignments[cIdx] === 'center'
+                          ? AlignmentType.CENTER
+                          : AlignmentType.LEFT,
+                    spacing: { before: 0, after: 0 },
+                  }),
+                ],
+                margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                verticalAlign:
+                  typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+                shading: rIdx % 2 === 1 ? { fill: FORMAT.colors.zebra } : undefined,
+                width:
+                  Array.isArray(columnWidths) && columnWidths[cIdx]
+                    ? { size: columnWidths[cIdx], type: WidthType.DXA }
+                    : undefined,
+              }),
+          ),
+          cantSplit: true,
+        });
+      });
+
+      const tableOptions = {
+        rows: [...headerRows, ...bodyRows],
+        layout: typeof TableLayoutType !== 'undefined' ? TableLayoutType.FIXED : undefined,
+        width:
+          Array.isArray(columnWidths) && columnWidths.length
+            ? { size: columnWidths.reduce((a, b) => a + b, 0), type: WidthType.DXA }
+            : { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          bottom: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          left: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          right: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          insideHorizontal: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          insideVertical: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+        },
+        indent: { size: FORMAT.indent.level2, type: WidthType.DXA },
+      };
+
+      if (Array.isArray(columnWidths) && columnWidths.length) {
+        tableOptions.columnWidths = columnWidths;
+      }
+      return new Table(tableOptions);
+    }
+
+    // Specialized builder for Combined Neuroscreen table with grouped headers (Left/Right)
+    // Header layout:
+    // [ REGION ] [    Left (colspan 3)     ] [    Right (colspan 3)    ]
+    //             [ Dermatome | Myotome | Reflex ]  [ Dermatome | Myotome | Reflex ]
+    function createCombinedNeuroscreenDocxTable(
+      regionLabel,
+      rowsData,
+      columnWidths,
+      alignments = [],
+    ) {
+      const headerFill = FORMAT.colors.neutralHeader;
+      const headerTextColor = FORMAT.colors.white;
+
+      // Row 1: REGION (rowSpan=2), Left (colSpan=3), Right (colSpan=3)
+      const row1Cells = [
+        new TableCell({
+          rowSpan: 2,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun(regionLabel, {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+          width:
+            Array.isArray(columnWidths) && columnWidths[0]
+              ? { size: columnWidths[0], type: WidthType.DXA }
+              : undefined,
+        }),
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun('Left', {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+        new TableCell({
+          columnSpan: 3,
+          shading: { fill: headerFill },
+          margins: { top: 30, bottom: 30, left: 100, right: 100 },
+          verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun('Right', {
+                  bold: true,
+                  size: FORMAT.sizes.small,
+                  color: headerTextColor,
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      ];
+
+      // Row 2: Dermatome, Myotome, Reflex, Dermatome, Myotome, Reflex
+      const headerLabels = ['Dermatome', 'Myotome', 'Reflex', 'Dermatome', 'Myotome', 'Reflex'];
+      const row2Cells = headerLabels.map(
+        (lbl, i) =>
+          new TableCell({
+            shading: { fill: headerFill },
+            margins: { top: 30, bottom: 30, left: 100, right: 100 },
+            verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+            children: [
+              new Paragraph({
+                children: [
+                  createTextRun(lbl, {
                     bold: true,
                     size: FORMAT.sizes.small,
                     color: headerTextColor,
@@ -1155,129 +1367,6 @@ export function exportToWord(caseData, draft) {
       });
     }
 
-    const promSaved = ra.prom || {};
-    if (selected.length) {
-      const promGroups = {};
-      selected.forEach((regionKey) => {
-        const region = regionalAssessments[regionKey];
-        (region?.rom || []).forEach((item) => {
-          const baseName = item.name || item.joint || item.muscle;
-          if (!promGroups[baseName]) {
-            promGroups[baseName] = { normal: item.normal };
-          }
-        });
-      });
-
-      const excluded = new Set(ra.promExcluded || []);
-      const promRows = Object.keys(promGroups)
-        .map((name) => {
-          const rowId = slug(name);
-          if (excluded.has(rowId)) return null; // skip excluded items
-          const saved = promSaved[rowId] || {};
-          const displayName = promGroups[name].normal
-            ? `${name} (${promGroups[name].normal})`
-            : name;
-          return [displayName, saved.left || '', saved.right || ''];
-        })
-        .filter(Boolean);
-
-      if (promRows.length) {
-        let headers = ['Passive Range of Motion (PROM)', 'Left', 'Right'];
-        let alignments = ['left', 'right', 'right'];
-        let rowsData = promRows.map((r) => [r[0], formatRom(r[1]), formatRom(r[2])]);
-        let widths = computeWidthsNoNotes();
-        elements.push(
-          createWebLikeTable(rowsData, headers, widths, alignments, {
-            indentLeft: FORMAT.indent.level2,
-            simulateIndent: true,
-            simulateIndentWidth: 360,
-          }),
-        );
-        elements.push(createSpacer(0, 160));
-      }
-    }
-
-    // AROM (Active ROM) export: reconstruct from selected regions and saved indices
-    const romSaved = ra.rom || {};
-    if (selected.length) {
-      // Build groups with left/right index positions and normal values
-      const romGroups = {};
-      selected.forEach((regionKey) => {
-        const region = regionalAssessments[regionKey];
-        (region?.rom || []).forEach((item, idx) => {
-          const baseName = item.name || item.joint || item.muscle;
-          if (!romGroups[baseName])
-            romGroups[baseName] = { normal: item.normal, left: null, right: null, bilateral: null };
-          if (item.side === 'L') romGroups[baseName].left = idx;
-          else if (item.side === 'R') romGroups[baseName].right = idx;
-          else romGroups[baseName].bilateral = idx;
-        });
-      });
-
-      const aromRows = Object.keys(romGroups).map((name) => {
-        const g = romGroups[name];
-        const leftVal = g.left != null ? romSaved[g.left] || '' : '';
-        const rightVal = g.right != null ? romSaved[g.right] || '' : '';
-        const displayName = g.normal ? `${name} (${g.normal})` : name;
-        return [displayName, leftVal, rightVal];
-      });
-
-      if (aromRows.length) {
-        let headers = ['Active Range of Motion (AROM)', 'Left', 'Right'];
-        let alignments = ['left', 'right', 'right'];
-        let rowsData = aromRows.map((r) => [r[0], formatRom(r[1]), formatRom(r[2])]);
-        let widths = computeWidthsNoNotes();
-        elements.push(
-          createWebLikeTable(rowsData, headers, widths, alignments, {
-            indentLeft: FORMAT.indent.level2,
-            simulateIndent: true,
-            simulateIndentWidth: 360,
-          }),
-        );
-        elements.push(createSpacer(0, 160));
-      }
-    }
-
-    // RIMs (Resisted Isometric Movement) export: reconstruct from selected regions and saved indices
-    const rimsSaved = ra.rims || {};
-    if (selected.length) {
-      // Build groups with left/right index positions (no normal values for RIMs)
-      const rimsGroups = {};
-      selected.forEach((regionKey) => {
-        const region = regionalAssessments[regionKey];
-        (region?.rims || []).forEach((item, idx) => {
-          const baseName = item.name || item.joint || item.muscle;
-          if (!rimsGroups[baseName])
-            rimsGroups[baseName] = { left: null, right: null, bilateral: null };
-          if (item.side === 'L') rimsGroups[baseName].left = idx;
-          else if (item.side === 'R') rimsGroups[baseName].right = idx;
-          else rimsGroups[baseName].bilateral = idx;
-        });
-      });
-
-      const rimsRows = Object.keys(rimsGroups).map((name) => {
-        const g = rimsGroups[name];
-        const leftVal = g.left != null ? rimsSaved[g.left] || '' : '';
-        const rightVal = g.right != null ? rimsSaved[g.right] || '' : '';
-        return [name, leftVal, rightVal];
-      });
-
-      if (rimsRows.length) {
-        let headers = ['Resisted Isometric Movement (RIMs)', 'Left', 'Right'];
-        let alignments = ['left', 'left', 'left'];
-        let rowsData = rimsRows.map((r) => [r[0], getRimsLabel(r[1]), getRimsLabel(r[2])]);
-        let widths = computeWidthsNoNotes();
-        elements.push(
-          createWebLikeTable(rowsData, headers, widths, alignments, {
-            indentLeft: FORMAT.indent.level2,
-            simulateIndent: true,
-            simulateIndentWidth: 360,
-          }),
-        );
-        elements.push(createSpacer(0, 160));
-      }
-    }
-
     // MMT export: reconstruct from selected regions and saved indices
     const mmtSaved = ra.mmt || {};
     if (selected.length) {
@@ -1379,6 +1468,129 @@ export function exportToWord(caseData, draft) {
         indentLeft: FORMAT.indent.level1,
       }),
     );
+
+    // Neuroscreen tables (dermatome, myotome, reflex)
+    const selectedNeuroRegions = obj.neuro?.selectedRegions || [];
+    const dermatomeData = obj.neuro?.dermatome || {};
+    const myotomeData = obj.neuro?.myotome || {};
+    const reflexData = obj.neuro?.reflex || {};
+
+    console.warn('NEURO EXPORT DEBUG:', {
+      selectedNeuroRegions,
+      hasNeuroscreenRegions: !!NEUROSCREEN_REGIONS,
+      neuroscreenRegionKeys: Object.keys(NEUROSCREEN_REGIONS || {}),
+      sampleDermatomeData: Object.keys(dermatomeData).slice(0, 3),
+    });
+
+    const readNeuroVal = (dataObj, regionKey, baseKey) => {
+      if (!dataObj) return '';
+      const pref = `${regionKey}:${baseKey}`;
+      if (Object.prototype.hasOwnProperty.call(dataObj, pref)) return dataObj[pref] || '';
+      return dataObj[baseKey] || '';
+    };
+
+    const getOptionLabel = (value, optionsList) => {
+      if (!value) return '—';
+      const opt = optionsList.find((o) => o.value === value);
+      return opt ? opt.label : value;
+    };
+
+    const dermatomeOptions = [
+      { value: '', label: '—' },
+      { value: 'intact', label: 'Intact' },
+      { value: 'impaired', label: 'Impaired' },
+      { value: 'absent', label: 'Absent' },
+    ];
+
+    const myotomeOptions = [
+      { value: '', label: '—' },
+      { value: '5/5', label: '5/5 - Normal' },
+      { value: '4/5', label: '4/5 - Good' },
+      { value: '3/5', label: '3/5 - Fair' },
+      { value: '2/5', label: '2/5 - Poor' },
+      { value: '1/5', label: '1/5 - Trace' },
+      { value: '0/5', label: '0/5 - Zero' },
+    ];
+
+    const reflexOptions = [
+      { value: '', label: '—' },
+      { value: '4+', label: '4+ - Hyperactive' },
+      { value: '3+', label: '3+ - Increased' },
+      { value: '2+', label: '2+ - Normal' },
+      { value: '1+', label: '1+ - Diminished' },
+      { value: '0', label: '0 - Absent' },
+    ];
+
+    if (selectedNeuroRegions.length > 0) {
+      elements.push(
+        createSectionHeader('Neuroscreen Assessment', 3, { indentLeft: FORMAT.indent.level1 }),
+      );
+
+      selectedNeuroRegions.forEach((regionKey) => {
+        const region = NEUROSCREEN_REGIONS[regionKey];
+        if (!region || !Array.isArray(region.items) || region.items.length === 0) return;
+
+        // Build rows: Level | L Dermatome | L Myotome | L Reflex | R Dermatome | R Myotome | R Reflex
+        const rows = region.items.map((item) => {
+          const level = item.level;
+          const reflex = item.reflex;
+
+          const leftDermatome = getOptionLabel(
+            readNeuroVal(dermatomeData, regionKey, `${level}-L-dermatome`),
+            dermatomeOptions,
+          );
+          const leftMyotome = getOptionLabel(
+            readNeuroVal(myotomeData, regionKey, `${level}-L-myotome`),
+            myotomeOptions,
+          );
+          const leftReflex = reflex
+            ? getOptionLabel(
+                readNeuroVal(reflexData, regionKey, `${level}-L-reflex`),
+                reflexOptions,
+              )
+            : '';
+
+          const rightDermatome = getOptionLabel(
+            readNeuroVal(dermatomeData, regionKey, `${level}-R-dermatome`),
+            dermatomeOptions,
+          );
+          const rightMyotome = getOptionLabel(
+            readNeuroVal(myotomeData, regionKey, `${level}-R-myotome`),
+            myotomeOptions,
+          );
+          const rightReflex = reflex
+            ? getOptionLabel(
+                readNeuroVal(reflexData, regionKey, `${level}-R-reflex`),
+                reflexOptions,
+              )
+            : '';
+
+          return [
+            level,
+            leftDermatome,
+            leftMyotome,
+            leftReflex,
+            rightDermatome,
+            rightMyotome,
+            rightReflex,
+          ];
+        });
+
+        // Alignments and widths
+        const alignments = ['center', 'left', 'left', 'left', 'left', 'left', 'left'];
+        const widths = [800, 1200, 1200, 1200, 1200, 1200, 1200];
+
+        elements.push(
+          createCombinedNeuroscreenDocxTable(
+            (region.name || '').toString().toUpperCase(),
+            rows,
+            widths,
+            alignments,
+          ),
+        );
+        elements.push(createSpacer(0, 160));
+      });
+    }
     elements.push(createSectionHeader('Functional Movement Assessment', 2));
     elements.push(
       createBodyParagraph(getSafeValue(obj, 'functional.assessment', ''), {

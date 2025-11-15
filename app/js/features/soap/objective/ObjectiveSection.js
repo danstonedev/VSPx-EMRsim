@@ -3,6 +3,10 @@
 
 import { textAreaField } from '../../../ui/form-components.js';
 import { createMultiRegionalAssessment } from './RegionalAssessments.js';
+import {
+  createCombinedNeuroscreenSection,
+  getNeuroscreenRegions,
+} from './CombinedNeuroscreenSection.js';
 import { el } from '../../../ui/utils.js';
 // CPT widget is intentionally only rendered in BillingSection to avoid duplication
 
@@ -59,15 +63,93 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   );
 
   // Neurological screening
-  section.append(
-    buildTextAreaSection(
-      'neurological-screening',
-      'Neurological Screening',
-      'Reflexes, Sensation, Dermatomes, Myotomes, Neural Tension',
-      data.neuro.screening || '',
-      (v) => updateField('neuro.screening', v),
-    ),
-  );
+  const neuroscreenAnchor = el('div', {
+    id: 'neurological-screening',
+    class: 'section-anchor',
+  });
+  const neuroscreenTitle = el('h4', { class: 'subsection-title' }, 'Neurological Screening');
+
+  // Region selector with buttons (multi-select)
+  const regionOptions = getNeuroscreenRegions();
+  const selectedRegions = new Set(data.neuro.selectedRegions || []);
+
+  const regionSelector = el('div', { class: 'region-selector mb-16' });
+  const regionLabel = el('p', { class: 'region-selector__label' }, 'Select regions to assess:');
+  const regionButtons = el('div', { class: 'region-buttons' });
+  const buttonsMap = {};
+
+  // Table container
+  const neuroscreenTableContainer = el('div', { class: 'neuroscreen-table-container' });
+
+  // Function to rebuild all tables
+  const rebuildTables = () => {
+    neuroscreenTableContainer.innerHTML = '';
+    if (selectedRegions.size === 0) {
+      neuroscreenTableContainer.appendChild(
+        el(
+          'div',
+          {
+            style:
+              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
+          },
+          'Select one or more regions to assess.',
+        ),
+      );
+      return;
+    }
+
+    Array.from(selectedRegions).forEach((regionKey) => {
+      const newSection = createCombinedNeuroscreenSection(
+        regionKey,
+        data.neuro.dermatome || {},
+        data.neuro.myotome || {},
+        data.neuro.reflex || {},
+        (d) => updateField('neuro.dermatome', d),
+        (m) => updateField('neuro.myotome', m),
+        (r) => updateField('neuro.reflex', r),
+      );
+      neuroscreenTableContainer.appendChild(newSection.element);
+    });
+  };
+
+  // Create region buttons
+  regionOptions.forEach((region) => {
+    const isSelected = selectedRegions.has(region.value);
+    const button = el(
+      'button',
+      {
+        type: 'button',
+        class: `btn pill-btn region-toggle-btn ${isSelected ? 'primary' : 'secondary'}`,
+        onclick: () => {
+          if (selectedRegions.has(region.value)) {
+            selectedRegions.delete(region.value);
+            button.classList.remove('primary');
+            button.classList.add('secondary');
+          } else {
+            selectedRegions.add(region.value);
+            button.classList.remove('secondary');
+            button.classList.add('primary');
+          }
+          updateField('neuro.selectedRegions', Array.from(selectedRegions));
+          rebuildTables();
+        },
+      },
+      region.label,
+    );
+    buttonsMap[region.value] = button;
+    regionButtons.appendChild(button);
+  });
+
+  regionSelector.appendChild(regionLabel);
+  regionSelector.appendChild(regionButtons);
+
+  // Initial render
+  rebuildTables();
+
+  neuroscreenAnchor.appendChild(neuroscreenTitle);
+  neuroscreenAnchor.appendChild(regionSelector);
+  neuroscreenAnchor.appendChild(neuroscreenTableContainer);
+  section.append(neuroscreenAnchor);
 
   // Functional movement assessment
   section.append(
@@ -115,7 +197,13 @@ function normalizeObjectiveData(obj = {}) {
     text: '',
     inspection: { visual: '' },
     palpation: { findings: '' },
-    neuro: { screening: '' },
+    neuro: {
+      screening: '',
+      selectedRegions: [],
+      dermatome: {},
+      myotome: {},
+      reflex: {},
+    },
     functional: { assessment: '' },
     regionalAssessments: {
       selectedRegions: [],
@@ -135,7 +223,13 @@ function normalizeObjectiveData(obj = {}) {
   const data = { ...base, ...obj };
   data.inspection = data.inspection || { visual: '' };
   data.palpation = data.palpation || { findings: '' };
-  data.neuro = data.neuro || { screening: '' };
+  data.neuro = data.neuro || {
+    screening: '',
+    selectedRegions: [],
+    dermatome: {},
+    myotome: {},
+    reflex: {},
+  };
   data.functional = data.functional || { assessment: '' };
   data.treatmentPerformed = data.treatmentPerformed || {
     patientEducation: '',
