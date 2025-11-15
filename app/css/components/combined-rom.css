@@ -3,13 +3,15 @@
  * Streamlined table for AROM, PROM, and RIMs
  */
 
-.combined-rom-table {
+/* Use higher specificity to override generic .table styles */
+table.combined-rom-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate !important;
+  border-spacing: 0;
   background: var(--surface);
   border: 4px solid var(--neutral-500);
-  border-radius: var(--radius-sm);
-  overflow: visible; /* Allow dropdowns to extend outside table */
+  border-radius: 8px !important;
+  overflow: visible !important; /* Allow dropdowns to extend outside table */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -39,6 +41,7 @@
   font-weight: 600;
   background: var(--neutral-600);
   color: var(--text);
+  border: none;
   border-bottom: 2px solid var(--color-border-strong);
 }
 
@@ -58,6 +61,17 @@
   font-weight: 600;
   font-size: 1.125rem; /* 18px, up from base 16px */
   border-right: 3px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-border-strong);
+}
+
+/* Top-left corner rounding */
+.combined-rom-thead tr:first-child .combined-rom-th.motion-col {
+  border-top-left-radius: 4px !important;
+}
+
+/* Top-right corner rounding */
+.combined-rom-thead tr:first-child .combined-rom-th:last-child {
+  border-top-right-radius: 4px !important;
 }
 
 /* Dark theme motion column header - keep UND Green in both themes */
@@ -71,8 +85,12 @@
   background: var(--neutral-600);
   font-weight: 600;
   font-size: 1.05rem;
-  border-left: 2px solid var(--color-border-strong);
   border-bottom: 2px solid var(--color-border-strong);
+}
+
+/* Vertical divider before Right group - matches sub-header pattern */
+.combined-rom-th.right-group {
+  border-left: 2px solid var(--color-border-strong);
 }
 
 /* Dark theme group headers - lightest for prominence */
@@ -91,11 +109,29 @@
   padding: 0.5rem 0.25rem;
 }
 
-/* Center group and sub-headers explicitly */
+/* Vertical divider before Right group sub-headers */
+.combined-rom-th.sub-header.divider-left {
+  border-left: 2px solid var(--color-border-strong);
+}
+
+/* Center group headers explicitly */
 .combined-rom-thead .left-group,
-.combined-rom-thead .right-group,
-.combined-rom-thead .sub-header {
+.combined-rom-thead .right-group {
   text-align: center;
+}
+
+/* Center RIM, right-align AROM and PROM */
+.combined-rom-thead .sub-header:nth-child(3),
+.combined-rom-thead .sub-header:nth-child(6) {
+  text-align: center; /* RIM columns */
+}
+
+.combined-rom-thead .sub-header:nth-child(1),
+.combined-rom-thead .sub-header:nth-child(2),
+.combined-rom-thead .sub-header:nth-child(4),
+.combined-rom-thead .sub-header:nth-child(5) {
+  text-align: right; /* AROM and PROM columns */
+  padding-right: 0.75rem;
 }
 
 /* Row hover states - UND green tint */
@@ -130,6 +166,11 @@
   border-bottom: 1px solid var(--color-border);
   text-align: center;
   transition: background 150ms ease-in-out;
+}
+
+/* Vertical divider between Left and Right data columns */
+.combined-rom-td.divider-left {
+  border-left: 2px solid var(--color-border-strong);
 }
 
 /* Zebra striping applied to cells - odd rows (default white) */
@@ -169,6 +210,16 @@
   padding-left: 0.75rem;
   transition: background 150ms ease-in-out;
   /* Background inherits from row zebra striping by default */
+}
+
+/* Bottom-left corner rounding */
+.combined-rom-tbody tr:last-child .combined-rom-td.motion-cell {
+  border-bottom-left-radius: 4px !important;
+}
+
+/* Bottom-right corner rounding */
+.combined-rom-tbody tr:last-child .combined-rom-td:last-child {
+  border-bottom-right-radius: 4px !important;
 }
 
 /* Dark theme motion cell */
@@ -222,15 +273,6 @@
 .combined-rom-tbody td:nth-child(5), /* Right AROM */
 .combined-rom-tbody td:nth-child(6)  /* Right PROM */ {
   width: 7rem;
-}
-
-/* Visual divider between Left (3 cols) and Right (3 cols) */
-/* Prefer explicit class for reliability across structure changes */
-.combined-rom-thead .divider-left,
-.combined-rom-tbody .divider-left,
-.regional-assessment .combined-rom-table thead .divider-left,
-.regional-assessment .combined-rom-table tbody .divider-left {
-  border-left: 3px solid var(--color-border-strong);
 }
 
 /* Input with suffix wrapper: right-justify contents */
