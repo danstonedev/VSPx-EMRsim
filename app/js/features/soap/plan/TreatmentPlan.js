@@ -114,7 +114,7 @@ export const TreatmentPlan = {
     migrateExerciseTable();
 
     const exerciseTable = createEditableTable({
-      title: 'In-Clinic Treatment Plan',
+      title: 'Treatment Plan',
       columns: [
         {
           field: 'exerciseText',
@@ -139,7 +139,7 @@ export const TreatmentPlan = {
       class: 'section-anchor',
       style: 'max-width: 100%;',
     });
-    inClinicSub.append(el('h4', { class: 'subsection-title' }, 'In-Clinic Treatment Plan'));
+    inClinicSub.append(el('h4', { class: 'subsection-title' }, 'Treatment Plan'));
     inClinicSub.append(scheduleRow);
     inClinicSub.append(exerciseTable.element);
 

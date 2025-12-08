@@ -20,7 +20,7 @@ export const GoalSetting = {
       class: 'section-anchor goal-setting-subsection',
     });
 
-    section.append(el('h4', { class: 'subsection-title' }, 'SMART Goals & Outcomes'));
+    section.append(el('h4', { class: 'subsection-title' }, 'Goals'));
 
     // Ensure goals table exists
     if (!data.goalsTable) {
@@ -37,7 +37,7 @@ export const GoalSetting = {
           width: '100%',
           type: 'textarea',
           rows: 1,
-          placeholder: 'Describe a clear, concise goal...',
+          placeholder: 'Input SMART or ABCDF goal here',
         },
       ],
       data: data.goalsTable || {},

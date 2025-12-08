@@ -435,7 +435,113 @@ Feature-specific flag example: `?debug=progress` OR unify within `debug=1` switc
 
 ---
 
-## 18. License / Attribution
+## 18. Table Input & Component Patterns
+
+This section documents the unified table system and input patterns used across all assessment tables.
+
+### 18.1 Table Design Tokens
+
+All tables use the `.combined-neuroscreen-table` class which defines these tokens:
+
+```css
+.combined-neuroscreen-table {
+  /* Input sizing */
+  --table-input-width-sm: 3.75rem; /* 60px - Height ft/in */
+  --table-input-width-md: 5rem; /* 80px - BP, HR, vitals */
+  --table-input-width-lg: 7.5rem; /* 120px - Selects, wider */
+
+  /* Typography */
+  --table-font-size: var(--font-md, 0.875rem); /* 14px */
+  --table-font-size-sm: var(--font-sm, 0.8125rem); /* 13px */
+  --table-header-font: var(--font-base, 1rem); /* 16px */
+
+  /* Spacing */
+  --table-cell-padding: var(--space-4, 1rem);
+  --table-cell-padding-y: var(--space-3, 0.75rem);
+  --table-flex-gap: var(--space-2, 0.5rem);
+}
+```
+
+### 18.2 Input Classes
+
+| Class                                    | Purpose                     | Example Use             |
+| ---------------------------------------- | --------------------------- | ----------------------- |
+| `.combined-neuroscreen__input`           | Base input styling          | All table inputs        |
+| `.combined-neuroscreen__input--sm`       | 60px width                  | Height ft/in fields     |
+| `.combined-neuroscreen__input--md`       | 80px width                  | BP, HR, temp fields     |
+| `.combined-neuroscreen__input--lg`       | 120px width                 | Wide inputs             |
+| `.combined-neuroscreen__input--left`     | Left-aligned text           | Detail/notes fields     |
+| `.combined-neuroscreen__input--right`    | Right-aligned text          | Numeric values          |
+| `.combined-neuroscreen__input--inline`   | Compact with visible border | ROM degree inputs       |
+| `.combined-neuroscreen__input--readonly` | Disabled appearance         | Calculated fields (BMI) |
+
+### 18.3 Table Variants
+
+| Class                                  | Purpose                                       |
+| -------------------------------------- | --------------------------------------------- |
+| `.combined-neuroscreen-table`          | Full-width table (ROM, Neuro, MMT)            |
+| `.combined-neuroscreen-table--compact` | Auto-width, lighter borders (Vitals, Billing) |
+
+### 18.4 Cell Alignment Utilities
+
+| Class                              | Effect                   |
+| ---------------------------------- | ------------------------ |
+| `.combined-neuroscreen-td--left`   | Left-align cell content  |
+| `.combined-neuroscreen-td--center` | Center cell content      |
+| `.combined-neuroscreen-td--right`  | Right-align cell content |
+
+### 18.5 Input Groups & Suffixes
+
+```js
+// Input with unit suffix (bpm, mmHg, etc.)
+el('div', { class: 'combined-neuroscreen-input-group' }, [
+  el('input', { class: 'combined-neuroscreen__input combined-neuroscreen__input--md' }),
+  el('span', { class: 'text-muted' }, 'bpm'),
+]);
+
+// Degree input with symbol suffix
+el('div', { class: 'combined-neuroscreen-input-suffix' }, [
+  el('input', { class: 'combined-neuroscreen__input combined-neuroscreen__input--transparent' }),
+  el('span', { class: 'combined-neuroscreen-input-suffix__symbol' }, '°'),
+]);
+```
+
+### 18.6 Custom Select in Tables
+
+Custom selects automatically inherit table styling:
+
+```css
+.combined-neuroscreen-table .custom-select__button {
+  min-height: 2rem; /* 32px standard */
+  padding: 0.375rem 0.5rem;
+  background: var(--neutral-50);
+  border: 1px solid var(--color-border);
+}
+
+/* Compact variant uses smaller selects */
+.combined-neuroscreen-table--compact .custom-select__button {
+  min-height: 1.75rem; /* 28px */
+}
+```
+
+### 18.7 Button Patterns
+
+| Class              | Size    | Use Case                         |
+| ------------------ | ------- | -------------------------------- |
+| `.compact-add-btn` | 24×24px | Green "+" circle for adding rows |
+| `.remove-btn`      | 24×24px | Red "×" for removing rows        |
+
+### 18.8 Best Practices
+
+1. **Never use inline styles** for alignment or colors — use CSS classes
+2. **Use size modifiers** (`--sm`, `--md`, `--lg`) instead of custom widths
+3. **Apply `--compact` variant** to simple 2-3 column tables
+4. **Use `--transparent` variant** for minimal ROM-style inputs
+5. **Use `--readonly` class** for calculated/disabled fields
+
+---
+
+## 19. License / Attribution
 
 This style guide derives from the PT EMR Simulator codebase; adapt freely within the project’s existing license terms.
 

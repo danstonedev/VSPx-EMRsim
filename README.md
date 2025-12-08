@@ -53,16 +53,10 @@
 ```powershell
 # From the repo root (this folder)
 ./start_servers_simple.ps1
+# OR
+npm run dev
 
-# Then open http://localhost:3000
-```
-
-**Python HTTP Server:**
-
-```bash
-cd app
-python -m http.server 3000
-# Open http://localhost:3000
+# Then open the URL shown in the terminal (usually http://localhost:5173)
 ```
 
 **VS Code Live Server Extension:**

@@ -1,21 +1,9 @@
-# Simple HTTP server launcher (delegates to app/)
-Write-Host "Starting PT EMR Simulator (serving app/) on http://localhost:3000"
-Write-Host "Press Ctrl+C to stop the server"
+# Start Vite Development Server with Hot Module Replacement (HMR)
+Write-Host 'Starting PT EMR Simulator with Vite (HMR enabled)...'
+Write-Host 'Press Ctrl+C to stop the server'
 
-# Build app folder path correctly (Join-Path only accepts two segments)
-$appFolder = Join-Path $PSScriptRoot 'app'
-$scriptPath = Join-Path $appFolder 'start_servers_simple.ps1'
+# Ensure we are in the project root
+Set-Location $PSScriptRoot
 
-if (Test-Path $scriptPath) {
-	Push-Location $appFolder
-	try {
-		& powershell -NoProfile -ExecutionPolicy Bypass -File '.\start_servers_simple.ps1'
-	}
- finally {
-		Pop-Location
-	}
-}
-else {
-	Write-Warning "app/start_servers_simple.ps1 not found. Falling back to serving repo root."
-	python -m http.server 3000
-}
+# Run the dev server
+npm run dev

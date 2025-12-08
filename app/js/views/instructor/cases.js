@@ -57,7 +57,9 @@ function computeAgeFromDob(dobStr) {
 // Lightweight YouTube-style Share Popup
 function showSharePopup(url) {
   const overlay = el('div', {
-    class: 'popup-overlay-base fixed inset-0 overlay-50 d-flex ai-center jc-center z-modal',
+    class: 'modal-overlay popup-overlay-base',
+    role: 'dialog',
+    'aria-modal': 'true',
     onclick: (e) => {
       if (e.target === overlay) close();
     },

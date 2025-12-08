@@ -135,7 +135,7 @@ export function createCombinedNeuroscreenSection(
     return createCustomSelect({
       options: NEUROSCREEN_CONFIG.dermatomeOptions,
       value: value || '',
-      className: 'combined-neuroscreen__select',
+      className: 'combined-neuroscreen__input',
       onChange: (newValue) => onChange(newValue),
     }).element;
   }
@@ -144,7 +144,7 @@ export function createCombinedNeuroscreenSection(
     return createCustomSelect({
       options: NEUROSCREEN_CONFIG.myotomeOptions,
       value: value || '',
-      className: 'combined-neuroscreen__select',
+      className: 'combined-neuroscreen__input',
       onChange: (newValue) => onChange(newValue),
     }).element;
   }
@@ -153,7 +153,7 @@ export function createCombinedNeuroscreenSection(
     return createCustomSelect({
       options: NEUROSCREEN_CONFIG.reflexOptions,
       value: value || '',
-      className: 'combined-neuroscreen__select',
+      className: 'combined-neuroscreen__input',
       onChange: (newValue) => onChange(newValue),
     }).element;
   }
@@ -162,7 +162,7 @@ export function createCombinedNeuroscreenSection(
    * Builds the neuroscreen table
    */
   function buildTable() {
-    const table = el('table', { class: 'table combined-neuroscreen-table' });
+    const table = el('table', { class: 'combined-neuroscreen-table' });
 
     // Table header
     const thead = el('thead', { class: 'combined-neuroscreen-thead' });

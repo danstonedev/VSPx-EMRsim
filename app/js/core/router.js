@@ -422,6 +422,11 @@ async function ensureRouteModuleLoaded(path) {
 
     const matchers = [
       {
+        test: (t) => t.startsWith('#/styleguide'),
+        key: 'styleguide',
+        load: () => import('../views/styleguide.js'),
+      },
+      {
         test: (t) => t === '#/' || t.startsWith('#/home'),
         key: 'home',
         load: () => import('../views/home.js'),

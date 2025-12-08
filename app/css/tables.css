@@ -2,6 +2,23 @@
    Depends on theme tokens defined in :root (styles.css)
 */
 
+/* ========================================
+   TABLE DESIGN SYSTEM - Composable Classes
+   ========================================
+
+   Usage: Combine these classes to build any table variant
+
+   Base:     .table (always required)
+   Border:   .table--bordered (outer border + rounded corners)
+   Cells:    .table--cells (visible cell borders)
+   Striped:  .table--striped (zebra rows)
+   Header:   .table--header-sticky (sticky header)
+   Dividers: .table--dividers (column dividers)
+   Compact:  .table--compact (tighter spacing)
+
+   Example: <table class="table table--bordered table--striped">
+*/
+
 /* Base tables with micro-interactions */
 .table {
   width: 100%;
@@ -9,6 +26,67 @@
   margin-top: var(--space-2);
   font-size: var(--font-sm, 0.8125rem); /* 13px - denser */
 }
+
+/* Bordered variant - outer border with rounded corners */
+.table--bordered {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: var(--table-border-width) solid var(--table-border-color);
+  border-radius: var(--table-radius-outer);
+  overflow: hidden;
+}
+
+.table--bordered th:first-child {
+  border-top-left-radius: var(--table-radius-inner);
+}
+
+.table--bordered th:last-child {
+  border-top-right-radius: var(--table-radius-inner);
+}
+
+.table--bordered tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--table-radius-inner);
+}
+
+.table--bordered tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--table-radius-inner);
+}
+
+/* Cell borders variant */
+.table--cells td,
+.table--cells th {
+  border-bottom: var(--table-cell-border-width) solid var(--table-cell-border-color);
+}
+
+.table--cells tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Striped rows variant */
+.table--striped tbody tr:nth-child(even) td {
+  background: var(--surface-table-striped, transparent);
+}
+
+/* Sticky header variant */
+.table--header-sticky thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Column dividers variant */
+.table--dividers td:not(:last-child),
+.table--dividers th:not(:last-child) {
+  border-right: var(--table-cell-border-width) solid var(--table-cell-border-color);
+}
+
+/* Compact variant */
+.table--compact td,
+.table--compact th {
+  padding: var(--space-1);
+}
+
+/* END TABLE DESIGN SYSTEM */
 
 /* Align tables with subsection inputs using shared indent */
 .section-anchor .editable-table,

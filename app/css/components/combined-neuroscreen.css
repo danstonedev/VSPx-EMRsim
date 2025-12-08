@@ -1,23 +1,48 @@
 /**
  * Combined Neuroscreen Section Styles
  * Based on Combined ROM table pattern
+ * Unified table system using design tokens
  */
+
+/* ========================================
+   Table Design Tokens (rem-based)
+   ======================================== */
+.combined-neuroscreen-table {
+  /* Column widths - auto by default, override per-table as needed */
+  --table-col-label-width: auto;
+  --table-col-action: 3.75rem; /* 60px */
+
+  /* Spacing */
+  --table-cell-padding: var(--space-4, 1rem); /* 16px */
+  --table-cell-padding-y: var(--space-3, 0.75rem); /* 12px vertical */
+  --table-flex-gap: var(--space-2, 0.5rem); /* 8px */
+
+  /* Input sizing */
+  --table-input-width-sm: 3.75rem; /* 60px */
+  --table-input-width-md: 5rem; /* 80px */
+  --table-input-width-lg: 7.5rem; /* 120px */
+
+  /* Typography */
+  --table-font-size: var(--font-md, 0.875rem); /* 14px */
+  --table-font-size-sm: var(--font-sm, 0.8125rem); /* 13px */
+  --table-header-font: var(--font-base, 1rem); /* 16px */
+}
 
 /* Table base styles */
 table.combined-neuroscreen-table {
   width: 100%;
-  border: 4px solid var(--neutral-500);
+  border: var(--table-border-width) solid var(--table-border-color);
   border-collapse: separate !important;
   border-spacing: 0;
-  border-radius: 8px !important;
+  border-radius: var(--table-radius-outer);
   overflow: visible !important;
   background: var(--surface);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--elev-soft);
 }
 
 :root[data-theme='dark'] table.combined-neuroscreen-table {
-  border: 3px solid var(--color-border-strong);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  /* Use same border width for consistency */
+  box-shadow: var(--elev-hero);
 }
 
 /* Thead */
@@ -27,11 +52,11 @@ table.combined-neuroscreen-table {
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--elev-inline-sep);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen-thead {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--elev-3);
 }
 
 /* Tbody */
@@ -45,64 +70,66 @@ table.combined-neuroscreen-table {
 
 /* Header cells - base */
 .combined-neuroscreen-th {
-  padding: 0.6rem 0.5rem;
-  text-align: center;
+  padding: var(--table-cell-padding-y) var(--table-cell-padding);
+  text-align: left;
   font-weight: 600;
-  background: var(--neutral-600);
-  color: var(--text);
+  font-size: var(--table-font-size);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
   border: none;
   border-bottom: 2px solid var(--color-border-strong);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen-th {
-  background: var(--neutral-650);
-  color: var(--white);
-  border-bottom: 1px solid var(--neutral-700);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  border-bottom: var(--table-cell-border-width) solid var(--color-border-strong);
 }
 
-/* Level column (green) */
+/* Level column (green) - label/parameter column */
 .combined-neuroscreen-th.level-col {
-  background: #009a44; /* UND Green */
+  background: var(--und-green);
   color: var(--white);
   font-weight: 600;
-  font-size: 1.125rem; /* 18px, up from base 16px */
-  width: 100px;
-  min-width: 100px;
-  text-align: center;
+  font-size: var(--table-header-font);
+  width: var(--table-col-label-width);
+  white-space: nowrap;
+  text-align: left;
   vertical-align: middle;
-  border-right: 3px solid var(--color-border-strong);
+  border-right: 2px solid var(--color-border-strong);
   border-bottom: 2px solid var(--color-border-strong);
+  padding-left: var(--table-cell-padding);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen-th.level-col {
-  background: #009a44; /* UND Green */
+  background: var(--und-green);
   color: var(--white);
 }
 
 /* Top-left corner rounding */
 .combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th.level-col {
-  border-top-left-radius: 4px !important;
+  border-top-left-radius: var(--table-radius-inner);
 }
 
 /* Top-right corner rounding */
 .combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th:last-child {
-  border-top-right-radius: 4px !important;
+  border-top-right-radius: var(--table-radius-inner);
 }
 
 /* Group headers (Left/Right in row 1) */
 .combined-neuroscreen-th.left-group,
 .combined-neuroscreen-th.right-group {
-  background: var(--neutral-600);
+  background: var(--surface-table-head);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: var(--table-header-font);
   border-bottom: 2px solid var(--color-border-strong);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen-th.left-group,
 :root[data-theme='dark'] .combined-neuroscreen-th.right-group {
-  background: var(--neutral-600);
-  color: var(--white);
-  border-bottom: 2px solid var(--neutral-700);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  border-bottom: var(--table-border-width) solid var(--color-border-strong);
 }
 
 /* Vertical divider before Right group - matches sub-header pattern */
@@ -112,9 +139,9 @@ table.combined-neuroscreen-table {
 
 /* Sub-headers (Dermatome/Myotome/Reflex in row 2) */
 .combined-neuroscreen-th.sub-header {
-  font-size: 0.9rem;
+  font-size: var(--table-font-size);
   font-weight: 500;
-  padding: 0.5rem 0.25rem;
+  padding: var(--table-cell-padding-y) var(--space-2, 0.5rem);
 }
 
 /* Vertical divider before Right group sub-headers */
@@ -128,43 +155,46 @@ table.combined-neuroscreen-table {
   text-align: center;
 }
 
-/* Center all sub-headers */
+/* Sub-headers inherit left alignment */
 .combined-neuroscreen-thead .sub-header {
-  text-align: center;
+  text-align: left;
+  padding-left: var(--table-cell-padding);
 }
 
 /* Row hover states */
 .combined-neuroscreen-tbody .combined-neuroscreen-row:hover .combined-neuroscreen-td {
-  background: rgba(0, 154, 68, 0.08) !important;
+  background: var(--table-row-hover) !important;
 }
 
 :root[data-theme='dark']
   .combined-neuroscreen-tbody
   .combined-neuroscreen-row:hover
   .combined-neuroscreen-td {
-  background: rgba(0, 154, 68, 0.25) !important;
+  background: var(--table-row-hover-accent) !important;
 }
 
 /* Data cells - base */
 .combined-neuroscreen-td {
-  padding: 0.5rem;
-  text-align: center;
+  padding: var(--table-cell-padding-y) var(--table-cell-padding);
+  text-align: left;
   vertical-align: middle;
+  font-size: var(--table-font-size);
   color: var(--text-primary);
   border: none;
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Level column in body */
+/* Level column in body - label/parameter column */
 .combined-neuroscreen-td.level-col {
   background: transparent;
   color: var(--text-primary);
   font-weight: 600;
-  width: 100px;
-  min-width: 100px;
-  text-align: center;
+  width: var(--table-col-label-width);
+  white-space: nowrap;
+  text-align: left;
   vertical-align: middle;
-  border-right: 3px solid var(--color-border-strong);
+  border-right: var(--table-border-width) solid var(--table-border-color);
+  padding-left: var(--table-cell-padding);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen-td.level-col {
@@ -179,29 +209,72 @@ table.combined-neuroscreen-table {
 
 /* Input cells */
 .combined-neuroscreen-td.input-cell {
-  padding: 0.25rem;
+  padding: var(--space-2, 0.5rem) var(--table-cell-padding-y);
 }
 
 /* Input fields */
 .combined-neuroscreen__input {
   width: 100%;
-  padding: 0.375rem 0.5rem;
+  padding: var(--space-1, 0.375rem) var(--space-2, 0.5rem);
   text-align: center;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   background: var(--neutral-50);
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: var(--table-font-size);
   transition:
     border-color 0.2s,
     background-color 0.2s;
 }
 
+/* Input width utilities for inline inputs */
+.combined-neuroscreen__input--sm {
+  width: var(--table-input-width-sm);
+}
+
+.combined-neuroscreen__input--md {
+  width: var(--table-input-width-md);
+}
+
+.combined-neuroscreen__input--lg {
+  width: var(--table-input-width-lg);
+}
+
+/* Input alignment variants */
+.combined-neuroscreen__input--left {
+  text-align: left;
+}
+
+.combined-neuroscreen__input--right {
+  text-align: right;
+}
+
+/* Compact inline variant (for ROM degree inputs - visible but compact) */
+.combined-neuroscreen__input--inline {
+  width: auto;
+  min-width: 3.5rem;
+  max-width: 5rem;
+  text-align: right;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Readonly/disabled variant */
+.combined-neuroscreen__input--readonly {
+  background-color: var(--surface-secondary);
+  cursor: default;
+  color: var(--text-secondary);
+}
+
+.combined-neuroscreen__input--readonly:focus {
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
 .combined-neuroscreen__input:focus {
   outline: none;
   border-color: var(--und-green);
-  background: white;
-  box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.1);
+  background: var(--white);
+  box-shadow: var(--table-focus-ring);
 }
 
 :root[data-theme='dark'] .combined-neuroscreen__input {
@@ -216,14 +289,14 @@ table.combined-neuroscreen-table {
 
 /* Select cells */
 .combined-neuroscreen-td.select-cell {
-  padding: 0.25rem;
+  padding: var(--space-1, 0.25rem);
   width: auto;
 }
 
 .combined-neuroscreen__select {
   width: 100%;
-  min-width: 120px;
-  font-size: 0.9rem;
+  min-width: var(--table-input-width-lg);
+  font-size: var(--table-font-size);
 }
 
 /* N/A cells (no reflex) */
@@ -234,11 +307,11 @@ table.combined-neuroscreen-table {
 
 /* Bottom corners */
 .combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td.level-col {
-  border-bottom-left-radius: 4px !important;
+  border-bottom-left-radius: var(--table-radius-inner);
 }
 
 .combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td:last-child {
-  border-bottom-right-radius: 4px !important;
+  border-bottom-right-radius: var(--table-radius-inner);
 }
 
 /* Remove bottom border from last row */
@@ -246,20 +319,203 @@ table.combined-neuroscreen-table {
   border-bottom: none;
 }
 
+/* Action column utility */
+.combined-neuroscreen-th.action-col,
+.combined-neuroscreen-td.action-col {
+  width: var(--table-col-action);
+  text-align: center;
+}
+
+/* Cell text alignment utilities */
+.combined-neuroscreen-td--left {
+  text-align: left;
+}
+
+.combined-neuroscreen-td--center {
+  text-align: center;
+}
+
+.combined-neuroscreen-td--right {
+  text-align: right;
+}
+
+/* Flex container for input groups (like Vitals) */
+.combined-neuroscreen-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--table-flex-gap);
+}
+
+/* Input with suffix (degree symbol, units) */
+.combined-neuroscreen-input-suffix {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.combined-neuroscreen-input-suffix__symbol {
+  color: var(--text-muted);
+  font-size: var(--table-font-size);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* ========================================
+   Unified Custom Select in Tables
+   ======================================== */
+.combined-neuroscreen-table .custom-select {
+  font-size: var(--table-font-size);
+}
+
+/* Borderless select button - cell already provides boundary */
+.combined-neuroscreen-table .custom-select__button {
+  min-height: 2rem; /* 32px consistent height */
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.combined-neuroscreen-table .custom-select:hover .custom-select__button {
+  background: var(--table-row-hover-subtle);
+}
+
+.combined-neuroscreen-table .custom-select:focus .custom-select__button,
+.combined-neuroscreen-table .custom-select--open .custom-select__button {
+  background: var(--table-row-hover);
+  box-shadow: none;
+}
+
+.combined-neuroscreen-table .custom-select__option {
+  padding: 0.5rem 0.75rem;
+  font-size: var(--table-font-size);
+}
+
+:root[data-theme='dark'] .combined-neuroscreen-table .custom-select__button {
+  background: transparent;
+}
+
+:root[data-theme='dark'] .combined-neuroscreen-table .custom-select:hover .custom-select__button {
+  background: var(--table-row-hover-medium);
+}
+
+/* Compact table uses smaller selects */
+.combined-neuroscreen-table--compact .custom-select__button {
+  min-height: 1.75rem; /* 28px */
+  padding: 0.25rem 0.5rem;
+}
+
+.combined-neuroscreen-table--compact .custom-select__option {
+  padding: 0.375rem 0.5rem;
+}
+
+/* ========================================
+   Compact Table Variant (for Vitals, simple 2-col tables)
+   ======================================== */
+.combined-neuroscreen-table--compact {
+  width: auto; /* Shrink to content */
+  max-width: 100%; /* But don't overflow */
+  border-width: 2px; /* Lighter border */
+  box-shadow: var(--table-shadow);
+}
+
+.combined-neuroscreen-table--compact .combined-neuroscreen-th,
+.combined-neuroscreen-table--compact .combined-neuroscreen-td {
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.combined-neuroscreen-table--compact .combined-neuroscreen-th.level-col {
+  border-right-width: 2px;
+}
+
+.combined-neuroscreen-table--compact .combined-neuroscreen-td.level-col {
+  border-right-width: 2px;
+}
+
+/* ========================================
+   Combined ROM Table - align to Vitals compact feel
+   ======================================== */
+.combined-neuroscreen-table[data-component='combined-rom'] {
+  --table-cell-padding: var(--space-3, 0.75rem); /* reduce horizontal */
+  --table-cell-padding-y: var(--space-2, 0.5rem); /* reduce vertical */
+  border-width: 2px; /* lighter frame like compact */
+  box-shadow: var(--table-shadow);
+}
+
+.combined-neuroscreen-table[data-component='combined-rom'] .combined-neuroscreen-td,
+.combined-neuroscreen-table[data-component='combined-rom'] .combined-neuroscreen-th {
+  padding: var(--table-cell-padding-y) var(--table-cell-padding);
+}
+
+.combined-neuroscreen-table[data-component='combined-rom'] .combined-neuroscreen-th.sub-header {
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+}
+
+/* Soften center divider to match vitals */
+.combined-neuroscreen-table[data-component='combined-rom'] .combined-neuroscreen-th.right-group,
+.combined-neuroscreen-table[data-component='combined-rom']
+  .combined-neuroscreen-th.sub-header.divider-left,
+.combined-neuroscreen-table[data-component='combined-rom'] .combined-neuroscreen-td.divider-left {
+  border-left: 1px solid var(--color-border);
+}
+
+/* Compact custom selects in ROM table */
+.combined-neuroscreen-table[data-component='combined-rom'] .custom-select__button {
+  min-height: 1.6rem; /* ~26px */
+  padding: 0.25rem 0.5rem;
+}
+
+/* RIM columns need min-width for dropdown text */
+.combined-neuroscreen-table[data-component='combined-rom']
+  .combined-neuroscreen-tbody
+  tr
+  td:nth-child(4),
+.combined-neuroscreen-table[data-component='combined-rom']
+  .combined-neuroscreen-tbody
+  tr
+  td:nth-child(7) {
+  min-width: 10rem;
+}
+
+.combined-neuroscreen-table[data-component='combined-rom']
+  .combined-neuroscreen-thead
+  tr:nth-child(2)
+  th:nth-child(3),
+.combined-neuroscreen-table[data-component='combined-rom']
+  .combined-neuroscreen-thead
+  tr:nth-child(2)
+  th:nth-child(6) {
+  min-width: 10rem;
+}
+
+/* ========================================
+   MMT / Bilateral Tables - Constrain first column
+   ======================================== */
+.mmt-section .combined-neuroscreen-table .combined-neuroscreen-th.level-col,
+.mmt-section .combined-neuroscreen-table .combined-neuroscreen-td.level-col {
+  width: 12rem;
+  max-width: 12rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .combined-neuroscreen-th,
-  .combined-neuroscreen-td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.875rem;
+  .combined-neuroscreen-table {
+    --table-cell-padding: var(--space-2, 0.5rem);
+    --table-input-width-md: 4rem;
+    --table-input-width-sm: 3rem;
   }
 
-  .combined-neuroscreen-th.level-col {
-    width: 80px;
+  .combined-neuroscreen-th,
+  .combined-neuroscreen-td {
+    padding: var(--space-2, 0.5rem) var(--space-1, 0.25rem);
+    font-size: var(--table-font-size-sm);
   }
 
   .combined-neuroscreen__input {
-    font-size: 0.875rem;
-    padding: 0.25rem;
+    font-size: var(--table-font-size-sm);
+    padding: var(--space-1, 0.25rem);
   }
 }

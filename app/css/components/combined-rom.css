@@ -1,6 +1,11 @@
 /**
  * Combined ROM Table Styles
  * Streamlined table for AROM, PROM, and RIMs
+ *
+ * Aligned with Table Design System tokens:
+ * - --table-border-width, --table-cell-border-width
+ * - --table-radius-outer, --table-radius-inner
+ * - --table-border-color, --table-cell-border-color
  */
 
 /* Use higher specificity to override generic .table styles */
@@ -9,16 +14,15 @@ table.combined-rom-table {
   border-collapse: separate !important;
   border-spacing: 0;
   background: var(--surface);
-  border: 4px solid var(--neutral-500);
-  border-radius: 8px !important;
+  border: var(--table-border-width) solid var(--table-border-color);
+  border-radius: var(--table-radius-outer);
   overflow: visible !important; /* Allow dropdowns to extend outside table */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--elev-hero-lg);
 }
 
-/* Dark theme table shadow */
+/* Dark theme table */
 :root[data-theme='dark'] .combined-rom-table {
-  border: 3px solid var(--color-border-strong);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--elev-hero);
 }
 
 .combined-rom-thead {
@@ -27,78 +31,79 @@ table.combined-rom-table {
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark theme header shadow */
+/* Dark theme header */
 :root[data-theme='dark'] .combined-rom-thead {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--elev-soft);
 }
 
+/* Base header cell styles */
 .combined-rom-th {
   padding: 0.6rem 0.5rem;
   text-align: center;
   font-weight: 600;
-  background: var(--neutral-600);
-  color: var(--text);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
   border: none;
-  border-bottom: 2px solid var(--color-border-strong);
+  border-bottom: var(--table-border-width) solid var(--table-border-color);
 }
 
-/* Dark theme column headers - lighter than data cells */
+/* Dark theme column headers - tokens handle theme switching */
 :root[data-theme='dark'] .combined-rom-th {
-  background: var(--neutral-650);
-  color: var(--white);
-  border-bottom: 1px solid var(--neutral-700);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  border-bottom: var(--table-border-width) solid var(--table-border-color);
 }
 
+/* Motion column (green accent) - label column */
 .combined-rom-th.motion-col {
-  text-align: center;
+  text-align: left;
   vertical-align: middle;
   width: 15%;
-  background: #009a44; /* UND Green */
+  background: var(--und-green);
   color: var(--white);
   font-weight: 600;
-  font-size: 1.125rem; /* 18px, up from base 16px */
-  border-right: 3px solid var(--color-border-strong);
-  border-bottom: 2px solid var(--color-border-strong);
+  font-size: 1.125rem;
+  padding-left: 0.75rem;
+  border-right: var(--table-border-width) solid var(--table-border-color);
+  border-bottom: var(--table-border-width) solid var(--table-border-color);
+  /* Only outer table corner - top-left */
+  border-top-left-radius: var(--table-radius-inner);
 }
 
-/* Top-left corner rounding */
-.combined-rom-thead tr:first-child .combined-rom-th.motion-col {
-  border-top-left-radius: 4px !important;
+/* Top-right corner - outer table corner on right-group header */
+.combined-rom-thead tr:first-child .combined-rom-th.right-group {
+  border-top-right-radius: var(--table-radius-inner);
 }
 
-/* Top-right corner rounding */
-.combined-rom-thead tr:first-child .combined-rom-th:last-child {
-  border-top-right-radius: 4px !important;
-}
-
-/* Dark theme motion column header - keep UND Green in both themes */
+/* Dark theme motion column - keep UND Green */
 :root[data-theme='dark'] .combined-rom-th.motion-col {
-  background: #009a44; /* UND Green */
+  background: var(--und-green);
   color: var(--white);
 }
 
+/* Group headers (Left/Right spanning columns) */
 .combined-rom-th.left-group,
 .combined-rom-th.right-group {
-  background: var(--neutral-600);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
   font-weight: 600;
   font-size: 1.05rem;
-  border-bottom: 2px solid var(--color-border-strong);
+  border-bottom: var(--table-border-width) solid var(--table-border-color);
 }
 
-/* Vertical divider before Right group - matches sub-header pattern */
+/* Vertical divider before Right group - matches outer table border */
 .combined-rom-th.right-group {
-  border-left: 2px solid var(--color-border-strong);
+  border-left: var(--table-border-width) solid var(--table-border-color);
 }
 
-/* Dark theme group headers - lightest for prominence */
+/* Dark theme group headers - tokens handle theme switching */
 :root[data-theme='dark'] .combined-rom-th.left-group,
 :root[data-theme='dark'] .combined-rom-th.right-group {
-  background: var(--neutral-600);
-  color: var(--white);
-  border-bottom: 2px solid var(--neutral-700);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  border-bottom: var(--table-border-width) solid var(--table-border-color);
 }
 
 /* normal-col removed when Normal column was removed */
@@ -107,11 +112,18 @@ table.combined-rom-table {
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.5rem 0.25rem;
+  border-right: var(--table-cell-border-width) solid var(--table-cell-border-color);
 }
 
-/* Vertical divider before Right group sub-headers */
+/* Remove right border from last sub-header in each group */
+.combined-rom-thead tr:nth-child(2) th:nth-child(2),
+.combined-rom-thead tr:nth-child(2) th:last-child {
+  border-right: none;
+}
+
+/* Heavy vertical divider before Right group sub-headers (major group separator) - matches outer table border */
 .combined-rom-th.sub-header.divider-left {
-  border-left: 2px solid var(--color-border-strong);
+  border-left: var(--table-border-width) solid var(--table-border-color);
 }
 
 /* Center group headers explicitly */
@@ -136,22 +148,22 @@ table.combined-rom-table {
 
 /* Row hover states - UND green tint */
 .combined-rom-tbody .combined-rom-row:hover .combined-rom-td {
-  background: rgba(0, 154, 68, 0.08) !important; /* 8% UND green tint */
+  background: var(--table-row-hover) !important;
 }
 
 /* Dark theme row hover - darker green tint */
 :root[data-theme='dark'] .combined-rom-tbody .combined-rom-row:hover .combined-rom-td {
-  background: rgba(0, 154, 68, 0.25) !important; /* 25% UND green overlay */
+  background: var(--table-row-hover-accent) !important;
 }
 
 /* Motion cell hover - darker UND green to lead the row */
 .combined-rom-tbody .combined-rom-row:hover .motion-cell {
-  background: rgba(0, 154, 68, 0.15) !important; /* 15% UND green tint */
+  background: var(--table-row-hover-strong) !important;
 }
 
 /* Dark theme motion cell hover - even darker green */
 :root[data-theme='dark'] .combined-rom-tbody .combined-rom-row:hover .motion-cell {
-  background: rgba(0, 154, 68, 0.35) !important; /* 35% UND green overlay */
+  background: var(--table-row-hover-accent-strong) !important;
 }
 
 /* Dark theme motion cell hover - brighten slightly */
@@ -163,14 +175,21 @@ table.combined-rom-table {
 .combined-rom-td {
   padding: 0.5rem;
   border: none;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: var(--table-cell-border-width) solid var(--table-cell-border-color);
+  border-right: var(--table-cell-border-width) solid var(--table-cell-border-color);
   text-align: center;
   transition: background 150ms ease-in-out;
 }
 
-/* Vertical divider between Left and Right data columns */
+/* Remove right border from last cell in each group */
+.combined-rom-tbody tr td:nth-child(3),
+.combined-rom-tbody tr td:last-child {
+  border-right: none;
+}
+
+/* Heavy vertical divider between Left and Right data groups (major group separator) - matches outer table border */
 .combined-rom-td.divider-left {
-  border-left: 2px solid var(--color-border-strong);
+  border-left: var(--table-border-width) solid var(--table-border-color);
 }
 
 /* Zebra striping applied to cells - odd rows (default white) */
@@ -199,34 +218,52 @@ table.combined-rom-table {
    generic table rules remove borders. Increase specificity to win. */
 .regional-assessment .combined-rom-table th.combined-rom-th,
 .regional-assessment .combined-rom-table td.combined-rom-td {
-  border: 1px solid var(--color-border);
+  border: var(--table-cell-border-width) solid var(--table-cell-border-color);
 }
 
+/* Motion cell in data rows */
 .combined-rom-td.motion-cell {
   text-align: left;
   font-weight: 600;
-  border-right: 3px solid var(--neutral-400);
-  border-bottom: 1px solid var(--color-border);
+  border-right: var(--table-border-width) solid var(--table-border-color);
+  border-bottom: var(--table-cell-border-width) solid var(--table-cell-border-color);
   padding-left: 0.75rem;
   transition: background 150ms ease-in-out;
-  /* Background inherits from row zebra striping by default */
 }
 
-/* Bottom-left corner rounding */
+/* Bottom-left corner - outer table corner */
 .combined-rom-tbody tr:last-child .combined-rom-td.motion-cell {
-  border-bottom-left-radius: 4px !important;
+  border-bottom-left-radius: var(--table-radius-inner);
 }
 
-/* Bottom-right corner rounding */
+/* Bottom-right corner - outer table corner */
 .combined-rom-tbody tr:last-child .combined-rom-td:last-child {
-  border-bottom-right-radius: 4px !important;
+  border-bottom-right-radius: var(--table-radius-inner);
+}
+
+/* Remove bottom border from last row - table border handles it */
+.combined-rom-tbody tr:last-child .combined-rom-td {
+  border-bottom: none;
+}
+
+/* Dark theme: also remove bottom border from last row (match specificity of nth-child rules) */
+:root[data-theme='dark'] .combined-rom-tbody .combined-rom-row:last-child .combined-rom-td {
+  border-bottom: none;
 }
 
 /* Dark theme motion cell */
 :root[data-theme='dark'] .combined-rom-td.motion-cell {
   color: var(--white);
-  border-right: 3px solid var(--neutral-700);
+  border-right: var(--table-border-width) solid var(--table-border-color);
   border-bottom-color: var(--neutral-750);
+}
+
+/* Dark theme: last row motion cell - ensure no bottom border (match specificity) */
+:root[data-theme='dark']
+  .combined-rom-tbody
+  .combined-rom-row:last-child
+  .combined-rom-td.motion-cell {
+  border-bottom: none;
 }
 
 .combined-rom-td.normal-cell {
@@ -284,33 +321,44 @@ table.combined-rom-table {
   width: 100%;
 }
 
-/* Make the input blend into the cell (transparent bg/border) using data attributes */
+/* Make the input visible with border like Vitals table */
 input[data-component='combined-rom'][data-element='input'] {
-  width: auto;
-  min-width: 2.5rem;
-  text-align: right;
-  padding: 0.25rem 0 0.25rem 0.375rem;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  border-bottom: 1px solid transparent;
-  max-width: 8ch;
+  width: 3.5rem;
+  text-align: center;
+  padding: 0.25rem; /* Compact to match Vitals inputs */
+  background: var(--neutral-50);
+  border: var(--table-cell-border-width) solid var(--table-cell-border-color);
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--table-font-size, 0.875rem);
+  color: var(--text-primary);
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
-/* Focus: underline for accessibility */
+/* Focus state with green border */
+input[data-component='combined-rom'][data-element='input']:focus,
 input[data-component='combined-rom'][data-element='input']:focus-visible {
   outline: none;
-  box-shadow: none;
-  border: 0;
-  border-bottom: 2px solid var(--und-green);
-  background: transparent;
+  border-color: var(--und-green);
+  background: var(--white);
+  box-shadow: var(--table-focus-ring);
 }
 
-/* Subtle underline on hover without stealing focus */
+/* Hover state */
 input[data-component='combined-rom'][data-element='input']:hover {
-  border: 0;
-  border-bottom-color: var(--color-border);
-  background: transparent;
+  border-color: var(--und-green-light, #66bb6a);
+}
+
+/* Dark mode */
+:root[data-theme='dark'] input[data-component='combined-rom'][data-element='input'] {
+  background: var(--neutral-700);
+  border-color: var(--neutral-600);
+}
+
+:root[data-theme='dark'] input[data-component='combined-rom'][data-element='input']:focus {
+  background: var(--neutral-800);
+  border-color: var(--und-green-light);
 }
 
 /* Degree symbol pinned at the far right side of the cell */

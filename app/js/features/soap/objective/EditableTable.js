@@ -99,16 +99,16 @@ function widthClass(width) {
 function buildTableHeader({ title, showAddButton, compactAddButton, addButtonText, onAdd }) {
   if (!title && !(showAddButton && !compactAddButton)) return null;
   const header = el('div', {
-    class: 'editable-table__header d-flex jc-between ai-center mb-8',
+    class: 'combined-neuroscreen-header d-flex jc-between ai-center mb-8',
   });
   if (title) {
-    header.appendChild(el('h5', { class: 'editable-table__title m-0 text-accent' }, title));
+    header.appendChild(el('h5', { class: 'combined-neuroscreen-title m-0 text-accent' }, title));
   }
   if (showAddButton && !compactAddButton) {
     header.appendChild(
       el(
         'button',
-        { type: 'button', class: 'btn small primary editable-table__add-btn', onclick: onAdd },
+        { type: 'button', class: 'btn small primary combined-neuroscreen-add-btn', onclick: onAdd },
         addButtonText,
       ),
     );
@@ -141,7 +141,7 @@ function buildSelectInput(column, value, onChange) {
   const input = createCustomSelect({
     options: options,
     value: String(value ?? ''),
-    className: 'editable-table__select form-input-standard',
+    className: 'combined-neuroscreen__input',
     onChange: (newValue) => onChange(String(newValue)),
   }).element;
 
@@ -150,13 +150,13 @@ function buildSelectInput(column, value, onChange) {
 
 function buildInputForColumn(column, value, onChange) {
   if (column.type === 'label') {
-    return el('span', { class: 'editable-table__label' }, String(value ?? ''));
+    return el('span', { class: 'combined-neuroscreen-label' }, String(value ?? ''));
   }
   if (column.type === 'select') return buildSelectInput(column, value, onChange);
   if (column.type === 'number')
     return el('input', {
       type: 'number',
-      class: 'editable-table__input form-input-standard',
+      class: 'combined-neuroscreen__input',
       value: value,
       placeholder: column.placeholder || '',
       min: column.min,
@@ -168,7 +168,7 @@ function buildInputForColumn(column, value, onChange) {
     const t = el(
       'textarea',
       {
-        class: 'editable-table__textarea form-input-standard resize-vertical',
+        class: 'combined-neuroscreen__input resize-vertical',
         rows: column.rows || 1,
         placeholder: column.placeholder || '',
         onblur: (e) => onChange(e.target.value),
@@ -180,7 +180,7 @@ function buildInputForColumn(column, value, onChange) {
   }
   return el('input', {
     type: column.type || 'text',
-    class: 'editable-table__input form-input-standard',
+    class: 'combined-neuroscreen__input',
     value: value,
     placeholder: column.placeholder || '',
     onblur: (e) => onChange(e.target.value),
@@ -188,18 +188,18 @@ function buildInputForColumn(column, value, onChange) {
 }
 
 function buildBodyRow(columns, rowId, rowData, createCell, showDeleteButton, onDelete) {
-  return el('tr', { class: 'editable-table__row', 'data-row-id': rowId }, [
+  return el('tr', { class: 'combined-neuroscreen-row', 'data-row-id': rowId }, [
     ...columns.map((col) => createCell(col, rowData, rowId)),
     ...(showDeleteButton
       ? [
           el(
             'td',
-            { class: 'editable-table__cell editable-table__cell--actions' },
+            { class: 'combined-neuroscreen-td' },
             el(
               'button',
               {
                 type: 'button',
-                class: 'remove-btn editable-table__delete-btn',
+                class: 'remove-btn',
                 title: 'Delete row',
                 'aria-label': 'Delete row',
                 onclick: () => onDelete(rowId),
@@ -227,14 +227,15 @@ function buildTableElement({
     tableChildren.push(
       el(
         'thead',
-        { class: 'editable-table__head' },
+        { class: 'combined-neuroscreen-thead' },
         el('tr', {}, [
-          ...columns.map((col) =>
-            el(
+          ...columns.map((col) => {
+            const isLevelCol = col.field === 'name' || col.type === 'label';
+            return el(
               'th',
               {
                 class:
-                  `editable-table__header-cell editable-table__header-cell--${col.field} ${widthClass(col.width)}`.trim(),
+                  `combined-neuroscreen-th ${isLevelCol ? 'level-col' : ''} ${widthClass(col.width)}`.trim(),
                 style: widthClass(col.width)
                   ? undefined
                   : col.width
@@ -244,14 +245,14 @@ function buildTableElement({
                 ...(col.short ? { 'data-short': String(col.short) } : {}),
               },
               col.label,
-            ),
-          ),
+            );
+          }),
           ...(showDeleteButton
             ? [
                 el(
                   'th',
                   {
-                    class: 'editable-table__header-cell editable-table__header-cell--actions',
+                    class: 'combined-neuroscreen-th',
                     style: undefined,
                     scope: 'col',
                     'aria-label': 'Actions',
@@ -267,13 +268,13 @@ function buildTableElement({
   tableChildren.push(
     el(
       'tbody',
-      { class: 'editable-table__body' },
+      { class: 'combined-neuroscreen-tbody' },
       rows.map((rowId) =>
         buildBodyRow(columns, rowId, data[rowId], createCell, showDeleteButton, onDelete),
       ),
     ),
   );
-  const table = el('table', { class: 'table editable-table__table' }, tableChildren);
+  const table = el('table', { class: 'table combined-neuroscreen-table' }, tableChildren);
   // Wrap in responsive container for mobile horizontal scroll when needed
   return el('div', { class: 'table-responsive' }, table);
 }
@@ -283,7 +284,7 @@ function buildCompactFooter(showAddButton, compactAddButton, onAdd) {
   return el(
     'div',
     {
-      class: 'editable-table__footer d-flex jc-center mb-16',
+      class: 'combined-neuroscreen-footer d-flex jc-center mb-16',
     },
     el(
       'button',
@@ -321,7 +322,7 @@ export function createEditableTable(config) {
   } = config;
 
   const container = el('div', {
-    class: `editable-table mb-16 ${className}`.trim(),
+    class: `combined-neuroscreen-container mb-16 ${className}`.trim(),
     style: style,
   });
 
@@ -380,11 +381,14 @@ function makeCreateCell(updateCell) {
     const input = buildInputForColumn(column, value, (val) => updateCell(rowId, column.field, val));
     // Accessibility: ensure interactive form control has a programmatic name.
     applyA11yLabel(input, column, rowData, rowId);
+
+    const isLevelCol = column.field === 'name' || column.type === 'label';
+
     return el(
       'td',
       {
         class:
-          `editable-table__cell editable-table__cell--${column.field} ${widthClass(column.width)}`.trim(),
+          `combined-neuroscreen-td ${isLevelCol ? 'level-col' : ''} ${widthClass(column.width)}`.trim(),
         style: widthClass(column.width)
           ? undefined
           : column.width

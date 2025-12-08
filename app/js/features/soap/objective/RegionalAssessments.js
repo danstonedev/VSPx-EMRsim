@@ -407,14 +407,15 @@ export function createRegionalAssessment(regionKey, assessmentData, onChange) {
     'div',
     {
       class: 'regional-assessment__header',
-      style: 'margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);',
+      style:
+        'margin-bottom: var(--space-5, 1.25rem); padding-bottom: var(--space-2, 0.5rem); border-bottom: 2px solid var(--accent);',
     },
     [
       el(
         'h4',
         {
           class: 'regional-assessment__title',
-          style: 'margin: 0; color: var(--accent); font-size: 18px;',
+          style: 'margin: 0; color: var(--accent); font-size: var(--font-lg, 1.125rem);',
         },
         region.name,
       ),
@@ -422,7 +423,8 @@ export function createRegionalAssessment(regionKey, assessmentData, onChange) {
         'p',
         {
           class: 'regional-assessment__description',
-          style: 'margin: 4px 0 0 0; color: var(--text-muted); font-size: 14px;',
+          style:
+            'margin: var(--space-1, 0.25rem) 0 0 0; color: var(--text-muted); font-size: var(--font-md, 0.875rem);',
         },
         `Comprehensive assessment including range of motion, manual muscle testing, and special tests.`,
       ),

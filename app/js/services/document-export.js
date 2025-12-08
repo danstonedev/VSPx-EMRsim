@@ -918,7 +918,7 @@ export function exportToWord(caseData, draft) {
     elements.push(createSectionDivider());
     elements.push(createWebSectionHeader('SUBJECTIVE'));
     const subj = (draft && draft.subjective) || {};
-    elements.push(createSectionHeader('History of Present Illness', 2));
+    elements.push(createSectionHeader('History', 2));
     const hpiLines = [];
     const chiefConcern =
       subj.chiefComplaint || getSafeValue(caseData, 'history.chief_complaint') || '';
@@ -946,7 +946,7 @@ export function exportToWord(caseData, draft) {
         }),
       );
     }
-    elements.push(createSectionHeader('Symptom Assessment', 2));
+    elements.push(createSectionHeader('Symptoms', 2));
     const painHasAny = !!(
       subj.painLocation ||
       subj.painScale ||
@@ -1049,8 +1049,68 @@ export function exportToWord(caseData, draft) {
     elements.push(createWebSectionHeader('OBJECTIVE'));
     const obj = (draft && draft.objective) || {};
     // General observations & vitals
-    elements.push(createSectionHeader('General Observations & Vital Signs', 2));
-    elements.push(createBodyParagraph(obj.text || '', { indentLeft: FORMAT.indent.level1 }));
+    const vitals = obj.vitals || {};
+    const obs = obj.observations || {};
+
+    // Vital Signs
+    elements.push(createSectionHeader('Vital Signs', 2));
+    const vitalsParts = [
+      vitals.bpSystolic || vitals.bpDiastolic
+        ? `BP: ${vitals.bpSystolic || '?'}/${vitals.bpDiastolic || '?'} mmHg`
+        : null,
+      vitals.hr ? `HR: ${vitals.hr} bpm` : null,
+      vitals.rr ? `RR: ${vitals.rr} breaths/min` : null,
+      vitals.spo2 ? `SpO2: ${vitals.spo2}%` : null,
+      vitals.temperature ? `Temp: ${vitals.temperature}°F` : null,
+      vitals.heightFt || vitals.heightIn
+        ? `Height: ${vitals.heightFt || 0}'${vitals.heightIn || 0}"`
+        : null,
+      vitals.weight ? `Weight: ${vitals.weight} lbs` : null,
+      vitals.bmi ? `BMI: ${vitals.bmi}` : null,
+    ].filter(Boolean);
+
+    if (vitalsParts.length > 0) {
+      elements.push(
+        createBodyParagraph(vitalsParts.join(' | '), { indentLeft: FORMAT.indent.level1 }),
+      );
+    } else {
+      elements.push(
+        createBodyParagraph('Not documented', {
+          indentLeft: FORMAT.indent.level1,
+          italics: true,
+          color: FORMAT.colors.grayText,
+        }),
+      );
+    }
+
+    // General Observations
+    elements.push(createSectionHeader('General Observations', 2));
+    const obsFields = [
+      { label: 'General Appearance', value: obs.generalAppearance },
+      { label: 'Posture', value: obs.posture },
+      { label: 'Gait', value: obs.gait },
+    ];
+
+    let hasObs = false;
+    obsFields.forEach((f) => {
+      if (f.value) {
+        hasObs = true;
+        elements.push(createLabelValueLine(f.label, f.value, { indentLeft: FORMAT.indent.level1 }));
+      }
+    });
+
+    // Fallback for legacy text if new fields are empty but old text exists
+    if (!hasObs && obj.text) {
+      elements.push(createBodyParagraph(obj.text, { indentLeft: FORMAT.indent.level1 }));
+    } else if (!hasObs) {
+      elements.push(
+        createBodyParagraph('Not documented', {
+          indentLeft: FORMAT.indent.level1,
+          italics: true,
+          color: FORMAT.colors.grayText,
+        }),
+      );
+    }
     // Inspection/Palpation
     elements.push(createSectionHeader('Inspection', 2));
     elements.push(
@@ -1709,7 +1769,7 @@ export function exportToWord(caseData, draft) {
         }),
       );
     }
-    elements.push(createSectionHeader('Clinical Reasoning', 2));
+    elements.push(createSectionHeader('Clinical Impression', 2));
     if (assess.clinicalReasoning) {
       elements.push(
         createBodyParagraph(assess.clinicalReasoning, {
@@ -1744,7 +1804,7 @@ export function exportToWord(caseData, draft) {
       ...plan,
     };
     // SMART Goals first
-    elements.push(createSectionHeader('SMART Goals & Outcomes', 2));
+    elements.push(createSectionHeader('Goals', 2));
     const goalRows =
       plan.goalsTable && typeof plan.goalsTable === 'object' ? Object.values(plan.goalsTable) : [];
     if (goalRows && goalRows.length) {
@@ -1807,7 +1867,7 @@ export function exportToWord(caseData, draft) {
       );
     }
     // In-Clinic Treatment Plan (Frequency/Duration + Exercise table)
-    elements.push(createSectionHeader('In-Clinic Treatment Plan', 2));
+    elements.push(createSectionHeader('Treatment Plan', 2));
     const sched = [];
     if (plan.frequency) sched.push(`Frequency: ${plan.frequency}`);
     if (plan.duration) sched.push(`Duration: ${plan.duration}`);

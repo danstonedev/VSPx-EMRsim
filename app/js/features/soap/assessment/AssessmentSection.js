@@ -107,7 +107,7 @@ export function createAssessmentSection(assessmentData, onUpdate) {
 
   // Clinical Reasoning
   const reasoningSection = el('div', { id: 'clinical-reasoning', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Clinical Reasoning'),
+    el('h4', { class: 'subsection-title' }, 'Clinical Impression'),
     textAreaField({
       label: 'Clinical Reasoning & Hypothesis',
       value: finalData.clinicalReasoning,

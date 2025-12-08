@@ -1277,7 +1277,7 @@ function openViewArtifactModal(module, options = {}) {
 }
 
 // Add Artifact modal (faculty): collects title, type, and type-specific fields
-function openAddArtifactModal(onAdd) {
+export function openAddArtifactModal(onAdd) {
   const overlay = el('div', {
     class: 'modal-overlay popup-overlay-base',
     role: 'dialog',
@@ -2006,8 +2006,8 @@ export function createChartNavigation(config) {
     billing: ['diagnosis-codes', 'cpt-codes', 'orders-referrals'],
   };
   const subsectionTitleMap = {
-    hpi: 'History of Present Illness',
-    'pain-assessment': 'Symptom Assessment',
+    hpi: 'History',
+    'pain-assessment': 'Symptoms',
     'functional-status': 'Functional Status',
     'additional-history': 'Additional History',
     'general-observations': 'General Observations & Vital Signs',
@@ -2034,10 +2034,10 @@ export function createChartNavigation(config) {
     'primary-impairments': 'Primary Impairments',
     'icf-classification': 'ICF Classification',
     'pt-diagnosis': 'Physical Therapy Diagnosis & Prognosis',
-    'clinical-reasoning': 'Clinical Reasoning',
+    'clinical-reasoning': 'Clinical Impression',
     'treatment-plan': 'Plan of Care',
-    'in-clinic-treatment-plan': 'In-Clinic Treatment Plan',
-    'goal-setting': 'SMART Goals & Outcomes',
+    'in-clinic-treatment-plan': 'Treatment Plan',
+    'goal-setting': 'Goals',
     'diagnosis-codes': 'ICD-10 Codes',
     'cpt-codes': 'CPT Codes',
     'orders-referrals': 'Orders & Referrals',

@@ -1,0 +1,253 @@
+/**
+ * Clinical Table Styles
+ * Unified styling for all clinical data tables (Vitals, ROM, Neuro, Billing, etc.)
+ * Matches the "Green Header" style with precise sizing and spacing.
+ */
+
+/* Base Table */
+table.clinical-table {
+  width: 100%;
+  border-collapse: separate; /* Required for border-radius */
+  border-spacing: 0;
+  margin: 1rem 0;
+  background: var(--surface);
+  border: 1px solid var(--neutral-300);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Section */
+.clinical-thead {
+  /* Sticky header handled on th */
+}
+
+/* Header Cells - Default (Dark Gray like "Measurement") */
+.clinical-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  background: var(--neutral-700); /* Dark Gray */
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--neutral-400);
+  border-right: 1px solid var(--neutral-600); /* Separator between headers */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.clinical-th:last-child {
+  border-right: none;
+}
+
+/* Primary Header Column (The "Green" Column like "Parameter") */
+.clinical-th.primary-col {
+  background: #009a44; /* UND Green */
+  color: var(--white);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid #007a36;
+}
+
+/* Body Cells */
+.clinical-td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--neutral-200);
+  border-right: 1px solid var(--neutral-200); /* Vertical divider */
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.clinical-td:last-child {
+  border-right: none;
+}
+
+/* Primary Column in Body (Bold text) */
+.clinical-td.primary-col {
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--surface); /* Ensure it stays clean */
+}
+
+/* Rows */
+.clinical-row:nth-child(even) {
+  background: var(--surface-alt);
+}
+
+.clinical-row:hover {
+  background: var(--surface-alt-hover);
+}
+
+/* Inputs within tables */
+.clinical-input,
+.clinical-select {
+  width: 100%;
+  border: 1px solid var(--neutral-300);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem; /* Slightly tighter padding for inputs */
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.clinical-input:focus,
+.clinical-select:focus {
+  outline: none;
+  border-color: #009a44;
+  box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.2);
+}
+
+/* Read-only / Disabled inputs */
+.clinical-input[readonly],
+.clinical-input[disabled] {
+  background-color: var(--neutral-100);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+/* Dark mode adjustments */
+:root[data-theme='dark'] table.clinical-table {
+  border-color: var(--neutral-600);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme='dark'] .clinical-th {
+  background: var(--neutral-800);
+  border-bottom-color: var(--neutral-600);
+  border-right-color: var(--neutral-700);
+}
+
+:root[data-theme='dark'] .clinical-th.primary-col {
+  background: #009a44;
+  border-bottom-color: #007a36;
+}
+
+:root[data-theme='dark'] .clinical-td {
+  border-bottom-color: var(--neutral-700);
+  border-right-color: var(--neutral-700);
+}
+
+:root[data-theme='dark'] .clinical-td.primary-col {
+  background-color: transparent;
+}
+
+:root[data-theme='dark'] .clinical-input,
+:root[data-theme='dark'] .clinical-select {
+  background: var(--neutral-800);
+  border-color: var(--neutral-600);
+  color: var(--white);
+}
+
+:root[data-theme='dark'] .clinical-input:focus,
+:root[data-theme='dark'] .clinical-select:focus {
+  border-color: #009a44;
+  box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.4);
+}
+
+:root[data-theme='dark'] .clinical-td {
+  border-bottom: 1px solid var(--neutral-700);
+}
+
+.clinical-td.primary-col {
+  background: var(--neutral-100);
+  font-weight: 600;
+  color: var(--text-strong);
+  border-right: 3px solid var(--neutral-300);
+  text-align: center;
+}
+
+:root[data-theme='dark'] .clinical-td.primary-col {
+  background: var(--neutral-800);
+  border-right: 3px solid var(--neutral-700);
+}
+
+/* Input Styling within Tables */
+.clinical-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 2px solid var(--neutral-400);
+  border-radius: 4px;
+  font-size: 1rem;
+  text-align: center;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.clinical-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-transparent);
+  outline: none;
+}
+
+/* Select Styling within Tables */
+.clinical-select {
+  width: 100%;
+  padding: 6px 24px 6px 8px;
+  border: 2px solid var(--neutral-400);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background-color: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Remove Button */
+.clinical-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.clinical-remove-btn:hover {
+  background: var(--danger-transparent);
+}
+
+/* Utility Classes */
+.clinical-th.divider-left,
+.clinical-td.divider-left {
+  border-left: 3px solid var(--neutral-400);
+}
+
+:root[data-theme='dark'] .clinical-th.divider-left,
+:root[data-theme='dark'] .clinical-td.divider-left {
+  border-left: 3px solid var(--neutral-600);
+}
+
+.clinical-td.na-cell {
+  background-color: var(--neutral-100);
+  color: var(--text-tertiary);
+  font-style: italic;
+  text-align: center;
+}
+
+:root[data-theme='dark'] .clinical-td.na-cell {
+  background-color: var(--neutral-800);
+}
+
+/* Row Hover */
+.clinical-row:hover .clinical-td {
+  background-color: var(--surface-hover);
+}
+
+/* Last Row Border Radius */
+.clinical-tbody tr:last-child .clinical-td:first-child {
+  border-bottom-left-radius: 4px;
+}
+.clinical-tbody tr:last-child .clinical-td:last-child {
+  border-bottom-right-radius: 4px;
+}
+.clinical-tbody tr:last-child .clinical-td {
+  border-bottom: none;
+}

@@ -106,7 +106,7 @@ export function createCombinedRomSection(
       value,
       options: COMBINED_ROM_CONFIG.rimsOptions,
       onChange,
-      className: 'combined-rom-select',
+      className: 'combined-neuroscreen__input',
       placeholder: '—',
       dataAttrs: {
         'data-component': COMBINED_ROM_CONFIG.component,
@@ -125,12 +125,12 @@ export function createCombinedRomSection(
    */
   function createDegreeInput(value, onChange, normalValue) {
     const wrapper = el('div', {
-      class: 'input-with-suffix',
+      class: 'combined-neuroscreen-input-suffix',
       ...(normalValue ? { title: `Normal: ${normalValue}` } : {}),
     });
     const input = el('input', {
       ...COMBINED_ROM_CONFIG.inputAttrs,
-      class: 'form-input-standard combined-rom-input',
+      class: 'combined-neuroscreen__input combined-neuroscreen__input--inline',
       'data-component': COMBINED_ROM_CONFIG.component,
       'data-element': 'input',
       value: value || '',
@@ -138,7 +138,7 @@ export function createCombinedRomSection(
       onblur: (e) => onChange(e.target.value),
       ...(normalValue ? { 'aria-label': `Value (Normal ${normalValue})` } : {}),
     });
-    const suffix = el('span', { class: 'input-suffix' }, '°');
+    const suffix = el('span', { class: 'combined-neuroscreen-input-suffix__symbol' }, '°');
     wrapper.appendChild(input);
     wrapper.appendChild(suffix);
     return wrapper;
@@ -147,35 +147,35 @@ export function createCombinedRomSection(
   // Build table structure
   const tableWrapper = el('div', { class: 'table-responsive' });
   const table = el('table', {
-    class: 'table combined-rom-table',
+    class: 'combined-neuroscreen-table',
     'data-component': COMBINED_ROM_CONFIG.component,
   });
 
   // Build header with grouped columns
-  const thead = el('thead', { class: 'combined-rom-thead' });
+  const thead = el('thead', { class: 'combined-neuroscreen-thead' });
   const headerRow1 = el('tr', {}, [
     el(
       'th',
-      { rowspan: '2', class: 'combined-rom-th motion-col' },
+      { rowspan: '2', class: 'combined-neuroscreen-th level-col' },
       (region.name || '').toUpperCase(),
     ),
-    el('th', { colspan: '3', class: 'combined-rom-th left-group' }, 'Left'),
-    el('th', { colspan: '3', class: 'combined-rom-th right-group' }, 'Right'),
+    el('th', { colspan: '3', class: 'combined-neuroscreen-th left-group' }, 'Left'),
+    el('th', { colspan: '3', class: 'combined-neuroscreen-th right-group' }, 'Right'),
   ]);
   const headerRow2 = el('tr', {}, [
-    el('th', { class: 'combined-rom-th sub-header' }, 'AROM'),
-    el('th', { class: 'combined-rom-th sub-header' }, 'PROM'),
-    el('th', { class: 'combined-rom-th sub-header' }, 'RIM'),
-    el('th', { class: 'combined-rom-th sub-header divider-left' }, 'AROM'),
-    el('th', { class: 'combined-rom-th sub-header' }, 'PROM'),
-    el('th', { class: 'combined-rom-th sub-header' }, 'RIM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header' }, 'AROM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header' }, 'PROM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header' }, 'RIM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header divider-left' }, 'AROM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header' }, 'PROM'),
+    el('th', { class: 'combined-neuroscreen-th sub-header' }, 'RIM'),
   ]);
   thead.appendChild(headerRow1);
   thead.appendChild(headerRow2);
   table.appendChild(thead);
 
   // Build table body
-  const tbody = el('tbody', { class: 'combined-rom-tbody' });
+  const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
 
   // Group items by joint name to combine left/right
   const grouped = {};
@@ -213,13 +213,13 @@ export function createCombinedRomSection(
 
   Object.keys(grouped).forEach((jointName) => {
     const group = grouped[jointName];
-    const row = el('tr', { class: 'combined-rom-row' });
+    const row = el('tr', { class: 'combined-neuroscreen-row' });
 
     // Motion name
     row.appendChild(
       el(
         'td',
-        { class: 'combined-rom-td motion-cell' },
+        { class: 'combined-neuroscreen-td level-col' },
         motionLabelFromJoint(regionKey, group.name),
       ),
     );
@@ -233,7 +233,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell' },
+          { class: 'combined-neuroscreen-td' },
           createDegreeInput(
             readVal(aromsData, aromKey),
             (val) => {
@@ -247,7 +247,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell' },
+          { class: 'combined-neuroscreen-td' },
           createDegreeInput(
             readVal(promsData, promKey),
             (val) => {
@@ -261,7 +261,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td select-cell' },
+          { class: 'combined-neuroscreen-td' },
           createSelect(readVal(rimsData, rimKey), (val) => {
             writeVal(rimsData, rimKey, val);
             onRimChange(rimsData);
@@ -270,9 +270,9 @@ export function createCombinedRomSection(
       );
 
       // Empty right side for midline movements
-      row.appendChild(el('td', { class: 'combined-rom-td empty-cell divider-left' }, '—'));
-      row.appendChild(el('td', { class: 'combined-rom-td empty-cell' }, '—'));
-      row.appendChild(el('td', { class: 'combined-rom-td empty-cell' }, '—'));
+      row.appendChild(el('td', { class: 'combined-neuroscreen-td divider-left' }, '—'));
+      row.appendChild(el('td', { class: 'combined-neuroscreen-td' }, '—'));
+      row.appendChild(el('td', { class: 'combined-neuroscreen-td' }, '—'));
     } else {
       // Bilateral movement
       const leftKey = `${jointName}_L`;
@@ -282,7 +282,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell' },
+          { class: 'combined-neuroscreen-td' },
           createDegreeInput(
             readVal(aromsData, leftKey),
             (val) => {
@@ -297,7 +297,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell' },
+          { class: 'combined-neuroscreen-td' },
           createDegreeInput(
             readVal(promsData, leftKey),
             (val) => {
@@ -312,7 +312,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td select-cell' },
+          { class: 'combined-neuroscreen-td' },
           createSelect(readVal(rimsData, leftKey), (val) => {
             writeVal(rimsData, leftKey, val);
             onRimChange(rimsData);
@@ -324,7 +324,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell divider-left' },
+          { class: 'combined-neuroscreen-td divider-left' },
           createDegreeInput(
             readVal(aromsData, rightKey),
             (val) => {
@@ -339,7 +339,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td input-cell' },
+          { class: 'combined-neuroscreen-td' },
           createDegreeInput(
             readVal(promsData, rightKey),
             (val) => {
@@ -354,7 +354,7 @@ export function createCombinedRomSection(
       row.appendChild(
         el(
           'td',
-          { class: 'combined-rom-td select-cell' },
+          { class: 'combined-neuroscreen-td' },
           createSelect(readVal(rimsData, rightKey), (val) => {
             writeVal(rimsData, rightKey, val);
             onRimChange(rimsData);

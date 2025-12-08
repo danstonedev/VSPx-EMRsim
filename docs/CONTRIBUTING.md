@@ -4,8 +4,8 @@ Thanks for improving the UND‑PT EMR Simulator. This project is a pure‑fronte
 
 ## Development setup
 
-- Node 18+ for tooling (lint/format only)
-- Local static server (PowerShell): `./start_servers_simple.ps1` → open <http://localhost:3000>
+- Node 18+ for tooling
+- Local dev server (Hot Reloading): `npm run dev` or `./start_servers_simple.ps1`
 - Browser tests: open files in `app/tests/*.test.html`
 
 Scripts:

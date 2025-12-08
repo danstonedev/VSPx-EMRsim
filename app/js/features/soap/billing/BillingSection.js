@@ -20,10 +20,8 @@ export const PTBilling = {
       class: 'billing-section',
     });
 
-    // ICD-10 Codes subsection anchor + title
-    const diagnosisSection = el('div', { id: 'diagnosis-codes', class: 'section-anchor' }, [
-      el('h4', { class: 'subsection-title' }, 'Diagnosis Codes (ICD-10)'),
-    ]);
+    // ICD-10 Codes anchor (title removed per request)
+    const diagnosisSection = el('div', { id: 'diagnosis-codes', class: 'section-anchor' });
     section.append(diagnosisSection);
 
     // Initialize diagnosis codes array if not exists
@@ -34,25 +32,55 @@ export const PTBilling = {
     // Add diagnosis code interface
     const diagnosisContainer = el('div', {
       class: 'billing-section-container',
-      style: 'margin-bottom: 24px;',
+      style: 'margin-top: 12px; margin-bottom: 24px;',
     });
     section.append(diagnosisContainer);
 
     // Function to render diagnosis codes
     function renderDiagnosisCodes() {
       diagnosisContainer.replaceChildren();
-      // No header here; the subsection title above already communicates context
+
+      if (data.diagnosisCodes.length === 0) {
+        // Empty state handled by adding a row below
+      }
+
+      const table = el('table', {
+        class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
+      });
+      const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
+        el('tr', {}, [
+          el('th', { class: 'combined-neuroscreen-th level-col' }, 'Diagnosis Codes (ICD-10)'),
+          el('th', { class: 'combined-neuroscreen-th' }, 'Description'),
+          el('th', { class: 'combined-neuroscreen-th action-col' }, 'Action'),
+        ]),
+      ]);
+      table.appendChild(thead);
+
+      const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
 
       data.diagnosisCodes.forEach((codeEntry, index) => {
-        const codeRow = createDiagnosisCodeRow(
-          codeEntry,
-          index,
-          data,
-          updateField,
-          renderDiagnosisCodes,
-        );
-        diagnosisContainer.append(codeRow);
+        if (!codeEntry.code && !codeEntry.description) {
+          const searchRow = createDiagnosisSearchRow(
+            codeEntry,
+            index,
+            data,
+            updateField,
+            renderDiagnosisCodes,
+          );
+          tbody.appendChild(searchRow);
+        } else {
+          const codeRow = createDiagnosisCodeRow(
+            codeEntry,
+            index,
+            data,
+            updateField,
+            renderDiagnosisCodes,
+          );
+          tbody.appendChild(codeRow);
+        }
       });
+      table.appendChild(tbody);
+      diagnosisContainer.appendChild(table);
 
       // Add compact + button
       const addButton = el(
@@ -85,24 +113,20 @@ export const PTBilling = {
       data.billingCodes = [];
     }
 
-    // CPT Codes subsection anchor + title
-    const cptSection = el('div', { id: 'cpt-codes', class: 'section-anchor' }, [
-      el('h4', { class: 'subsection-title' }, 'CPT Codes'),
-    ]);
+    // CPT Codes anchor (title removed per request)
+    const cptSection = el('div', { id: 'cpt-codes', class: 'section-anchor' });
     section.append(cptSection);
 
     // Use shared CPT widget for Billing CPT Codes UI
     const cptWidget = createBillingCodesWidget(data, updateField);
     section.append(cptWidget.element);
 
-    // Orders & Referrals subsection anchor + title
+    // Orders & Referrals anchor (title removed per request)
     if (!Array.isArray(data.ordersReferrals)) {
       data.ordersReferrals = [];
     }
 
-    const ordersSection = el('div', { id: 'orders-referrals', class: 'section-anchor' }, [
-      el('h4', { class: 'subsection-title' }, 'Orders & Referrals'),
-    ]);
+    const ordersSection = el('div', { id: 'orders-referrals', class: 'section-anchor' });
     section.append(ordersSection);
 
     const ordersContainer = el('div', {
@@ -114,34 +138,26 @@ export const PTBilling = {
     function renderOrdersReferrals() {
       ordersContainer.replaceChildren();
 
-      if (data.ordersReferrals.length > 0) {
-        const header = el(
-          'div',
-          {
-            class: 'codes-header',
-            style: `
-            display: grid;
-    grid-template-columns: 140px 1fr 60px;
-            gap: 12px;
-            padding: var(--space-2) 0 var(--space-2) 0;
-            margin: 16px 0 var(--space-3);
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-            text-transform: capitalize;
-            letter-spacing: 0.3px;
-            border-bottom: 3px solid var(--und-green);
-          `,
-          },
-          [el('div', {}, 'Type'), el('div', {}, 'Details')],
-        );
-        ordersContainer.append(header);
-      }
+      const table = el('table', {
+        class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
+      });
+      const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
+        el('tr', {}, [
+          el('th', { class: 'combined-neuroscreen-th level-col' }, 'Orders & Referrals'),
+          el('th', { class: 'combined-neuroscreen-th' }, 'Details'),
+          el('th', { class: 'combined-neuroscreen-th action-col' }, 'Action'),
+        ]),
+      ]);
+      table.appendChild(thead);
+
+      const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
 
       data.ordersReferrals.forEach((entry, index) => {
         const row = createOrderReferralRow(entry, index, data, updateField, renderOrdersReferrals);
-        ordersContainer.append(row);
+        tbody.appendChild(row);
       });
+      table.appendChild(tbody);
+      ordersContainer.appendChild(table);
 
       const addButton = el(
         'div',
@@ -184,35 +200,30 @@ export function createBillingCodesWidget(data, updateField) {
   function render() {
     container.replaceChildren();
 
-    // Header when there are rows
-    if (data.billingCodes.length > 0) {
-      const header = el(
-        'div',
-        {
-          class: 'codes-header',
-          style: `
-          display: grid;
-          grid-template-columns: 2fr 80px 120px 60px;
-          gap: 12px;
-          padding: var(--space-2) 0 var(--space-2) 0;
-          margin: 16px 0 var(--space-3);
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text);
-          text-transform: capitalize;
-          letter-spacing: 0.3px;
-          border-bottom: 3px solid var(--und-green);
-        `,
-        },
-        [el('div', {}, 'Treatment Code'), el('div', {}, 'Units'), el('div', {}, 'Time Spent')],
-      );
-      container.append(header);
-    }
+    const table = el('table', {
+      class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
+    });
+
+    // Header
+    const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
+      el('tr', {}, [
+        el('th', { class: 'combined-neuroscreen-th level-col' }, 'CPT Codes'),
+        el('th', { class: 'combined-neuroscreen-th' }, 'Units'),
+        el('th', { class: 'combined-neuroscreen-th' }, 'Time Spent'),
+        el('th', { class: 'combined-neuroscreen-th action-col' }, 'Action'),
+      ]),
+    ]);
+    table.appendChild(thead);
+
+    const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
 
     data.billingCodes.forEach((codeEntry, index) => {
       const codeRow = createBillingCodeRow(codeEntry, index, data, updateField, render);
-      container.append(codeRow);
+      tbody.appendChild(codeRow);
     });
+
+    table.appendChild(tbody);
+    container.appendChild(table);
 
     const addButton = el(
       'div',
@@ -290,50 +301,20 @@ export function createBillingSection(billingData, onUpdate) {
  * Creates a single diagnosis code row with ICD-10 selection
  */
 function createDiagnosisCodeRow(codeEntry, index, data, updateField, renderCallback) {
-  const row = el('div', {
-    class: 'code-row diagnosis-row',
-    style: `
-      display: grid;
-      grid-template-columns: 1fr 60px;
-      gap: 12px;
-      padding: 4px 0;
-      align-items: center;
-      transition: background-color 0.15s ease;
-    `,
-  });
+  const row = el('tr', { class: 'combined-neuroscreen-row' });
 
-  // Add hover effect
-  row.onmouseover = () => (row.style.background = 'rgba(249, 250, 251, 0.8)');
-  row.onmouseout = () => (row.style.background = 'transparent');
+  // ICD-10 Code display only
+  const codeCell = el('td', { class: 'combined-neuroscreen-td level-col' });
+  codeCell.textContent = codeEntry.label || codeEntry.code || '';
+  row.appendChild(codeCell);
 
-  // ICD-10 Code Selection with inline label
-  const codeContainer = el('div', { style: 'position: relative;' });
-  const codeSelect = createCustomSelect({
-    options: getPTICD10Codes().map((option) => ({
-      value: option.value,
-      label: option.label,
-    })),
-    value: codeEntry.code || '',
-    className: 'billing-code-select',
-    onChange: (newValue) => {
-      data.diagnosisCodes[index].code = newValue;
-      // Update both description and label based on selected code
-      const selectedOption = getPTICD10Codes().find((opt) => opt.value === newValue);
-      if (selectedOption) {
-        data.diagnosisCodes[index].description = selectedOption.description;
-        data.diagnosisCodes[index].label = selectedOption.label;
-      } else {
-        data.diagnosisCodes[index].description = '';
-        data.diagnosisCodes[index].label = '';
-      }
-      updateField('diagnosisCodes', data.diagnosisCodes);
-    },
-  }).element;
+  // Description (Read-only or auto-filled)
+  const descCell = el('td', { class: 'combined-neuroscreen-td combined-neuroscreen-td--left' });
+  descCell.textContent = codeEntry.description || '';
+  row.appendChild(descCell);
 
-  codeContainer.append(codeSelect);
-
-  // Remove button (only show for non-primary or if multiple codes exist)
-  let actionContainer = el('div', { style: 'display: flex; justify-content: center;' });
+  // Action (Remove button)
+  const actionCell = el('td', { class: 'combined-neuroscreen-td' });
   if (!codeEntry.isPrimary || data.diagnosisCodes.length > 1) {
     const removeButton = el(
       'button',
@@ -352,10 +333,169 @@ function createDiagnosisCodeRow(codeEntry, index, data, updateField, renderCallb
       },
       '×',
     );
-    actionContainer.append(removeButton);
+    actionCell.appendChild(removeButton);
   }
+  row.appendChild(actionCell);
 
-  row.append(codeContainer, actionContainer);
+  return row;
+}
+
+/**
+ * Creates a search row for adding new diagnosis codes
+ */
+function createDiagnosisSearchRow(codeEntry, index, data, updateField, renderCallback) {
+  const row = el('tr', { class: 'combined-neuroscreen-row' });
+
+  // Search Cell (spans 2 columns)
+  const searchCell = el('td', {
+    class: 'combined-neuroscreen-td level-col',
+    colspan: '2',
+    style: 'position: relative; overflow: visible;',
+  });
+
+  const searchInput = el('input', {
+    type: 'text',
+    class: 'combined-neuroscreen__input combined-neuroscreen__input--left',
+    placeholder: 'Search ICD-10 code or description…',
+    style: 'width: 100%;',
+    autofocus: true,
+  });
+
+  // Results list container
+  const resultsList = el('div', {
+    class: 'billing-search-results',
+    style:
+      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 100;',
+  });
+
+  let highlightIndex = -1;
+  let currentResults = [];
+
+  const codes = getPTICD10Codes().map((opt) => ({
+    ...opt,
+    _norm: normalizeOption(opt),
+  }));
+
+  const renderResults = () => {
+    resultsList.replaceChildren();
+    if (!currentResults.length) {
+      resultsList.style.display = 'none';
+      return;
+    }
+    resultsList.style.display = 'block';
+    currentResults.forEach((item, idx) => {
+      const { code, desc, friendlyLabel } = item._norm || {};
+      const rightText = desc && desc.toLowerCase() !== friendlyLabel?.toLowerCase() ? desc : '';
+
+      const resultRow = el(
+        'div',
+        {
+          class: 'billing-search-result-row',
+          style:
+            'padding: 0.45rem 0.65rem; display:flex; justify-content:space-between; align-items:flex-start; gap: 0.65rem; cursor:pointer; font-size: 0.95rem; background: ' +
+            (idx === highlightIndex ? 'rgba(0,154,68,0.12);' : 'white;'),
+          onmouseenter: () => {
+            highlightIndex = idx;
+            Array.from(resultsList.children).forEach((child, cIdx) => {
+              child.style.background = cIdx === idx ? 'rgba(0,154,68,0.12)' : 'white';
+            });
+          },
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            applySelection(item);
+          },
+        },
+        [
+          el(
+            'div',
+            { style: 'font-weight:600; min-width: 9rem;' },
+            friendlyLabel || code || item.label || item.value,
+          ),
+          el(
+            'div',
+            { style: 'flex:1; color: var(--text-muted); text-align:left;' },
+            rightText || '',
+          ),
+        ],
+      );
+      resultsList.appendChild(resultRow);
+    });
+  };
+
+  const performSearch = () => {
+    const q = (searchInput.value || '').trim().toLowerCase();
+    if (!q) {
+      currentResults = [];
+      renderResults();
+      return;
+    }
+    currentResults = codes
+      .map((item) => ({ ...item, _score: scoreOption(item, q) }))
+      .filter((i) => i._score > 0)
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 10);
+    highlightIndex = currentResults.length ? 0 : -1;
+    renderResults();
+  };
+
+  const applySelection = (item) => {
+    if (!item) return;
+    // Update the current entry
+    data.diagnosisCodes[index] = {
+      code: item.value,
+      description: item.description,
+      label: item.label,
+      isPrimary: index === 0,
+    };
+    updateField('diagnosisCodes', data.diagnosisCodes);
+    renderCallback();
+  };
+
+  const commitSelection = () => {
+    if (currentResults.length) {
+      const choice = currentResults[highlightIndex >= 0 ? highlightIndex : 0];
+      applySelection(choice);
+    }
+  };
+
+  searchInput.addEventListener('input', () => performSearch());
+  searchInput.addEventListener('keydown', (e) => {
+    if (!currentResults.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightIndex = (highlightIndex + 1) % currentResults.length;
+      renderResults();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightIndex = (highlightIndex - 1 + currentResults.length) % currentResults.length;
+      renderResults();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      commitSelection();
+    }
+  });
+
+  searchCell.append(searchInput, resultsList);
+  row.appendChild(searchCell);
+
+  // Action (Remove button)
+  const actionCell = el('td', { class: 'combined-neuroscreen-td' });
+  const removeButton = el(
+    'button',
+    {
+      type: 'button',
+      class: 'remove-btn',
+      onclick: () => {
+        data.diagnosisCodes.splice(index, 1);
+        updateField('diagnosisCodes', data.diagnosisCodes);
+        renderCallback();
+      },
+    },
+    '×',
+  );
+  actionCell.appendChild(removeButton);
+  row.appendChild(actionCell);
 
   return row;
 }
@@ -364,20 +504,7 @@ function createDiagnosisCodeRow(codeEntry, index, data, updateField, renderCallb
  * Creates a single Orders/Referrals row
  */
 function createOrderReferralRow(entry, index, data, updateField, renderCallback) {
-  const row = el('div', {
-    class: 'code-row orders-referrals-row',
-    style: `
-      display: grid;
-  grid-template-columns: 140px 1fr 60px;
-      gap: 12px;
-      padding: 4px 0;
-      align-items: center;
-      transition: background-color 0.15s ease;
-    `,
-  });
-
-  row.onmouseover = () => (row.style.background = 'rgba(249, 250, 251, 0.8)');
-  row.onmouseout = () => (row.style.background = 'transparent');
+  const row = el('tr', { class: 'combined-neuroscreen-row' });
 
   // Type select
   const typeSelect = createCustomSelect({
@@ -388,35 +515,34 @@ function createOrderReferralRow(entry, index, data, updateField, renderCallback)
       { value: 'consult', label: 'Consult' },
     ],
     value: entry.type || '',
-    className: 'order-type-select',
+    className: 'combined-neuroscreen__input',
     onChange: (newValue) => {
       data.ordersReferrals[index].type = newValue;
       updateField('ordersReferrals', data.ordersReferrals);
     },
   }).element;
 
+  const typeCell = el('td', { class: 'combined-neuroscreen-td level-col' });
+  typeCell.appendChild(typeSelect);
+  row.appendChild(typeCell);
+
   // Details input
   const detailsInput = el('input', {
     type: 'text',
     value: entry.details || '',
     placeholder: 'Order/referral details or notes',
-    style: `
-      width: 100%;
-      padding: 4px 8px;
-      border: 1px solid var(--input-border);
-      border-radius: 4px;
-      font-size: 14px;
-      background: var(--input-bg);
-      color: var(--text);
-    `,
+    class: 'combined-neuroscreen__input combined-neuroscreen__input--left',
     onblur: (e) => {
       data.ordersReferrals[index].details = e.target.value;
       updateField('ordersReferrals', data.ordersReferrals);
     },
   });
+  const detailsCell = el('td', { class: 'combined-neuroscreen-td' });
+  detailsCell.appendChild(detailsInput);
+  row.appendChild(detailsCell);
 
   // Remove button
-  const actionContainer = el('div', { style: 'display: flex; justify-content: center;' });
+  const actionCell = el('td', { class: 'combined-neuroscreen-td' });
   const removeButton = el(
     'button',
     {
@@ -430,9 +556,9 @@ function createOrderReferralRow(entry, index, data, updateField, renderCallback)
     },
     '×',
   );
-  actionContainer.append(removeButton);
+  actionCell.appendChild(removeButton);
+  row.appendChild(actionCell);
 
-  row.append(typeSelect, detailsInput, actionContainer);
   return row;
 }
 
@@ -440,21 +566,7 @@ function createOrderReferralRow(entry, index, data, updateField, renderCallback)
  * Creates a single billing code row with CPT selection and units
  */
 function createBillingCodeRow(codeEntry, index, data, updateField, renderCallback) {
-  const row = el('div', {
-    class: 'code-row billing-row',
-    style: `
-      display: grid;
-      grid-template-columns: 2fr 80px 120px 60px;
-      gap: 12px;
-      padding: 4px 0;
-      align-items: center;
-      transition: background-color 0.15s ease;
-    `,
-  });
-
-  // Add hover effect
-  row.onmouseover = () => (row.style.background = 'var(--und-green-light)');
-  row.onmouseout = () => (row.style.background = 'transparent');
+  const row = el('tr', { class: 'combined-neuroscreen-row' });
 
   // CPT Code Selection
   const codeSelect = createCustomSelect({
@@ -463,7 +575,7 @@ function createBillingCodeRow(codeEntry, index, data, updateField, renderCallbac
       label: option.label,
     })),
     value: codeEntry.code || '',
-    className: 'editable-table__select billing-cpt-select',
+    className: 'combined-neuroscreen__input',
     onChange: (newValue) => {
       data.billingCodes[index].code = newValue;
       // Update both description and label based on selected code
@@ -480,40 +592,48 @@ function createBillingCodeRow(codeEntry, index, data, updateField, renderCallbac
     },
   }).element;
 
+  const codeCell = el('td', { class: 'combined-neuroscreen-td level-col' });
+  codeCell.appendChild(codeSelect);
+  row.appendChild(codeCell);
+
   // Units input (for time-based codes)
   const unitsInput = el('input', {
     type: 'number',
     value: codeEntry.units || 1,
     min: 1,
     max: 8,
-    class: 'editable-table__input',
-    style: 'width: 100%; text-align: center;',
+    class: 'combined-neuroscreen__input',
     onblur: (e) => {
       data.billingCodes[index].units = parseInt(e.target.value) || 1;
       updateField('billingCodes', data.billingCodes);
     },
   });
+  const unitsCell = el('td', { class: 'combined-neuroscreen-td' });
+  unitsCell.appendChild(unitsInput);
+  row.appendChild(unitsCell);
 
   // Time spent input
   const timeInput = el('input', {
     type: 'text',
     value: codeEntry.timeSpent || '',
     placeholder: '30 minutes',
-    class: 'editable-table__input',
-    style: 'width: 100%;',
+    class: 'combined-neuroscreen__input',
     onblur: (e) => {
       data.billingCodes[index].timeSpent = e.target.value;
       updateField('billingCodes', data.billingCodes);
     },
   });
+  const timeCell = el('td', { class: 'combined-neuroscreen-td' });
+  timeCell.appendChild(timeInput);
+  row.appendChild(timeCell);
 
   // Remove button
-  const actionContainer = el('div', { style: 'display: flex; justify-content: center;' });
   const removeButton = el(
     'button',
     {
       type: 'button',
       class: 'remove-btn',
+      title: 'Remove',
       onclick: () => {
         data.billingCodes.splice(index, 1);
         updateField('billingCodes', data.billingCodes);
@@ -522,9 +642,9 @@ function createBillingCodeRow(codeEntry, index, data, updateField, renderCallbac
     },
     '×',
   );
-
-  actionContainer.append(removeButton);
-  row.append(codeSelect, unitsInput, timeInput, actionContainer);
+  const actionCell = el('td', { class: 'combined-neuroscreen-td combined-neuroscreen-td--center' });
+  actionCell.appendChild(removeButton);
+  row.appendChild(actionCell);
 
   return row;
 }
@@ -716,6 +836,39 @@ function getPTCPTCodes() {
 //   ];
 //   return timeBasedCodes.includes(code);
 // }
+
+// Helper: Normalize code/description
+function normalizeOption(opt) {
+  const rawCode = (opt?.value || '').trim();
+  const rawLabel = (opt?.label || '').trim();
+  const rawDesc = (opt?.description || '').trim();
+  let code = rawCode;
+  let descFromLabel = '';
+  const m = rawLabel.match(/^([A-Z0-9.]+)\s*[-–—:]\s*(.+)$/i);
+  if (m) {
+    if (!code) code = m[1];
+    descFromLabel = m[2].trim();
+  }
+  const desc = rawDesc || descFromLabel;
+  const friendlyLabel = desc ? desc : rawLabel || code;
+  return { code, desc, friendlyLabel };
+}
+
+// Helper: Score match
+function scoreOption(item, q) {
+  const norm = item._norm || normalizeOption(item);
+  const code = (norm.code || item.value || '').toLowerCase();
+  const desc = (norm.desc || item.description || '').toLowerCase();
+  const label = (norm.friendlyLabel || item.label || '').toLowerCase();
+  if (code === q) return 100;
+  if (code.startsWith(q)) return 90;
+  if (label.startsWith(q)) return 80;
+  if (desc.startsWith(q)) return 75;
+  if (code.includes(q)) return 60;
+  if (label.includes(q)) return 55;
+  if (desc.includes(q)) return 50;
+  return 0;
+}
 
 /**
  * Top 25 ICD-10 diagnosis codes commonly used in Physical Therapy

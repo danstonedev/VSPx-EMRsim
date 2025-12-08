@@ -150,7 +150,7 @@ export function render(container, options) {
       nodes.push(
         el(
           'div',
-          { class: 'editable-table__footer artifact-add-footer', style: 'margin-top:6px;' },
+          { class: 'combined-neuroscreen-footer artifact-add-footer', style: 'margin-top:6px;' },
           el(
             'div',
             {
@@ -172,7 +172,7 @@ export function render(container, options) {
         ),
         el(
           'div',
-          { class: 'editable-table__footer artifact-add-footer', style: 'margin-top:6px;' },
+          { class: 'combined-neuroscreen-footer artifact-add-footer', style: 'margin-top:6px;' },
           el(
             'div',
             {

@@ -42,7 +42,7 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
 
   // History of Present Illness section with anchor (includes Chief Concern)
   const hpiSection = el('div', { id: 'hpi', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'History of Present Illness'),
+    el('h4', { class: 'subsection-title' }, 'History'),
     textAreaField({
       label: 'Chief Concern',
       value: data.chiefComplaint,
@@ -60,7 +60,7 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
 
   // Pain assessment section with anchor - Using improved PainAssessment module
   const painSection = el('div', { id: 'pain-assessment', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Symptom Assessment'),
+    el('h4', { class: 'subsection-title' }, 'Symptoms'),
     PainAssessment.create(data, updateField),
   ]);
   section.append(painSection);

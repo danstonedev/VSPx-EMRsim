@@ -101,6 +101,25 @@
   --bw-1: 1px;
   --bw-2: 2px;
   --ring-thin: 0.1em;
+
+  /* Table Design System Tokens */
+  --table-border-width: 2px;       /* Outer border & major dividers */
+  --table-cell-border-width: 1px;  /* Inner cell borders */
+  --table-radius-outer: var(--radius-md);  /* 8px - table corners */
+  --table-radius-inner: 6px;       /* 8px - 2px border = 6px for smooth corner alignment */
+  --table-border-color: var(--color-border-strong);
+  --table-cell-border-color: var(--color-border);
+
+  /* Table row hover colors (UND green tints) */
+  --table-row-hover-subtle: rgba(0, 154, 68, 0.04); /* Very subtle hover */
+  --table-row-hover: rgba(0, 154, 68, 0.08);        /* Light hover tint */
+  --table-row-hover-medium: rgba(0, 154, 68, 0.10); /* Medium hover tint */
+  --table-row-hover-strong: rgba(0, 154, 68, 0.15); /* Stronger hover for special cells */
+  --table-row-hover-accent: rgba(0, 154, 68, 0.25); /* Accent cell hover */
+  --table-row-hover-accent-strong: rgba(0, 154, 68, 0.35); /* Strong accent hover */
+  --table-focus-ring: 0 0 0 2px rgba(0, 154, 68, 0.1); /* Focus ring for inputs */
+  --table-shadow: var(--elev-neutral-depth);       /* Standard table shadow */
+
   /* Max rows cap used by textarea auto-resize (can be overridden per route) */
   --textarea-max-rows: 10;
 }
@@ -3279,7 +3298,9 @@ select:focus,
 }
 .text-muted {
   color: var(--muted);
-  font-style: italic;
+}
+.fw-bold {
+  font-weight: 700;
 }
 .hint {
   color: var(--muted);
@@ -3599,7 +3620,11 @@ select:focus,
   line-height: 1.4;
 }
 
-.form-input-standard:not([data-component="combined-rom"]) {
+/* Consolidated input styling for instructor/standard forms
+   Both classes share identical styling - use either one.
+   For new code, prefer inputField() helpers from form-components.js */
+.form-input-standard:not([data-component="combined-rom"]),
+.instructor-form-input {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--input-border);
   border-radius: var(--radius-sm);
@@ -3615,17 +3640,21 @@ select:focus,
     box-shadow 0.2s ease;
 }
 
-.form-input-standard:not([data-component="combined-rom"]):focus {
+.form-input-standard:not([data-component="combined-rom"]):focus,
+.instructor-form-input:focus {
   border-color: var(--und-green);
   outline: none;
   box-shadow: var(--elev-focus-ring);
 }
-.form-input-standard:not([data-component="combined-rom"]):focus-visible {
+
+.form-input-standard:not([data-component="combined-rom"]):focus-visible,
+.instructor-form-input:focus-visible {
   outline: 2px solid var(--und-green);
   outline-offset: 2px;
 }
 
-.form-input-standard:not([data-component="combined-rom"]):disabled {
+.form-input-standard:not([data-component="combined-rom"]):disabled,
+.instructor-form-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   background: var(--bg-secondary);
@@ -3668,37 +3697,7 @@ select:focus,
   line-height: 1.4;
 }
 
-.instructor-form-input {
-  padding: var(--space-3);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  width: 100%;
-  background: var(--input-bg);
-  color: var(--text);
-  font-family: inherit;
-  line-height: 1.4;
-  min-height: 44px; /* Touch target for accessibility */
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.instructor-form-input:focus {
-  border-color: var(--und-green);
-  outline: none;
-  box-shadow: var(--elev-focus-ring);
-}
-.instructor-form-input:focus-visible {
-  outline: 2px solid var(--und-green);
-  outline-offset: 2px;
-}
-
-.instructor-form-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: var(--bg-secondary);
-}
+/* Note: .instructor-form-input base styles are consolidated above with .form-input-standard */
 
 /* Error states for form components */
 .form-input-standard.error:not([data-component="combined-rom"]),
