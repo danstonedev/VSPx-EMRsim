@@ -3,7 +3,7 @@
     {
       "route": "/api/cases",
       "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["anonymous", "authenticated"]
     },
     {
       "route": "/api/cases",
