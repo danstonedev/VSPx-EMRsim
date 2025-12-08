@@ -150,14 +150,10 @@ export class CSSOptimizer {
       if (!this.preloadedRoutes.has(route)) {
         // Just preload the CSS files, don't apply them yet
         const routeCSSMap = {
-          student: ['css/components/forms-lazy.css', 'css/buttons.css'],
-          instructor: ['css/components/forms-lazy.css', 'css/buttons.css', 'css/sidebar.css'],
-          editor: [
-            'css/components/tables-lazy.css',
-            'css/components/forms-lazy.css',
-            'css/buttons.css',
-          ],
-          home: ['css/home.css'],
+          student: [formsLazyUrl, buttonsUrl],
+          instructor: [formsLazyUrl, buttonsUrl, sidebarUrl],
+          editor: [tablesLazyUrl, formsLazyUrl, buttonsUrl],
+          home: [homeUrl],
         };
 
         const cssFiles = routeCSSMap[route] || [];

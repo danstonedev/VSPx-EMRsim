@@ -121,7 +121,8 @@ async function tryFetchJson(urls) {
 let __manifestCache = null; // raw manifest JSON
 async function getManifest() {
   if (__manifestCache) return __manifestCache;
-  __manifestCache = await tryFetchJson(['/data/cases/manifest.json', 'data/cases/manifest.json']);
+  const manifestUrl = `${import.meta.env.BASE_URL}data/cases/manifest.json`;
+  __manifestCache = await tryFetchJson([manifestUrl]);
   return __manifestCache;
 }
 
@@ -154,7 +155,8 @@ async function loadCasesFromManifest() {
   debugWarn('🔍 Loading cases from manifest...');
 
   // Prefer relative paths first; include '/app/...' for repo-root servers
-  const manifest = await tryFetchJson(['/data/cases/manifest.json', 'data/cases/manifest.json']);
+  const manifestUrl = `${import.meta.env.BASE_URL}data/cases/manifest.json`;
+  const manifest = await tryFetchJson([manifestUrl]);
 
   debugWarn('📄 Manifest loaded:', manifest);
 
