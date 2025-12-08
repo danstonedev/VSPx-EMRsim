@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node -e \"if(process.platform==='linux'){console.log('Installing Linux Rollup...');try{require('child_process').execSync('npm install @rollup/rollup-linux-x64-gnu --no-save',{stdio:'inherit'})}catch(e){console.error(e)}}\"",
     "build": "vite build",
     "postbuild": "node scripts/check-bundle-sizes.mjs",
     "preview": "vite preview",
@@ -33,9 +34,6 @@
     "rollup-plugin-visualizer": "^6.0.3",
     "sharp": "^0.33.5",
     "vite": "7.1.5"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.52.0"
   },
   "main": "index.js",
   "repository": {
