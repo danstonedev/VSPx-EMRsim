@@ -630,40 +630,6 @@ function createModalCard({ title, description, tags, open }) {
   return card;
 }
 
-function showDemoModal(builder) {
-  let overlay;
-  const handleKeydown = (event) => {
-    if (event.key === 'Escape') close();
-  };
-
-  const close = () => {
-    if (!overlay) return;
-    overlay.remove();
-    overlay = null;
-    unlockStyleguideScroll();
-    document.removeEventListener('keydown', handleKeydown);
-  };
-
-  overlay = builder({ close });
-  if (!overlay) return;
-  overlay.classList.add('sg-modal-demo-overlay');
-  overlay.addEventListener('click', (event) => {
-    if (event.target === overlay) close();
-  });
-  document.body.appendChild(overlay);
-  lockStyleguideScroll();
-  document.addEventListener('keydown', handleKeydown);
-  requestAnimationFrame(() => focusFirstInteractive(overlay));
-}
-
-function focusFirstInteractive(root) {
-  if (!root) return;
-  const selector =
-    'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  const target = root.querySelector(selector);
-  if (target) target.focus();
-}
-
 function openCaseModalDemo() {
   openEditCaseModal(
     {
@@ -674,7 +640,7 @@ function openCaseModalDemo() {
       acuity: 'acute',
       modules: [],
     },
-    (updated) => {
+    () => {
       showToast(`Demo: Case would be updated`);
     },
   );

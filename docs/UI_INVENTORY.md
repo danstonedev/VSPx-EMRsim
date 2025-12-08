@@ -2,7 +2,7 @@
 
 This document provides a comprehensive breakdown of the UI elements, design tokens, and components used in the VSPx-EMRsim application.
 
-**Live Style Guide**: [Open Style Guide](#/styleguide) (Run the app and navigate to `#/styleguide`)
+**Live Style Guide**: Run the app and navigate to `#/styleguide` in your browser.
 
 ## 1. Design Tokens
 

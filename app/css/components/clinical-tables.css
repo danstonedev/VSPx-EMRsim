@@ -17,10 +17,8 @@ table.clinical-table {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Header Section */
-.clinical-thead {
-  /* Sticky header handled on th */
-}
+/* Header Section - sticky behavior handled on th elements */
+/* .clinical-thead reserved for future group styling */
 
 /* Header Cells - Default (Dark Gray like "Measurement") */
 .clinical-th {
