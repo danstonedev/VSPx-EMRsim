@@ -1105,16 +1105,36 @@ html {
   opacity: 0.9;
   color: var(--und-gray);
 }
-/* Left/Right inline layout */
+/* Left/Center/Right inline layout */
 .edu-ribbon {
   gap: 0.5rem;
 }
 .edu-ribbon .edu-left {
-  margin-right: auto;
+  flex: 1;
+  text-align: left;
+}
+.edu-ribbon .edu-center {
+  flex: 0 0 auto;
+  text-align: center;
 }
 .edu-ribbon .edu-right {
-  margin-left: auto;
+  flex: 1;
+  text-align: right;
   white-space: nowrap;
+}
+/* Legal link styling */
+.edu-ribbon .edu-link {
+  color: var(--und-gray);
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+.edu-ribbon .edu-link:hover,
+.edu-ribbon .edu-link:focus {
+  opacity: 1;
+  color: var(--und-green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 /* Small flame orange text on right */
 .edu-ribbon .edu-right {

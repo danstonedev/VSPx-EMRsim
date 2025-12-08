@@ -479,6 +479,12 @@ async function ensureRouteModuleLoaded(path) {
         key: 'notfound',
         load: () => import('../views/notfound.js'),
       },
+      {
+        test: (t) =>
+          t.startsWith('#/legal') || t.startsWith('#/terms') || t.startsWith('#/privacy'),
+        key: 'legal',
+        load: () => import('../views/legal.js'),
+      },
     ];
     const found = matchers.find((m) => m.test(p)) || {
       key: 'fallback-notfound',
