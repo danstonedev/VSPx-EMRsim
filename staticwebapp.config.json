@@ -9,6 +9,11 @@
       "route": "/api/cases",
       "methods": ["GET"],
       "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
+      "route": "/api/cases",
+      "methods": ["DELETE"],
+      "allowedRoles": ["anonymous", "authenticated"]
     }
   ],
   "navigationFallback": {

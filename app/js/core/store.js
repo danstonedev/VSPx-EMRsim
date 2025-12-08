@@ -431,6 +431,21 @@ export const deleteCase = async (id) => {
     // Auto-publish to local server if available
     scheduleAutoPublish();
   }
+
+  // Also delete from cloud database
+  try {
+    const res = await fetch(`/api/cases?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      console.warn('Failed to delete case from cloud:', await res.text());
+    } else {
+      console.log('📡 Deleted case from cloud:', id);
+    }
+  } catch (e) {
+    console.warn('Failed to delete case from cloud (API might be offline):', e);
+  }
+
   return { ok: true };
 };
 
