@@ -17,8 +17,16 @@ export default async function (context, req) {
     // 1. Validate the case using the shared schema logic
     // We wrap this in a try-catch because validateCase might throw or return errors
     try {
+      // Extract the inner case object if it's wrapped (which it is coming from store.js)
+      // store.js sends: { id, title, latestVersion, caseObj: { ... } }
+      // schema.js expects: { meta, history, ... } (which is inside caseObj)
+      let caseToValidate = caseData;
+      if (caseData.caseObj) {
+        caseToValidate = caseData.caseObj;
+      }
+
       // Ensure structure is correct
-      const cleanCase = ensureDataIntegrity(caseData);
+      const cleanCase = ensureDataIntegrity(caseToValidate);
 
       // Run validation rules
       const validationErrors = validateCase(cleanCase);
