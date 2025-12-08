@@ -1,7 +1,6 @@
 import { getContainer } from '../shared/cosmos.js';
-// We import the schema validation from the frontend code
-// Note: We need to use a relative path that goes up to the app folder
-import { validateCase, ensureDataIntegrity } from '../../app/js/core/schema.js';
+// Import schema validation from the local shared folder (copied during build/dev)
+import { validateCase, ensureDataIntegrity } from '../shared/schema.js';
 
 export default async function (context, req) {
   try {
