@@ -377,6 +377,8 @@ export const createCase = async (caseData) => {
   saveCasesToStorage(cases);
   // Auto-publish to local server if available
   scheduleAutoPublish();
+  // Auto-publish to Azure Cosmos DB (fire and forget)
+  publishCaseToRemote(newCase.id).catch((e) => console.warn('Background cloud sync failed:', e));
 
   return newCase;
 };
@@ -402,6 +404,8 @@ export const updateCase = async (id, caseData) => {
   saveCasesToStorage(cases);
   // Auto-publish to local server if available
   scheduleAutoPublish();
+  // Auto-publish to Azure Cosmos DB (fire and forget)
+  publishCaseToRemote(id).catch((e) => console.warn('Background cloud sync failed:', e));
 
   return cases[id];
 };
