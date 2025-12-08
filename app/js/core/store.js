@@ -281,6 +281,7 @@ async function fetchRemoteCases() {
     const res = await fetch('/api/cases');
     if (res.ok) {
       const remoteCases = await res.json();
+      console.log('📡 Fetched remote cases:', Object.keys(remoteCases));
       // Validate/Migrate remote cases before using
       Object.keys(remoteCases).forEach((id) => {
         if (remoteCases[id] && remoteCases[id].caseObj) {
@@ -289,6 +290,8 @@ async function fetchRemoteCases() {
         }
       });
       return remoteCases;
+    } else {
+      console.warn('📡 Remote API returned non-OK status:', res.status);
     }
   } catch (e) {
     console.warn('Failed to fetch remote cases (API might be offline or unreachable)', e);
