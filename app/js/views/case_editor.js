@@ -140,7 +140,46 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
 
   // Initialize draft using modular function - pass faculty mode for proper data handling
   const draftManager = initializeDraft(caseId, encounter, isFacultyMode, c, isKeyMode);
-  let { draft, save: originalSave } = draftManager;
+  let { draft, save: originalSave, hasUnsavedChanges } = draftManager;
+
+  // --- Unsaved Changes Protection ---
+  const onBeforeUnload = (e) => {
+    if (hasUnsavedChanges && hasUnsavedChanges()) {
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes.';
+    }
+  };
+  window.addEventListener('beforeunload', onBeforeUnload);
+  ac.signal.addEventListener('abort', () => {
+    window.removeEventListener('beforeunload', onBeforeUnload);
+  });
+
+  // Intercept internal navigation
+  const onLinkClick = (e) => {
+    const link = e.target.closest('a');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    if (
+      !href ||
+      href.startsWith('javascript:') ||
+      href.startsWith('mailto:') ||
+      href.startsWith('tel:')
+    )
+      return;
+    if (link.hasAttribute('download') || link.target === '_blank') return;
+
+    if (hasUnsavedChanges && hasUnsavedChanges()) {
+      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
+  document.body.addEventListener('click', onLinkClick, { capture: true });
+  ac.signal.addEventListener('abort', () => {
+    document.body.removeEventListener('click', onLinkClick, { capture: true });
+  });
+  // ----------------------------------
 
   // Create editor configuration using utility
   const editorConfig = createEditorConfiguration({

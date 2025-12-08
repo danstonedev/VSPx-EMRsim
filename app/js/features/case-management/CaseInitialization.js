@@ -8,6 +8,7 @@ async function _getCase(caseId) {
 }
 import { storage } from '../../core/index.js';
 import { el } from '../../ui/utils.js';
+import { showToast } from '../../ui/toast.js';
 import { mapFrequencyToEnum, mapDurationToEnum } from '../../services/case-generator.js';
 
 // Extracted micro-helpers (pure, no side effects) to reduce complexity in populateDraftFromCaseData
@@ -809,6 +810,9 @@ export function initializeDraft(
   // Storage key for saving (used by save function)
   const localStorageKey = `draft_${caseId}_${encounter}`;
 
+  // Track last saved state for dirty checking
+  let lastSavedState = JSON.stringify(draft);
+
   // Save function - behavior depends on faculty mode
   const save = async (isKeyMode = false) => {
     if (isKeyMode) return; // read-only view
@@ -821,9 +825,16 @@ export function initializeDraft(
         setCurrentCaseId: (id) => (currentCaseId = id),
         localStorageKey,
       });
+      lastSavedState = JSON.stringify(draft);
     } else {
       await studentSaveFlow(draft, localStorageKey);
+      lastSavedState = JSON.stringify(draft);
     }
+  };
+
+  // Check for unsaved changes
+  const hasUnsavedChanges = () => {
+    return JSON.stringify(draft) !== lastSavedState;
   };
 
   // Clear draft and storage
@@ -831,6 +842,7 @@ export function initializeDraft(
     if (confirm('Are you sure you want to clear all your work? This cannot be undone.')) {
       draft = createDefaultDraft();
       storage.removeItem(localStorageKey);
+      lastSavedState = JSON.stringify(draft);
 
       return true; // Indicates reset occurred
     }
@@ -841,6 +853,7 @@ export function initializeDraft(
     draft,
     save,
     resetDraft,
+    hasUnsavedChanges,
     localStorageKey,
   };
 }
@@ -867,6 +880,7 @@ async function facultySaveFlow({
   localStorageKey,
 }) {
   try {
+    showToast('Saving case...', { timeoutMs: 1000 });
     attachDraftToCaseObject(caseData, encounter, draft);
     if (draft.editorSettings) caseData.editorSettings = draft.editorSettings;
 
@@ -879,9 +893,11 @@ async function facultySaveFlow({
       await persistExistingCase(getCurrentCaseId(), caseData);
     }
     persistDraftToStorage(localStorageKey, draft);
+    showToast('✅ Case saved to cloud', { timeoutMs: 2000 });
   } catch (error) {
     console.error('❌ Failed to save case content:', error);
     persistDraftToStorage(localStorageKey, draft); // fallback to storage only
+    showToast('⚠️ Saved locally only (Cloud sync failed)', { timeoutMs: 4000 });
   }
 }
 
