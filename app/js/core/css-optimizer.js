@@ -1,3 +1,10 @@
+import tablesLazyUrl from '../../css/components/tables-lazy.css?url';
+import formsLazyUrl from '../../css/components/forms-lazy.css?url';
+import buttonsUrl from '../../css/buttons.css?url';
+import sidebarUrl from '../../css/sidebar.css?url';
+import mobilePatchUrl from '../../css/mobile-patch-v2.css?url';
+import homeUrl from '../../css/home.css?url';
+
 /**
  * CSS Optimization Utilities
  * - Handles critical CSS inlining
@@ -44,12 +51,12 @@ export function loadCSS(href, media = 'all', critical = false) {
  */
 export async function loadComponentCSS(component) {
   const cssMap = {
-    soap: ['css/components/tables-lazy.css'],
-    forms: ['css/components/forms-lazy.css', 'css/buttons.css'],
-    navigation: ['css/sidebar.css'],
-    editor: ['css/components/tables-lazy.css', 'css/components/forms-lazy.css', 'css/buttons.css'],
-    mobile: ['css/mobile-patch-v2.css'],
-    homev2: ['css/home.css'],
+    soap: [tablesLazyUrl],
+    forms: [formsLazyUrl, buttonsUrl],
+    navigation: [sidebarUrl],
+    editor: [tablesLazyUrl, formsLazyUrl, buttonsUrl],
+    mobile: [mobilePatchUrl],
+    homev2: [homeUrl],
   };
 
   const cssFiles = cssMap[component];

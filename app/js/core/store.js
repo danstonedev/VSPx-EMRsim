@@ -121,12 +121,7 @@ async function tryFetchJson(urls) {
 let __manifestCache = null; // raw manifest JSON
 async function getManifest() {
   if (__manifestCache) return __manifestCache;
-  __manifestCache = await tryFetchJson([
-    'data/cases/manifest.json',
-    './data/cases/manifest.json',
-    '/data/cases/manifest.json',
-    '/app/data/cases/manifest.json',
-  ]);
+  __manifestCache = await tryFetchJson(['/data/cases/manifest.json', 'data/cases/manifest.json']);
   return __manifestCache;
 }
 
@@ -159,12 +154,7 @@ async function loadCasesFromManifest() {
   debugWarn('🔍 Loading cases from manifest...');
 
   // Prefer relative paths first; include '/app/...' for repo-root servers
-  const manifest = await tryFetchJson([
-    'data/cases/manifest.json',
-    './data/cases/manifest.json',
-    '/data/cases/manifest.json',
-    '/app/data/cases/manifest.json',
-  ]);
+  const manifest = await tryFetchJson(['/data/cases/manifest.json', 'data/cases/manifest.json']);
 
   debugWarn('📄 Manifest loaded:', manifest);
 
@@ -181,12 +171,7 @@ async function loadCasesFromManifest() {
     for (const c of cat.cases) {
       if (!c?.file) continue;
       debugWarn(`🔄 Loading case file candidates for: ${c.file}`);
-      const caseWrapper = await tryFetchJson([
-        `data/${c.file}`,
-        `./data/${c.file}`,
-        `/data/${c.file}`,
-        `/app/data/${c.file}`,
-      ]);
+      const caseWrapper = await tryFetchJson([`/data/${c.file}`, `data/${c.file}`]);
 
       if (!caseWrapper || !caseWrapper.id || !caseWrapper.caseObj) {
         console.warn(`❌ Failed to load case: ${c.file}`);

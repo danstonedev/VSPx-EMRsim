@@ -12,13 +12,14 @@ import { showToast } from '../ui/toast.js';
 import { openSignatureDialog } from '../features/signature/SignatureModal.js';
 import { openEditCaseModal } from '../features/navigation/modal.js';
 import { openAddArtifactModal } from '../features/navigation/ChartNavigation.js';
+import styleguideCssUrl from '../../css/styleguide.css?url';
 
 // Lazy-load styleguide CSS
 const loadStyleguideCSS = () => {
   if (!document.querySelector('link[href*="styleguide.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/css/styleguide.css';
+    link.href = styleguideCssUrl;
     document.head.appendChild(link);
   }
 };
