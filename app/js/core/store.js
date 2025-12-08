@@ -538,17 +538,42 @@ export const listDrafts = () => {
 // --- Manifest-first summaries (no full case JSON) ---
 export const listCaseSummaries = async () => {
   const manifest = await getManifest();
-  if (!manifest || !Array.isArray(manifest.categories)) return [];
   const stored = loadCasesFromStorage();
-  const flat = flattenManifestCases(manifest);
-  return flat.map((c) => {
+
+  // Start with manifest cases
+  const flat = manifest && Array.isArray(manifest.categories) ? flattenManifestCases(manifest) : [];
+
+  const summaryMap = {};
+
+  // Add manifest cases to map
+  flat.forEach((c) => {
     const cached = stored[c.id];
-    return {
+    summaryMap[c.id] = {
       id: c.id,
       title: (cached && cached.title) || c.title || 'Untitled Case',
       latestVersion: (cached && cached.latestVersion) || 0,
       isStored: Boolean(cached),
-      // No caseObj to keep list light
+      source: 'manifest',
     };
   });
+
+  // Fetch and merge remote cases (cloud database)
+  try {
+    const remoteCases = await fetchRemoteCases();
+    Object.keys(remoteCases).forEach((id) => {
+      const rc = remoteCases[id];
+      // Remote cases override or add to the list
+      summaryMap[id] = {
+        id: id,
+        title: rc.title || rc.caseObj?.meta?.title || 'Untitled Case',
+        latestVersion: rc.latestVersion || 0,
+        isStored: true,
+        source: 'cloud',
+      };
+    });
+  } catch (e) {
+    console.warn('Failed to fetch remote case summaries:', e);
+  }
+
+  return Object.values(summaryMap);
 };
