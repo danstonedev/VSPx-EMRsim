@@ -401,6 +401,14 @@ function matchRoute(routePath, actualPath) {
 
 // Initialization function that loads all modules and starts the router
 async function initializeApp() {
+  // Initialize user menu (auth UI)
+  try {
+    const { initUserMenu } = await import('../ui/UserMenu.js');
+    initUserMenu();
+  } catch (e) {
+    console.warn('Failed to initialize user menu:', e);
+  }
+
   // Start the router; route modules will be loaded on demand
   startRouter();
 }

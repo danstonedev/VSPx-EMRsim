@@ -1,0 +1,250 @@
+/**
+ * User Menu Styles
+ */
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 1rem;
+}
+
+.user-menu__loading {
+  color: var(--text-secondary, #a1a1aa);
+  font-size: 0.875rem;
+}
+
+/* Login Button */
+.user-menu__login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-on-primary, #fff);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.user-menu__login-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--text-on-primary, #fff);
+}
+
+/* Dropdown Container */
+.user-menu__dropdown {
+  position: relative;
+}
+
+/* Trigger Button */
+.user-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-on-primary, #fff);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-menu__trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.user-menu__trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Avatar */
+.user-menu__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-700, #15803d);
+  background: var(--primary-100, #dcfce7);
+  border-radius: 50%;
+}
+
+/* Name */
+.user-menu__name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chevron */
+.user-menu__chevron {
+  font-size: 0.625rem;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.user-menu__trigger[aria-expanded='true'] .user-menu__chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.user-menu__menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 220px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.user-menu__menu[hidden] {
+  display: none;
+}
+
+/* User Info Section */
+.user-menu__info {
+  padding: 0.75rem 1rem;
+  background: var(--surface-subtle, #f9fafb);
+}
+
+.user-menu__info-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary, #111827);
+}
+
+.user-menu__info-email {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 0.125rem;
+}
+
+/* Role Badge */
+.user-menu__role {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.user-menu__role--admin {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.user-menu__role--faculty {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.user-menu__role--student {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Divider */
+.user-menu__divider {
+  border: none;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  margin: 0;
+}
+
+/* Menu Items */
+.user-menu__items {
+  padding: 0.5rem;
+}
+
+.user-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-primary, #111827);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-menu__item:hover {
+  background: var(--surface-hover, #f3f4f6);
+}
+
+.user-menu__item--danger {
+  color: var(--danger-600, #dc2626);
+}
+
+.user-menu__item--danger:hover {
+  background: var(--danger-50, #fef2f2);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .user-menu__menu {
+    background: var(--surface-card, #1f2937);
+    border-color: var(--border-color, #374151);
+  }
+
+  .user-menu__info {
+    background: var(--surface-subtle, #111827);
+  }
+
+  .user-menu__avatar {
+    background: var(--primary-900, #14532d);
+    color: var(--primary-200, #bbf7d0);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .user-menu {
+    padding-left: 0.5rem;
+  }
+
+  .user-menu__name {
+    display: none;
+  }
+
+  .user-menu__chevron {
+    display: none;
+  }
+
+  .user-menu__trigger {
+    padding: 0.375rem;
+  }
+
+  .user-menu__menu {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    min-width: auto;
+  }
+}

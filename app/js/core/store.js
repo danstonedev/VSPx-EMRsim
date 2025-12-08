@@ -304,10 +304,30 @@ export const publishCaseToRemote = async (caseId) => {
   const caseWrapper = cases[caseId];
   if (!caseWrapper) throw new Error('Case not found');
 
+  // Add ownership info if not already set
+  let payload = { ...caseWrapper };
+  try {
+    const { getCurrentUser } = await import('./auth.js');
+    const user = await getCurrentUser();
+    if (user && !payload.createdBy) {
+      payload.createdBy = user.userId;
+      payload.createdByName = user.displayName || user.name || user.email;
+      payload.createdAt = new Date().toISOString();
+    }
+    // Always update the updatedAt timestamp
+    payload.updatedAt = new Date().toISOString();
+    if (user) {
+      payload.updatedBy = user.userId;
+      payload.updatedByName = user.displayName || user.name || user.email;
+    }
+  } catch (e) {
+    console.warn('Could not get user info for case ownership:', e);
+  }
+
   const res = await fetch('/api/cases', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(caseWrapper),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -425,6 +445,39 @@ export const updateCase = async (id, caseData) => {
 
 export const deleteCase = async (id) => {
   const cases = loadCasesFromStorage();
+
+  // Also delete from cloud database first (to check permissions)
+  let cloudDeleteSuccess = true;
+  let cloudError = null;
+  try {
+    const res = await fetch(`/api/cases?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      if (res.status === 403) {
+        // Permission denied - don't delete locally either
+        throw new Error(
+          errData.error ||
+            `Permission denied: This case belongs to ${errData.owner || 'another user'}`,
+        );
+      }
+      cloudDeleteSuccess = false;
+      cloudError = errData.error || 'Failed to delete from cloud';
+      console.warn('Failed to delete case from cloud:', cloudError);
+    } else {
+      console.log('📡 Deleted case from cloud:', id);
+    }
+  } catch (e) {
+    if (e.message.includes('Permission denied')) {
+      throw e; // Re-throw permission errors
+    }
+    cloudDeleteSuccess = false;
+    cloudError = e.message;
+    console.warn('Failed to delete case from cloud (API might be offline):', e);
+  }
+
+  // Delete from local storage
   if (cases[id]) {
     delete cases[id];
     saveCasesToStorage(cases);
@@ -432,21 +485,11 @@ export const deleteCase = async (id) => {
     scheduleAutoPublish();
   }
 
-  // Also delete from cloud database
-  try {
-    const res = await fetch(`/api/cases?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
-      console.warn('Failed to delete case from cloud:', await res.text());
-    } else {
-      console.log('📡 Deleted case from cloud:', id);
-    }
-  } catch (e) {
-    console.warn('Failed to delete case from cloud (API might be offline):', e);
-  }
-
-  return { ok: true };
+  return {
+    ok: true,
+    cloudDeleted: cloudDeleteSuccess,
+    cloudError: cloudError,
+  };
 };
 
 export const upsertCase = (c) => (c.id ? updateCase(c.id, c.caseObj) : createCase(c));

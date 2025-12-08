@@ -1,9 +1,20 @@
 {
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/common/v2.0",
+          "clientIdSettingName": "AAD_CLIENT_ID",
+          "clientSecretSettingName": "AAD_CLIENT_SECRET"
+        }
+      }
+    }
+  },
   "routes": [
     {
       "route": "/api/cases",
-      "methods": ["POST"],
-      "allowedRoles": ["anonymous", "authenticated"]
+      "methods": ["POST", "DELETE"],
+      "allowedRoles": ["faculty", "admin"]
     },
     {
       "route": "/api/cases",
@@ -11,15 +22,21 @@
       "allowedRoles": ["anonymous", "authenticated"]
     },
     {
-      "route": "/api/cases",
-      "methods": ["DELETE"],
-      "allowedRoles": ["anonymous", "authenticated"]
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html"
   },
   "responseOverrides": {
+    "401": {
+      "rewrite": "/401.html"
+    },
     "404": {
       "rewrite": "/404.html"
     }

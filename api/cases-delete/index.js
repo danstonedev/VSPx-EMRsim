@@ -14,11 +14,27 @@ module.exports = async function (context, req) {
     return;
   }
 
+  // Get authenticated user from Azure SWA headers
+  const clientPrincipal = req.headers['x-ms-client-principal'];
+  let userId = null;
+  let userRoles = [];
+
+  if (clientPrincipal) {
+    try {
+      const decoded = JSON.parse(Buffer.from(clientPrincipal, 'base64').toString('utf8'));
+      userId = decoded.userId;
+      userRoles = decoded.userRoles || [];
+    } catch (e) {
+      context.log.warn('Failed to decode client principal:', e);
+    }
+  }
+
+  const isAdmin = userRoles.includes('admin');
+
   try {
     const container = getContainer();
 
-    // First, we need to find the item to get its partition key
-    // Query for the item by id
+    // First, we need to find the item to get its partition key and ownership
     const querySpec = {
       query: 'SELECT * FROM c WHERE c.id = @id',
       parameters: [{ name: '@id', value: caseId }],
@@ -40,12 +56,26 @@ module.exports = async function (context, req) {
     }
 
     const item = resources[0];
+
+    // Check ownership: only owner or admin can delete
+    if (item.createdBy && item.createdBy !== userId && !isAdmin) {
+      context.res = {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'Permission denied: You can only delete cases you created',
+          owner: item.createdByName || 'another user',
+        }),
+      };
+      return;
+    }
+
     const partitionKey = item.category || 'uncategorized';
 
     // Delete the item
     await container.item(caseId, partitionKey).delete();
 
-    context.log(`Deleted case ${caseId} from Cosmos DB`);
+    context.log(`Deleted case ${caseId} from Cosmos DB by user ${userId}`);
 
     context.res = {
       status: 200,
