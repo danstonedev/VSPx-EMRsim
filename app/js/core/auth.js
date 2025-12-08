@@ -1,6 +1,7 @@
 /**
  * Authentication utilities for Azure Static Web Apps
  * Uses built-in Azure AD / Microsoft Entra ID authentication
+ * Combined with our own user database for role management
  */
 
 // Cache user info to avoid repeated API calls
@@ -8,7 +9,7 @@ let cachedUser = null;
 let userPromise = null;
 
 /**
- * Get the current authenticated user
+ * Get the current authenticated user (combines Azure auth + our user DB)
  * @returns {Promise<Object|null>} User object or null if not logged in
  */
 export async function getCurrentUser() {
@@ -24,31 +25,61 @@ export async function getCurrentUser() {
 
   userPromise = (async () => {
     try {
-      const res = await fetch('/.auth/me');
-      if (!res.ok) {
+      // First check Azure auth
+      const authRes = await fetch('/.auth/me');
+      if (!authRes.ok) {
         cachedUser = null;
         return null;
       }
 
-      const data = await res.json();
-      if (data.clientPrincipal) {
-        cachedUser = {
-          userId: data.clientPrincipal.userId,
-          name: data.clientPrincipal.userDetails, // typically email
-          displayName:
-            data.clientPrincipal.claims?.find((c) => c.typ === 'name')?.val ||
-            data.clientPrincipal.userDetails,
-          email:
-            data.clientPrincipal.claims?.find((c) => c.typ === 'preferred_username')?.val ||
-            data.clientPrincipal.userDetails,
-          roles: data.clientPrincipal.userRoles || [],
-          provider: data.clientPrincipal.identityProvider,
-        };
-        return cachedUser;
+      const authData = await authRes.json();
+      if (!authData.clientPrincipal) {
+        cachedUser = null;
+        return null;
       }
 
-      cachedUser = null;
-      return null;
+      const azureUser = {
+        userId: authData.clientPrincipal.userId,
+        name: authData.clientPrincipal.userDetails,
+        displayName:
+          authData.clientPrincipal.claims?.find((c) => c.typ === 'name')?.val ||
+          authData.clientPrincipal.userDetails,
+        email:
+          authData.clientPrincipal.claims?.find((c) => c.typ === 'preferred_username')?.val ||
+          authData.clientPrincipal.userDetails,
+        azureRoles: authData.clientPrincipal.userRoles || [],
+        provider: authData.clientPrincipal.identityProvider,
+      };
+
+      // Now fetch/register user in our database to get their app-specific role
+      let dbRole = 'student'; // Default
+      let roleRequestedAt = null;
+      try {
+        const userRes = await fetch('/api/user');
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          dbRole = userData.role || 'student';
+          roleRequestedAt = userData.roleRequestedAt;
+          // Use DB display name if available
+          if (userData.displayName) {
+            azureUser.displayName = userData.displayName;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch user profile from API:', e);
+      }
+
+      // Combine Azure roles with our DB role
+      const roles = [...new Set([...azureUser.azureRoles, dbRole])];
+
+      cachedUser = {
+        ...azureUser,
+        role: dbRole, // Primary role from our DB
+        roles: roles, // Combined roles
+        roleRequestedAt: roleRequestedAt,
+      };
+
+      return cachedUser;
     } catch (e) {
       console.warn('Auth check failed:', e);
       cachedUser = null;
@@ -124,6 +155,38 @@ export async function canCreateCase() {
 export function clearUserCache() {
   cachedUser = null;
   userPromise = null;
+}
+
+/**
+ * Request faculty access (for students)
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export async function requestFacultyAccess() {
+  try {
+    const res = await fetch('/api/user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'request-faculty' }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Clear cache so next getCurrentUser() fetches fresh data
+      clearUserCache();
+      return { success: true, message: data.message };
+    }
+    return { success: false, message: data.error || 'Request failed' };
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Check if user has pending faculty request
+ * @returns {Promise<boolean>}
+ */
+export async function hasPendingFacultyRequest() {
+  const user = await getCurrentUser();
+  return Boolean(user?.roleRequestedAt);
 }
 
 /**

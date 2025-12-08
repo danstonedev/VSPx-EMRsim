@@ -465,6 +465,11 @@ async function ensureRouteModuleLoaded(path) {
         load: () => import('../views/instructor/cases.js'),
       },
       {
+        test: (t) => t.startsWith('#/admin/users'),
+        key: 'admin-users',
+        load: () => import('../views/admin/users.js'),
+      },
+      {
         test: (t) => t.startsWith('#/preview'),
         key: 'preview',
         load: () => import('../views/preview.js'),

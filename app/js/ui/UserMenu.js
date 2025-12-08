@@ -3,7 +3,14 @@
  * Displays login button or user dropdown based on auth state
  */
 
-import { getCurrentUser, getLoginUrl, logout, ROLES } from '../core/auth.js';
+import {
+  getCurrentUser,
+  getLoginUrl,
+  logout,
+  requestFacultyAccess,
+  clearUserCache,
+  ROLES,
+} from '../core/auth.js';
 import { el } from './utils.js';
 
 /**
@@ -120,6 +127,63 @@ function createUserDropdown(user) {
       '📁 My Cases',
     );
     menuItems.appendChild(myCasesLink);
+  }
+
+  // Request Faculty Access (for students only)
+  if (user.role === ROLES.STUDENT && !user.roleRequestedAt) {
+    const requestBtn = el(
+      'button',
+      {
+        type: 'button',
+        class: 'user-menu__item',
+        role: 'menuitem',
+      },
+      '🎓 Request Faculty Access',
+    );
+    requestBtn.addEventListener('click', async () => {
+      requestBtn.textContent = '⏳ Requesting...';
+      requestBtn.disabled = true;
+      const result = await requestFacultyAccess();
+      if (result.success) {
+        requestBtn.textContent = '✅ Request Submitted';
+        // Update the menu after a short delay
+        setTimeout(() => {
+          clearUserCache();
+          updateUserMenu(wrapper.closest('.user-menu'));
+        }, 1500);
+      } else {
+        requestBtn.textContent = '❌ ' + result.message;
+        setTimeout(() => {
+          requestBtn.textContent = '🎓 Request Faculty Access';
+          requestBtn.disabled = false;
+        }, 2000);
+      }
+    });
+    menuItems.appendChild(requestBtn);
+  }
+
+  // Show pending request status
+  if (user.role === ROLES.STUDENT && user.roleRequestedAt) {
+    const pendingItem = el(
+      'div',
+      { class: 'user-menu__item user-menu__item--muted' },
+      '⏳ Faculty request pending',
+    );
+    menuItems.appendChild(pendingItem);
+  }
+
+  // Admin link (for admins)
+  if (user.roles.includes(ROLES.ADMIN)) {
+    const adminLink = el(
+      'a',
+      {
+        href: '#/admin/users',
+        class: 'user-menu__item',
+        role: 'menuitem',
+      },
+      '👑 Manage Users',
+    );
+    menuItems.appendChild(adminLink);
   }
 
   // Logout button

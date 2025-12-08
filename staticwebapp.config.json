@@ -22,6 +22,16 @@
       "allowedRoles": ["anonymous", "authenticated"]
     },
     {
+      "route": "/api/user",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/admin/*",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["admin"]
+    },
+    {
       "route": "/.auth/login/github",
       "statusCode": 404
     },

@@ -203,6 +203,21 @@
   background: var(--danger-50, #fef2f2);
 }
 
+.user-menu__item--muted {
+  color: var(--text-secondary, #6b7280);
+  cursor: default;
+  font-style: italic;
+}
+
+.user-menu__item--muted:hover {
+  background: transparent;
+}
+
+.user-menu__item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .user-menu__menu {
