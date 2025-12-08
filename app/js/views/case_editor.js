@@ -270,7 +270,7 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   // Create patient header using modular utility BEFORE it's used
   const headerElements = createPatientHeader(c);
   const { patientHeader, avatarEl, updatePatientAvatar } = headerElements;
-  const updatePatientHeader = createPatientHeaderUpdater(c, headerElements);
+  const updatePatientHeader = createPatientHeaderUpdater(c, caseWrapper, headerElements);
 
   // Wrap save function to include progress refresh and status updates
   const save = createSaveWrapper({

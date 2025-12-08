@@ -612,6 +612,7 @@ export const listCaseSummaries = async () => {
       latestVersion: (cached && cached.latestVersion) || 0,
       isStored: Boolean(cached),
       source: 'manifest',
+      isBuiltIn: true,
     };
   });
 
@@ -627,11 +628,30 @@ export const listCaseSummaries = async () => {
         latestVersion: rc.latestVersion || 0,
         isStored: true,
         source: 'cloud',
+        isBuiltIn: false,
+        createdBy: rc.createdBy,
+        createdByName: rc.createdByName,
+        createdAt: rc.createdAt,
+        updatedAt: rc.updatedAt,
       };
     });
   } catch (e) {
     console.warn('Failed to fetch remote case summaries:', e);
   }
+
+  // Mark local-only cases (in storage but not in manifest or cloud)
+  Object.keys(stored).forEach((id) => {
+    if (!summaryMap[id]) {
+      summaryMap[id] = {
+        id: id,
+        title: stored[id].title || stored[id].caseObj?.meta?.title || 'Untitled Case',
+        latestVersion: stored[id].latestVersion || 0,
+        isStored: true,
+        source: 'local',
+        isBuiltIn: false,
+      };
+    }
+  });
 
   return Object.values(summaryMap);
 };

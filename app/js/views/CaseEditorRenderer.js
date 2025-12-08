@@ -4,6 +4,7 @@
  */
 
 import { el } from '../ui/utils.js';
+import { createAuthorBadge } from '../ui/CaseBadge.js';
 import {
   getCaseInfo,
   getPatientDisplayName,
@@ -117,10 +118,11 @@ export function setupThemeObserver(avatarEl, updatePatientAvatar) {
 /**
  * Create patient header update function
  * @param {Object} c - Case object
+ * @param {Object} caseWrapper - Full case wrapper with metadata
  * @param {Object} headerElements - Header elements from createPatientHeader
  * @returns {Function} Update function
  */
-export function createPatientHeaderUpdater(c, headerElements) {
+export function createPatientHeaderUpdater(c, caseWrapper, headerElements) {
   const { patientHeaderNameEl, patientHeaderDemoEl, updatePatientAvatar } = headerElements;
 
   return function updatePatientHeader() {
@@ -139,6 +141,14 @@ export function createPatientHeaderUpdater(c, headerElements) {
 
       patientHeaderDemoEl.replaceChildren();
       patientHeaderDemoEl.append(el('span', { class: 'patient-dob' }, dateText));
+
+      // Add author attribution if available
+      if (caseWrapper?.createdByName) {
+        const authorBadge = createAuthorBadge(caseWrapper.createdByName, caseWrapper.createdAt);
+        if (authorBadge) {
+          patientHeaderDemoEl.append(' • ', authorBadge);
+        }
+      }
 
       // Update CSS variable for layout
       const h = headerElements.patientHeader.offsetHeight || 0;

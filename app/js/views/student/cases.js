@@ -1,5 +1,6 @@
 import { route } from '../../core/router.js';
 import { navigate as urlNavigate } from '../../core/url.js';
+import { createCaseBadge, createAuthorBadge } from '../../ui/CaseBadge.js';
 async function _listCaseSummaries() {
   const store = await import('../../core/store.js');
   if (typeof store.listCaseSummaries === 'function') {
@@ -532,11 +533,14 @@ function createCaseRow(c, drafts, storage, urlNavigate) {
   const evalDraft = draftInfo?.eval;
   const statusContent = buildStatusContent(evalDraft);
   const actionButtons = buildActionButtons(c, evalDraft, storage, urlNavigate);
+  const badge = createCaseBadge(c);
+
   return el('tr', {}, [
     el('td', {}, c.title || ''),
     el('td', {}, ''),
     el('td', {}, ''),
     el('td', {}, statusContent),
+    el('td', {}, badge || ''),
     el('td', { class: 'nowrap' }, actionButtons),
   ]);
 }
@@ -637,6 +641,7 @@ function makeCasesPanel(app, cases, drafts) {
           createSortableHeader('Setting', 'setting'),
           createSortableHeader('Diagnosis', 'diagnosis'),
           createSortableHeader('Draft Status', 'status'),
+          el('th', {}, 'Source'),
           el('th', {}, ''),
         ]),
       ),

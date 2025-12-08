@@ -601,6 +601,7 @@ route('#/legal', async (app, qs) => {
       },
       [
         el('header', { class: 'legal-header' }, [
+          el('p', { class: 'legal-draft-notice' }, '// DRAFT //'),
           el('h1', {}, isTerms ? 'Terms of Use' : 'Privacy Policy'),
           el('p', { class: 'legal-subtitle' }, 'Virtual Standardized Patient Sim EMR'),
           el(

@@ -6,6 +6,8 @@ import {
   setQueryParams as setUrlQuery,
 } from '../../core/url.js';
 import { createCustomSelect } from '../../ui/CustomSelect.js';
+import { showConfirmModal } from '../../ui/ConfirmModal.js';
+import { createCaseBadge, createAuthorBadge } from '../../ui/CaseBadge.js';
 // Lazy-load store functions to avoid static/dynamic import mix warnings
 async function _listCases() {
   const store = await import('../../core/store.js');
@@ -967,6 +969,8 @@ route('#/instructor/cases', async (app) => {
           createSortableHeaderLocal('Setting', 'setting'),
           createSortableHeaderLocal('Diagnosis', 'diagnosis'),
           createSortableHeaderLocal('Acuity', 'acuity'),
+          el('th', {}, 'Source'),
+          el('th', {}, 'Author'),
           el('th', {}, ''),
         ]),
       ),
@@ -979,11 +983,17 @@ route('#/instructor/cases', async (app) => {
             v: c.latestVersion || 0,
             encounter: 'eval',
           });
+
+          const badge = createCaseBadge(c);
+          const authorBadge = createAuthorBadge(c.createdByName, c.createdAt);
+
           return el('tr', {}, [
             el('td', {}, c.title || 'Untitled'),
             el('td', {}, ''),
             el('td', {}, ''),
             el('td', {}, ''),
+            el('td', {}, badge || ''),
+            el('td', {}, authorBadge || ''),
             el('td', { class: 'nowrap' }, [
               el('div', { class: 'd-inline-flex ai-center gap-6' }, [
                 el(
@@ -1051,7 +1061,27 @@ route('#/instructor/cases', async (app) => {
                   {
                     class: 'btn small subtle-danger d-inline-flex ai-center gap-6',
                     onClick: async () => {
-                      if (confirm(`Are you sure you want to delete "${c.title}"?`)) {
+                      const confirmed = await showConfirmModal({
+                        title: 'Delete Case',
+                        message: el('div', {}, [
+                          el('p', { class: 'mb-12' }, [
+                            'Are you sure you want to delete ',
+                            el('strong', {}, c.title),
+                            '?',
+                          ]),
+                          el(
+                            'p',
+                            { class: 'text-secondary small' },
+                            'This action cannot be undone. All patient data and student progress for this case will be permanently removed.',
+                          ),
+                        ]),
+                        confirmText: c.title,
+                        confirmLabel: 'Type the case name to confirm',
+                        confirmButton: 'Delete Case',
+                        danger: true,
+                      });
+
+                      if (confirmed) {
                         try {
                           await _deleteCase(c.id);
                           await loadAndRender(); // Reload all data and re-render the view

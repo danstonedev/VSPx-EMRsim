@@ -4195,3 +4195,92 @@ header.topbar a.button {
 [data-theme='dark'] .patient-avatar img {
   background: var(--avatar-bg-dark, var(--neutral-800));
 }
+
+/* ========================================
+  Shake Animation (for invalid input feedback)
+  ======================================== */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  border-color: var(--danger, #dc3545) !important;
+}
+
+/* ========================================
+  Case Badges (source indicators)
+  ======================================== */
+.case-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.case-badge-builtin {
+  background: var(--neutral-100, #f8f9fa);
+  color: var(--neutral-700, #495057);
+}
+
+.case-badge-cloud {
+  background: var(--info-light, rgba(13, 110, 253, 0.1));
+  color: var(--info, #0d6efd);
+}
+
+.case-badge-local {
+  background: var(--warning-light, rgba(255, 193, 7, 0.15));
+  color: var(--warning-dark, #cc7a00);
+}
+
+.case-badge-draft {
+  background: var(--secondary-light, rgba(108, 117, 125, 0.1));
+  color: var(--secondary, #6c757d);
+}
+
+[data-theme='dark'] .case-badge-builtin {
+  background: var(--neutral-800, #2d3748);
+  color: var(--neutral-300, #cbd5e0);
+}
+
+[data-theme='dark'] .case-badge-cloud {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .case-badge-local {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .case-badge-draft {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+.case-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
