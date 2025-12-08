@@ -1,0 +1,28 @@
+{
+  "routes": [
+    {
+      "route": "/api/cases",
+      "methods": ["POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/cases",
+      "methods": ["GET"],
+      "allowedRoles": ["anonymous", "authenticated"]
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404.html"
+    }
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:;"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}

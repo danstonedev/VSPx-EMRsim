@@ -274,10 +274,60 @@ export const forceReloadCases = async () => {
   return await ensureCasesInitialized();
 };
 
+// --- Remote API Sync ---
+
+async function fetchRemoteCases() {
+  try {
+    const res = await fetch('/api/cases');
+    if (res.ok) {
+      const remoteCases = await res.json();
+      // Validate/Migrate remote cases before using
+      Object.keys(remoteCases).forEach((id) => {
+        if (remoteCases[id] && remoteCases[id].caseObj) {
+          remoteCases[id].caseObj = migrateOldCaseData(remoteCases[id].caseObj);
+          remoteCases[id].caseObj = ensureDataIntegrity(remoteCases[id].caseObj);
+        }
+      });
+      return remoteCases;
+    }
+  } catch (e) {
+    console.warn('Failed to fetch remote cases (API might be offline or unreachable)', e);
+  }
+  return {};
+}
+
+export const publishCaseToRemote = async (caseId) => {
+  const cases = loadCasesFromStorage();
+  const caseWrapper = cases[caseId];
+  if (!caseWrapper) throw new Error('Case not found');
+
+  const res = await fetch('/api/cases', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(caseWrapper),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to publish');
+  }
+  return await res.json();
+};
+
 // --- Public API (matches original backend interface) ---
 
 export const listCases = async () => {
-  const cases = await ensureCasesInitialized();
+  // 1. Ensure local/manifest cases are loaded
+  let cases = await ensureCasesInitialized();
+
+  // 2. Try to fetch remote cases and merge (non-blocking or blocking? let's block for now to ensure visibility)
+  // We only do this if we haven't recently? For now, let's just try it.
+  const remoteCases = await fetchRemoteCases();
+  if (Object.keys(remoteCases).length > 0) {
+    cases = { ...cases, ...remoteCases };
+    saveCasesToStorage(cases);
+  }
+
   return Object.values(cases);
 };
 

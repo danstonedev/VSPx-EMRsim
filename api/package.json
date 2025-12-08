@@ -1,0 +1,12 @@
+{
+  "name": "emr-sim-api",
+  "version": "1.0.0",
+  "description": "API for VSPx-EMRsim",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.0.0"
+  }
+}
