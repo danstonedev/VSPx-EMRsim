@@ -1,4 +1,4 @@
-import { CosmosClient } from '@azure/cosmos';
+const { CosmosClient } = require('@azure/cosmos');
 
 // Environment variables (set these in Azure Portal)
 const CONNECTION_STRING = process.env.AZURE_COSMOS_CONNECTION_STRING;
@@ -8,7 +8,7 @@ const CONTAINER_ID = 'cases';
 let client = null;
 let container = null;
 
-export async function getContainer() {
+async function getContainer() {
   if (container) return container;
 
   if (!CONNECTION_STRING) {
@@ -23,3 +23,5 @@ export async function getContainer() {
   container = database.container(CONTAINER_ID);
   return container;
 }
+
+module.exports = { getContainer };

@@ -1,8 +1,7 @@
-import { getContainer } from '../shared/cosmos.js';
-// Import schema validation from the local shared folder (copied during build/dev)
-import { validateCase, ensureDataIntegrity } from '../shared/schema.js';
+const { getContainer } = require('../shared/cosmos.js');
+const { validateCase, ensureDataIntegrity } = require('../shared/schema.js');
 
-export default async function (context, req) {
+module.exports = async function (context, req) {
   try {
     const caseData = req.body;
 
@@ -15,11 +14,9 @@ export default async function (context, req) {
     }
 
     // 1. Validate the case using the shared schema logic
-    // We wrap this in a try-catch because validateCase might throw or return errors
     try {
-      // Extract the inner case object if it's wrapped (which it is coming from store.js)
+      // Extract the inner case object if it's wrapped
       // store.js sends: { id, title, latestVersion, caseObj: { ... } }
-      // schema.js expects: { meta, history, ... } (which is inside caseObj)
       let caseToValidate = caseData;
       if (caseData.caseObj) {
         caseToValidate = caseData.caseObj;
@@ -59,7 +56,7 @@ export default async function (context, req) {
     context.log.error('Error saving case:', error);
     context.res = {
       status: 500,
-      body: { error: 'Failed to save case' },
+      body: { error: 'Failed to save case', details: error.message },
     };
   }
-}
+};

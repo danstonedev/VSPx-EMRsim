@@ -1,11 +1,10 @@
-import { getContainer } from '../shared/cosmos.js';
+const { getContainer } = require('../shared/cosmos.js');
 
-export default async function (context, req) {
+module.exports = async function (context, req) {
   try {
     const container = await getContainer();
 
     // Query all cases
-    // In a real app, you might want pagination or filtering
     const querySpec = {
       query: 'SELECT * FROM c',
     };
@@ -29,7 +28,7 @@ export default async function (context, req) {
     context.log.error('Error fetching cases:', error);
     context.res = {
       status: 500,
-      body: { error: 'Failed to fetch cases' },
+      body: { error: 'Failed to fetch cases', details: error.message },
     };
   }
-}
+};
