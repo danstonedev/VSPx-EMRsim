@@ -56,9 +56,8 @@ export function render(container, options = {}) {
 
   async function openSignature(out, draft) {
     try {
-      const { openSignatureDialog, getPersistedSignatureMeta } = await import(
-        '../signature/SignatureModal.js'
-      );
+      const { openSignatureDialog, getPersistedSignatureMeta } =
+        await import('../signature/SignatureModal.js');
       openSignatureDialog({
         existingSignature: (out.meta && out.meta.signature) || getPersistedSignatureMeta(),
         onSigned: async (signature) => {

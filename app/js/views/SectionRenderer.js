@@ -33,9 +33,8 @@ function createSectionWrapper(sectionId, title, content, cssClass) {
  * @returns {Promise<Object>} Section elements
  */
 async function createSubjectiveSectionWithWrapper(draft, save) {
-  const { createSubjectiveSection } = await import(
-    '../features/soap/subjective/SubjectiveSection.js'
-  );
+  const { createSubjectiveSection } =
+    await import('../features/soap/subjective/SubjectiveSection.js');
 
   const content = createSubjectiveSection(draft.subjective, (data) => {
     draft.subjective = data;
@@ -71,9 +70,8 @@ async function createObjectiveSectionWithWrapper(draft, save) {
  * @returns {Promise<Object>} Section elements
  */
 async function createAssessmentSectionWithWrapper(draft, save) {
-  const { createAssessmentSection } = await import(
-    '../features/soap/assessment/AssessmentSection.js'
-  );
+  const { createAssessmentSection } =
+    await import('../features/soap/assessment/AssessmentSection.js');
 
   const content = createAssessmentSection(draft.assessment, (data) => {
     draft.assessment = data;
