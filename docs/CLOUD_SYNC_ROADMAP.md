@@ -1,6 +1,6 @@
 # Cloud Sync & Multi-User Roadmap
 
-> PT EMR Simulator - Production Readiness Plan  
+> PT EMR Simulator - Production Readiness Plan
 > Created: December 8, 2025
 
 ## Overview
@@ -17,15 +17,19 @@ This roadmap addresses faculty and student concerns for a production-ready share
 | --- | --------------------------------------------------------- | ------ | ------ |
 | A1  | Enable Azure SWA built-in auth (Microsoft/Entra ID)       | 1 hr   | ⬜     |
 | A2  | Create login/logout UI in header                          | 2 hrs  | ⬜     |
-| A3  | `getCurrentUser()` utility via `/.auth/me`                | 1 hr   | ⬜     |
-| A4  | Role-based route protection (student vs faculty vs admin) | 2 hrs  | ⬜     |
-| A5  | Store `userId` with cases and drafts                      | 2 hrs  | ⬜     |
-| A6  | Role assignment strategy (manual or domain-based)         | 1 hr   | ⬜     |
+| A3  | `getCurrentUser()` utility via `/.auth/me`                | 1 hr   | ✅     |
+| A4  | Role-based route protection (student vs faculty vs admin) | 2 hrs  | ✅     |
+| A5  | Store `userId` with cases and drafts                      | 2 hrs  | ✅     |
+| A6  | Role assignment strategy (manual or domain-based)         | 1 hr   | ✅     |
+| A7  | User database (Cosmos DB `users` collection)              | 2 hrs  | ✅     |
+| A8  | Faculty request flow (self-service)                       | 2 hrs  | ✅     |
+| A9  | Admin user management UI                                  | 3 hrs  | ✅     |
 
 **Auth Providers:**
 
 - Primary: Microsoft Entra ID (Azure AD) - school accounts
 - Roles: `anonymous`, `student`, `faculty`, `admin`
+- Role management: Self-service request + admin approval via `/api/admin/users`
 
 ---
 
@@ -35,8 +39,8 @@ This roadmap addresses faculty and student concerns for a production-ready share
 
 | ID  | Feature                                          | Effort | Status | Notes                     |
 | --- | ------------------------------------------------ | ------ | ------ | ------------------------- |
-| F1  | `createdBy` uses auth `userId`                   | -      | ⬜     | Covered by A5             |
-| F2  | Owner-only delete for cloud cases                | 2 hrs  | ⬜     | API checks userId match   |
+| F1  | `createdBy` uses auth `userId`                   | -      | ✅     | Covered by A5             |
+| F2  | Owner-only delete for cloud cases                | 2 hrs  | ✅     | API checks userId match   |
 | F3  | Delete confirmation modal                        | 1 hr   | ⬜     | Type case name to confirm |
 | F4  | Source badges in case list (📦☁️✏️💾)            | 2 hrs  | ⬜     | Visual distinction        |
 | F5  | Author name display                              | 1 hr   | ⬜     | "Created by Dr. Smith"    |
