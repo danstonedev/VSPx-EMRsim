@@ -41,9 +41,9 @@ This roadmap addresses faculty and student concerns for a production-ready share
 | --- | ------------------------------------------------ | ------ | ------ | ------------------------- |
 | F1  | `createdBy` uses auth `userId`                   | -      | ✅     | Covered by A5             |
 | F2  | Owner-only delete for cloud cases                | 2 hrs  | ✅     | API checks userId match   |
-| F3  | Delete confirmation modal                        | 1 hr   | ⬜     | Type case name to confirm |
-| F4  | Source badges in case list (📦☁️✏️💾)            | 2 hrs  | ⬜     | Visual distinction        |
-| F5  | Author name display                              | 1 hr   | ⬜     | "Created by Dr. Smith"    |
+| F3  | Delete confirmation modal                        | 1 hr   | ✅     | Type case name to confirm |
+| F4  | Source badges in case list (📦☁️✏️💾)            | 2 hrs  | ✅     | Visual distinction        |
+| F5  | Author name display                              | 1 hr   | ✅     | "Created by Dr. Smith"    |
 | S1  | Student snapshot (work persists if case removed) | 3 hrs  | ⬜     | Copy-on-start             |
 
 ---
