@@ -34,6 +34,9 @@
     "sharp": "^0.33.5",
     "vite": "7.1.5"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.52.0"
+  },
   "main": "index.js",
   "repository": {
     "type": "git",
