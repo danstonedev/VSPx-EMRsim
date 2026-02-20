@@ -10,6 +10,7 @@ import { storage } from '../../core/index.js';
 import { el } from '../../ui/utils.js';
 import { showToast } from '../../ui/toast.js';
 import { mapFrequencyToEnum, mapDurationToEnum } from '../../services/case-generator.js';
+import { IS_LOCAL_DEV } from '../../core/constants.js';
 
 // Extracted micro-helpers (pure, no side effects) to reduce complexity in populateDraftFromCaseData
 function _mergeArrayToCsv(target, arr) {
@@ -296,7 +297,9 @@ function mergeEvalObjective(draft, evalObj) {
     };
     try {
       normalizeRegionalAssessments(draft.objective.regionalAssessments);
-    } catch {}
+    } catch (err) {
+      console.warn('[CaseInit] normalizeRegionalAssessments failed:', err);
+    }
   }
   setObjectiveNarrativesFromEval(draft, evalObj);
 }
@@ -320,7 +323,9 @@ function seedTreatmentPerformedFromPlan(draft, evalPlan) {
     const tplan = evalPlan?.treatmentPlan || '';
     if (!tplan) return;
     fillTreatmentPerformedFromPlanText(tp, tplan);
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseInit] seedTreatmentPerformedFromPlan failed:', err);
+  }
 }
 
 function ensureTreatmentPerformedContainer(draft) {
@@ -415,7 +420,9 @@ function seedGoalsTableFromText(draft, stgRaw, ltgRaw) {
       if (ltg) add(ltg);
       draft.plan.goalsTable = tbl;
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseInit] mergePlanFromEval goals failed:', err);
+  }
 }
 
 // Billing: merge eval billing
@@ -791,10 +798,8 @@ export function initializeDraft(
   draft = initDraftByMode({ draft, isFacultyMode, isKeyMode, caseData, caseId });
 
   // Development mode: Skip local draft loading for NEW cases only to prevent cached data issues
-  const isDevelopmentMode =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const isNewCase = caseId === 'new';
-  const skipLoading = isKeyMode || (isDevelopmentMode && isNewCase);
+  const skipLoading = isKeyMode || (IS_LOCAL_DEV && isNewCase);
 
   if (skipLoading) {
   } else {
@@ -937,7 +942,9 @@ function migrateDraftKey(oldKey, newKey) {
     const prev = storage.getItem(oldKey);
     if (prev) storage.setItem(newKey, prev);
     if (prev) storage.removeItem(oldKey);
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseInit] migrateDraftKey failed:', err);
+  }
 }
 
 function updateUrlForNewCase(newCaseId, encounter) {
@@ -947,13 +954,17 @@ function updateUrlForNewCase(newCaseId, encounter) {
       '',
       `#/instructor/editor?case=${newCaseId}&encounter=${encodeURIComponent(encounter)}`,
     );
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseInit] updateUrlForNewCase failed:', err);
+  }
 }
 
 function persistDraftToStorage(localStorageKey, draft) {
   try {
     storage.setItem(localStorageKey, JSON.stringify(draft));
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseInit] persistDraftToStorage failed:', err);
+  }
 }
 
 // Helper: load and merge existing draft from storage

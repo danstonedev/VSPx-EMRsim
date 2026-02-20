@@ -100,6 +100,7 @@ export function setupHeaderResizeObserver(patientHeader, ac) {
       return null;
     }
   } catch {
+    /* ResizeObserver may not be available */
     return null;
   }
 }
@@ -121,7 +122,8 @@ export function setupRouteHandling(switchTo, isValidSection, currentActive) {
       }
     });
     return offRoute;
-  } catch {
+  } catch (err) {
+    console.warn('[EditorSetupManager] route change listener setup failed:', err);
     return null;
   }
 }

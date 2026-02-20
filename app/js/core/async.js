@@ -25,14 +25,18 @@ export function safeAsync(handler, opts) {
           console.error('Unhandled async error:', err);
           try {
             onError && onError(err);
-          } catch {}
+          } catch {
+            /* onError callback may throw */
+          }
         });
       }
     } catch (err) {
       console.error('Unhandled error:', err);
       try {
         onError && onError(err);
-      } catch {}
+      } catch {
+        /* onError callback may throw */
+      }
     }
   };
 }

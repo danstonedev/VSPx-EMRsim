@@ -293,13 +293,18 @@ export const BillingValidators = {
   'cpt-codes': (data, section) => {
     const arr = section?.billingCodes || section?.cptCodes || data;
     if (!Array.isArray(arr) || arr.length === 0) return false;
+    const diagnosisCodes = Array.isArray(section?.diagnosisCodes)
+      ? section.diagnosisCodes.filter((code) => isFieldComplete(code?.code))
+      : [];
+    const requireDxLink = diagnosisCodes.length > 0;
     // Require all visible inputs per CPT row: code, units (>0), and timeSpent (non-empty)
     return arr.every((item) => {
       const hasCode = isFieldComplete(item.code);
       const units = parseInt(item.units, 10);
       const hasValidUnits = !isNaN(units) && units > 0;
       const hasTime = isFieldComplete(item.timeSpent);
-      return hasCode && hasValidUnits && hasTime;
+      const hasDxLink = !requireDxLink || isFieldComplete(item.linkedDiagnosisCode);
+      return hasCode && hasDxLink && hasValidUnits && hasTime;
     });
   },
 
@@ -312,8 +317,17 @@ export const BillingValidators = {
   'orders-referrals': (data, section) => {
     const arr = section?.ordersReferrals || data;
     if (!Array.isArray(arr) || arr.length === 0) return false;
+    const diagnosisCodes = Array.isArray(section?.diagnosisCodes)
+      ? section.diagnosisCodes.filter((code) => isFieldComplete(code?.code))
+      : [];
+    const requireDxLink = diagnosisCodes.length > 0;
     // Require both Type and Details for each row
-    return arr.every((item) => isFieldComplete(item.type) && isFieldComplete(item.details));
+    return arr.every(
+      (item) =>
+        isFieldComplete(item.type) &&
+        (!requireDxLink || isFieldComplete(item.linkedDiagnosisCode)) &&
+        isFieldComplete(item.details),
+    );
   },
 
   /**

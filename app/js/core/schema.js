@@ -319,7 +319,9 @@ export function ensureDataIntegrity(caseData) {
     ensureModulesArray(caseData);
     ensureAssessmentVisibility(caseData);
     normalizeEnums(caseData);
-  } catch {}
+  } catch (err) {
+    console.warn('[Schema] ensureDataIntegrity failed:', err);
+  }
   return caseData;
 }
 
@@ -354,7 +356,13 @@ export function migrateOldCaseData(caseData) {
       medications: '',
       functionalGoals: '',
       additionalHistory: '',
+      qaItems: [],
     };
+  }
+
+  // Ensure qaItems array exists on subjective
+  if (caseData.subjective && !Array.isArray(caseData.subjective.qaItems)) {
+    caseData.subjective.qaItems = [];
   }
 
   return ensureDataIntegrity(caseData);

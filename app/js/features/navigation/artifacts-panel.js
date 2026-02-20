@@ -10,14 +10,17 @@ const ARTIFACT_COLLAPSE_KEY = 'artifactCategoryCollapse_v1';
 function loadArtifactCollapseState() {
   try {
     return JSON.parse(localStorage.getItem(ARTIFACT_COLLAPSE_KEY) || '{}') || {};
-  } catch {
+  } catch (err) {
+    console.warn('[ArtifactsPanel] Failed to load collapse state:', err);
     return {};
   }
 }
 function saveArtifactCollapseState(state) {
   try {
     localStorage.setItem(ARTIFACT_COLLAPSE_KEY, JSON.stringify(state || {}));
-  } catch {}
+  } catch (err) {
+    console.warn('[ArtifactsPanel] Failed to save collapse state:', err);
+  }
 }
 
 // Category metadata & type normalization
@@ -194,7 +197,9 @@ export function render(container, options) {
     cleanup() {
       try {
         container.replaceChildren();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     },
   };
 }

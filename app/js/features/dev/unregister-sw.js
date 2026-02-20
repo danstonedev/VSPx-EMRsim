@@ -21,10 +21,14 @@
               if (reg.navigationPreload && typeof reg.navigationPreload.disable === 'function') {
                 await reg.navigationPreload.disable();
               }
-            } catch {}
+            } catch {
+              /* SW may not be available */
+            }
             try {
               await reg.unregister();
-            } catch {}
+            } catch {
+              /* SW may not be available */
+            }
           }),
         );
         // Clear caches created by prior SWs to reduce interference
@@ -32,7 +36,9 @@
           try {
             const keys = await caches.keys();
             await Promise.all(keys.map((k) => caches.delete(k)));
-          } catch {}
+          } catch {
+            /* SW may not be available */
+          }
         }
         // Reload when controller changes to ensure a clean, uncontrolled page
         try {
@@ -41,8 +47,12 @@
               window.location.reload();
             });
           }
-        } catch {}
+        } catch {
+          /* SW may not be available */
+        }
       })
       .catch(() => {});
-  } catch {}
+  } catch {
+    /* SW may not be available */
+  }
 })();

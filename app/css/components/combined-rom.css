@@ -69,12 +69,12 @@ table.combined-rom-table {
   border-right: var(--table-border-width) solid var(--table-border-color);
   border-bottom: var(--table-border-width) solid var(--table-border-color);
   /* Only outer table corner - top-left */
-  border-top-left-radius: var(--table-radius-inner);
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Top-right corner - outer table corner on right-group header */
 .combined-rom-thead tr:first-child .combined-rom-th.right-group {
-  border-top-right-radius: var(--table-radius-inner);
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Dark theme motion column - keep UND Green */
@@ -233,12 +233,12 @@ table.combined-rom-table {
 
 /* Bottom-left corner - outer table corner */
 .combined-rom-tbody tr:last-child .combined-rom-td.motion-cell {
-  border-bottom-left-radius: var(--table-radius-inner);
+  border-bottom-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Bottom-right corner - outer table corner */
 .combined-rom-tbody tr:last-child .combined-rom-td:last-child {
-  border-bottom-right-radius: var(--table-radius-inner);
+  border-bottom-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Remove bottom border from last row - table border handles it */

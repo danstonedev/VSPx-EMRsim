@@ -106,7 +106,9 @@ export function openSignatureDialog({ onSigned, existingSignature } = {}) {
     const removeNow = () => {
       try {
         overlay.remove();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       detachTrap();
       priorFocus && priorFocus.focus && priorFocus.focus();
     };

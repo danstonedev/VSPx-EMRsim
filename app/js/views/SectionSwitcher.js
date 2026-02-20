@@ -59,7 +59,9 @@ export function createSectionSwitcher(options) {
     // Sync section to URL (replace by default to avoid history spam)
     try {
       setQueryParams({ section: s });
-    } catch {}
+    } catch (err) {
+      console.warn('[SectionSwitcher] setQueryParams failed:', err);
+    }
 
     if (changingSection) {
       // Update chart navigation only if the logical active section changed.

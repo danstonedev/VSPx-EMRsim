@@ -280,7 +280,7 @@ html[data-theme='dark'] .btn.primary:hover {
   color: var(--danger-600);
   font-size: 0.875rem; /* 14px */
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;

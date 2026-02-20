@@ -18,6 +18,7 @@
 /* Extracted modules (must appear before any style rules) - combined-rom.css loads FIRST for proper cascade */
 @import url('./components/combined-rom.css');
 @import url('./components/combined-neuroscreen.css');
+@import url('./components/subjective-qa.css');
 @import url('./components/custom-select.css');
 @import url('./buttons.css');
 @import url('./sidebar.css');
@@ -604,7 +605,7 @@
   --section-parallelogram-slant: 38px; /* ≈ 56px / tan(56°) */
   /* Responsive sidebar width: shrink slightly on tighter desktops, cap at previous 300px */
   --sidebar-w: clamp(260px, 24vw, 300px);
-  --section-divider-h: 28px; /* halved: sticky in-content section banner height */
+  --section-divider-h: 42px; /* 50% taller sticky in-content section banner height */
 
   /* Z-index layers */
   --z-topbar: 3000;
@@ -1869,6 +1870,64 @@ html[data-theme='dark'] .theme-toggle .icon.moon {
   margin-top: 0;
 }
 
+/* ─── Collapse / expand animation ─────────────────────────────────────── */
+/* Uses CSS grid rows (1fr → 0fr) for silky-smooth height transitions
+   without needing to know content height.  Works in all modern browsers. */
+.section-collapse-wrapper {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 420ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.section-collapse-wrapper.collapsed {
+  grid-template-rows: 0fr;
+}
+.section-collapse-inner {
+  overflow: hidden;
+  min-height: 0; /* required for grid 0fr to collapse fully */
+}
+
+/* ─── Chevron indicator ───────────────────────────────────────────────── */
+.section-chevron {
+  position: absolute;
+  left: calc(var(--pad-x, 16px) + 4px);
+  width: 10px;
+  height: 10px;
+  border-right: 2.5px solid var(--white);
+  border-bottom: 2.5px solid var(--white);
+  transform: rotate(45deg);
+  transform-origin: center;
+  transition: transform 420ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.section-collapsed .section-chevron {
+  transform: rotate(-45deg);
+}
+
+/* Interactive feedback on the header */
+.editor-section-divider[role='button'] {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.editor-section-divider[role='button']:hover::before {
+  filter: brightness(1.08);
+}
+.editor-section-divider[role='button']:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: -2px;
+}
+
+/* ─── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .section-collapse-wrapper {
+    transition: none !important;
+  }
+  .section-chevron {
+    transition: none !important;
+  }
+}
+
 /* Constrain sticky bar content to the same max width as #app on routes without sidebar */
 .sticky-top-bar > .bar-inner {
   width: 100%;
@@ -2493,30 +2552,6 @@ body[data-route='instructor-editor'] .section-anchor {
 /* Indent form input wrappers within subsections to match labels */
 .section-anchor .form-input-wrapper {
   margin-left: 0;
-}
-
-/* Remove content indent for In-Clinic Treatment Plan, but keep header pulled left to align with others */
-#in-clinic-treatment-plan.section-anchor {
-  --subsection-indent: 32px; /* base indent token */
-  /* Increase left padding for the section contents so they are relatively indented */
-  padding-left: calc(var(--subsection-indent) + var(--space-6));
-}
-/* Header should stay inside the container (no clipping) and not add extra inner indent */
-
-/* Keep header position but remove extra inner left padding on the banner */
-#in-clinic-treatment-plan.section-anchor > .subsection-title {
-  padding-left: 0;
-}
-
-/* Keep the In-Clinic Treatment Plan sub-heading visually indented, but avoid clipping
-   from negative margins inside an overflow-hidden parent. */
-#in-clinic-treatment-plan.section-anchor > .subsection-title {
-  /* Align header like others: negate the full left padding applied to this section */
-  margin-left: calc(-1 * (var(--subsection-indent) + var(--space-6)));
-  /* Use default inner padding */
-  padding-left: var(--space-4);
-  /* Keep right edge aligned with section content by negating the base indent */
-  margin-right: calc(-1 * var(--subsection-indent));
 }
 
 .form-input-wrapper {
@@ -4283,4 +4318,34 @@ header.topbar a.button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ========================================
+   Preview Page
+   ======================================== */
+.preview-panel h3 {
+  margin-top: var(--space-4);
+}
+.preview-panel h4 {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: 0.95rem;
+  color: var(--text-muted, var(--text));
+}
+.preview-row {
+  padding: 2px 0;
+  line-height: 1.6;
+}
+.preview-row strong {
+  min-width: 10em;
+  display: inline-block;
+}
+.preview-table {
+  width: 100%;
+  margin: var(--space-2) 0;
+  font-size: 0.9rem;
+}
+@media print {
+  .preview-panel {
+    break-inside: avoid;
+  }
 }

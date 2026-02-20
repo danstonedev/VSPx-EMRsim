@@ -9,8 +9,9 @@ function hasIndexedDB() {
   try {
     return typeof indexedDB !== 'undefined';
   } catch {
-    return false;
+    /* safe fallback */
   }
+  return false;
 }
 
 function openDB() {

@@ -52,17 +52,23 @@ export function openEditCaseModal(caseInfo, onSave) {
           card.style.opacity = '';
           card.style.transform = '';
         }
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const removeNow = () => {
         try {
           modal?.remove();
-        } catch {}
+        } catch {
+          /* element may not exist */
+        }
       };
       if (prefersReduce) return removeNow();
       modal?.addEventListener('transitionend', removeNow, { once: true });
       setTimeout(removeNow, 480);
-    } catch {}
+    } catch (err) {
+      console.warn('[Modal] close:', err);
+    }
   }
 
   // Build modal content with full form parity
@@ -244,7 +250,9 @@ export function openEditCaseModal(caseInfo, onSave) {
           card.style.opacity = '1';
           card.style.transform = 'scale(1)';
         }
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       titleInput?.focus();
     }, 90);
   });
@@ -282,6 +290,8 @@ export function openEditCaseModal(caseInfo, onSave) {
     close();
     try {
       onSave?.(updated);
-    } catch {}
+    } catch (err) {
+      console.warn('[Modal] onSave callback:', err);
+    }
   }
 }

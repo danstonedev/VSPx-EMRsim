@@ -249,8 +249,8 @@ export function canEditCase(isFacultyMode, caseId) {
   try {
     const idStr = String(caseId || '');
     if (!canEdit && idStr.startsWith('blank')) canEdit = true;
-  } catch {
-    // Ignore errors
+  } catch (err) {
+    console.warn('[CaseEditorUtils] canEditCase check failed:', err);
   }
   return canEdit;
 }
@@ -267,7 +267,9 @@ function getTargetAnchorId(sectionId) {
       pendingAnchorId = String(window.__pendingAnchorScrollId);
       window.__pendingAnchorScrollId = '';
     }
-  } catch {}
+  } catch {
+    /* pending anchor property may not exist */
+  }
 
   const preferredAnchorBySection = {
     subjective: 'hpi',
@@ -291,12 +293,16 @@ function handleSectionAccessibility(sectionId, header, root) {
     const focusTarget = header || root;
     focusTarget.setAttribute('tabindex', '-1');
     focusTarget.focus({ preventScroll: true });
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 
   try {
     const announcer = document.getElementById('route-announcer');
     if (announcer) announcer.textContent = `Moved to ${sectionId} section`;
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 }
 
 /**

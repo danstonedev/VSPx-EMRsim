@@ -194,7 +194,7 @@ function buildBodyRow(columns, rowId, rowData, createCell, showDeleteButton, onD
       ? [
           el(
             'td',
-            { class: 'combined-neuroscreen-td' },
+            { class: 'combined-neuroscreen-td action-col' },
             el(
               'button',
               {
@@ -252,8 +252,7 @@ function buildTableElement({
                 el(
                   'th',
                   {
-                    class: 'combined-neuroscreen-th',
-                    style: undefined,
+                    class: 'combined-neuroscreen-th action-col',
                     scope: 'col',
                     'aria-label': 'Actions',
                   },
@@ -374,7 +373,9 @@ function makeCreateCell(updateCell) {
       const rowLabel = rowData.name || rowId;
       const colLabel = column.label || column.field;
       input.setAttribute('aria-label', `${colLabel}: ${rowLabel}`);
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
   }
   return (column, rowData, rowId) => {
     const value = rowData[column.field] || '';

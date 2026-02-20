@@ -70,7 +70,9 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const partitionKey = item.category || 'uncategorized';
+    // Use the item's id as the partition key (matches Cosmos container config).
+    // Fall back to category or id if the container uses a different partition scheme.
+    const partitionKey = item.id || item.category || caseId;
 
     // Delete the item
     await container.item(caseId, partitionKey).delete();

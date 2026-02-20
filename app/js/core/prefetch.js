@@ -17,7 +17,11 @@ export function idleImport(loader) {
     ric(() => {
       try {
         loader();
-      } catch {}
+      } catch {
+        /* prefetch is best-effort */
+      }
     });
-  } catch {}
+  } catch {
+    /* requestIdleCallback may not be available */
+  }
 }

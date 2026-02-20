@@ -1,3 +1,6 @@
+// Module-level AbortController for global listeners; prevents stacking on re-init
+let _menuAc = null;
+
 /**
  * Site Menu (mobile/compact) controller
  * - Ties .hamburger-btn to #siteMenu
@@ -11,6 +14,11 @@ export function initSiteMenu() {
   if (!hamburger || !menu) return false;
 
   window.__SITE_MENU_INIT__ = true;
+
+  // Abort any previous listeners and create a fresh controller
+  if (_menuAc) _menuAc.abort();
+  _menuAc = new AbortController();
+  const sig = { signal: _menuAc.signal };
 
   function ensureOverlay() {
     let ov = document.getElementById('siteMenuOverlay');
@@ -59,7 +67,9 @@ export function initSiteMenu() {
     if (target) {
       try {
         target.focus();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     }
     // Now hide from assistive tech and prevent stray focus while hidden
     menu.setAttribute('aria-hidden', 'true');
@@ -89,48 +99,59 @@ export function initSiteMenu() {
   }
 
   if (!hamburger._siteMenuBound) {
-    hamburger.addEventListener('click', (e) => {
-      e.preventDefault();
-      menu.classList.contains('is-open') ? closeMenu() : openMenu();
-    });
+    hamburger.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        menu.classList.contains('is-open') ? closeMenu() : openMenu();
+      },
+      sig,
+    );
     hamburger._siteMenuBound = true;
   }
   if (!overlay._siteMenuBound) {
-    overlay.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu, sig);
     overlay._siteMenuBound = true;
   }
   if (closeBtn && !closeBtn._siteMenuBound) {
-    closeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeMenu();
-    });
+    closeBtn.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        closeMenu();
+      },
+      sig,
+    );
     closeBtn._siteMenuBound = true;
   }
-  if (!document._siteMenuEscTrap) {
-    document.addEventListener('keydown', onKeydownTrap);
-    document._siteMenuEscTrap = true;
-  }
-  if (!window._siteMenuHashClose) {
-    window.addEventListener('hashchange', closeMenu);
-    window._siteMenuHashClose = true;
-  }
+
+  document.addEventListener('keydown', onKeydownTrap, sig);
+  window.addEventListener('hashchange', closeMenu, sig);
 
   // Wire theme + feedback buttons inside the menu (delegated where possible)
   const themeBtn = document.getElementById('siteMenuThemeToggle');
   const feedbackBtn = document.getElementById('siteMenuFeedback');
   if (themeBtn && !themeBtn._siteMenuBound) {
-    themeBtn.addEventListener('click', () => {
-      const t = document.getElementById('themeToggle');
-      if (t) t.click();
-    });
+    themeBtn.addEventListener(
+      'click',
+      () => {
+        const t = document.getElementById('themeToggle');
+        if (t) t.click();
+      },
+      sig,
+    );
     themeBtn._siteMenuBound = true;
   }
   if (feedbackBtn && !feedbackBtn._siteMenuBound) {
-    feedbackBtn.addEventListener('click', () => {
-      const f = document.getElementById('feedbackBtn');
-      if (f) f.click();
-      closeMenu();
-    });
+    feedbackBtn.addEventListener(
+      'click',
+      () => {
+        const f = document.getElementById('feedbackBtn');
+        if (f) f.click();
+        closeMenu();
+      },
+      sig,
+    );
     feedbackBtn._siteMenuBound = true;
   }
 

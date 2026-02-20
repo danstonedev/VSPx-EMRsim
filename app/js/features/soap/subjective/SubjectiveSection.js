@@ -4,6 +4,7 @@
 import { textAreaField } from '../../../ui/form-components.js';
 import { el } from '../../../ui/utils.js';
 import { PainAssessment } from './PainAssessment.js';
+import { createInterviewQAPanel } from './SubjectiveQA.js';
 
 /**
  * Creates the complete subjective assessment section with structured pain assessment,
@@ -64,6 +65,17 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     PainAssessment.create(data, updateField),
   ]);
   section.append(painSection);
+
+  // Interview Q/A section with anchor — structured open-ended questions
+  const qaSection = el('div', { id: 'interview-qa', class: 'section-anchor' }, [
+    el('h4', { class: 'subsection-title' }, 'Interview Q/A'),
+    createInterviewQAPanel(data, (updated) => {
+      // Merge qaItems back into data and persist
+      data.qaItems = updated.qaItems;
+      onUpdate(data);
+    }),
+  ]);
+  section.append(qaSection);
 
   // Functional status section with anchor
   const functionalSection = el('div', { id: 'functional-status', class: 'section-anchor' }, [

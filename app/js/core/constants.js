@@ -8,3 +8,11 @@
 export const EXPERIMENT_FLAGS = {
   NAV_SIMPLE_MODE: true,
 };
+
+/**
+ * True when running on localhost / 127.0.0.1 (dev servers).
+ * Use this instead of inline hostname checks throughout the codebase.
+ */
+export const IS_LOCAL_DEV =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');

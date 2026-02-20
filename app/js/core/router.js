@@ -61,7 +61,9 @@ async function loadCssForPathAndPreload(path, debug) {
 function safeCleanup() {
   try {
     if (typeof currentCleanup === 'function') currentCleanup();
-  } catch {}
+  } catch (err) {
+    console.warn('[Router] view cleanup error:', err);
+  }
 }
 
 function postRenderPerfAndPrefetch(routeType, path, debug) {
@@ -69,7 +71,9 @@ function postRenderPerfAndPrefetch(routeType, path, debug) {
     performance.measure('router:render', 'router:render:start');
   try {
     scheduleIdle(() => idlePrefetchLikelyNext(routeType), 1500);
-  } catch {}
+  } catch (err) {
+    console.warn('[Router] idle prefetch scheduling failed:', err);
+  }
   if (debug) {
     try {
       const measures = performance
@@ -80,7 +84,9 @@ function postRenderPerfAndPrefetch(routeType, path, debug) {
           '[router][perf]',
           measures.map((m) => `${m.name}=${m.duration.toFixed(1)}ms`).join(' '),
         );
-    } catch {}
+    } catch {
+      /* performance API may not be available */
+    }
   }
 }
 
@@ -112,14 +118,18 @@ function updateDocumentTitle(title) {
   try {
     const base = 'UND-PT EMR-Sim';
     document.title = title ? `${base} — ${title}` : base;
-  } catch {}
+  } catch {
+    /* document title may not be settable */
+  }
 }
 
 function derivePageTitle(path, wrapper) {
   try {
     const h1 = wrapper && wrapper.querySelector ? wrapper.querySelector('h1') : null;
     if (h1 && h1.textContent) return h1.textContent.trim();
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
   const type = getRouteType(path);
   const map = {
     home: 'Home',
@@ -137,14 +147,18 @@ function applyPostRenderA11y(wrapper, path) {
   try {
     // Scroll to top on navigation
     window.scrollTo(0, 0);
-  } catch {}
+  } catch {
+    /* scrollTo may not be available */
+  }
   try {
     // Announce new page and update title
     const title = derivePageTitle(path, wrapper);
     updateDocumentTitle(title);
     const announcer = ensureAnnouncer();
     announcer.textContent = `${title} loaded`;
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
   try {
     // Focus main heading if present; otherwise focus wrapper for keyboard users
     const h1 = wrapper && wrapper.querySelector ? wrapper.querySelector('h1') : null;
@@ -155,7 +169,9 @@ function applyPostRenderA11y(wrapper, path) {
       if (!wrapper.hasAttribute('tabindex')) wrapper.setAttribute('tabindex', '-1');
       wrapper.focus({ preventScroll: true });
     }
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 }
 
 /**
@@ -180,7 +196,9 @@ function applyRouteTransition(appEl, mode = 'fade') {
       before: (cb) => {
         try {
           appEl.replaceChildren();
-        } catch {}
+        } catch {
+          /* element may not exist */
+        }
         cb();
       },
       after: () => {},
@@ -194,7 +212,9 @@ function applyRouteTransition(appEl, mode = 'fade') {
     if (current && current.parentElement === appEl) {
       try {
         appEl.removeChild(current);
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     }
     prepareNew();
   };
@@ -326,14 +346,18 @@ function resolveRendererAndParams(path) {
 function persistLastRoute(hash, path) {
   try {
     if (path && path !== '#/' && path !== '#/404') storage.setItem('pt_emr_last_route', hash);
-  } catch {}
+  } catch (err) {
+    console.warn('[Router] failed to persist last route:', err);
+  }
 }
 
 function setBodyRouteKey(path) {
   try {
     const routeKey = path && path !== '#/' ? path.slice(2).replace(/\//g, '-') : 'home';
     document.body.setAttribute('data-route', routeKey);
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 }
 
 function buildRouteWrapper(app, before) {
@@ -514,7 +538,9 @@ function setupPredictivePrefetch() {
       const currentPath = getNormalizedHash().path;
       if (path === currentPath) return;
       prefetchRoute(path);
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
   };
   // Prefetch when the user shows intent (hover) or navigates with keyboard (focus)
   document.addEventListener('mouseover', handler, { passive: true });
@@ -533,7 +559,9 @@ function prefetchRoute(path) {
     }
     // Prefetch module at idle
     scheduleIdle(() => ensureRouteModuleLoaded(path), 1200);
-  } catch {}
+  } catch (err) {
+    console.warn('[Router] route prefetch failed:', err);
+  }
 }
 
 function idlePrefetchLikelyNext(routeType) {
@@ -548,5 +576,7 @@ function idlePrefetchLikelyNext(routeType) {
     };
     const nextPaths = map[routeType] || [];
     nextPaths.forEach((p) => prefetchRoute(p));
-  } catch {}
+  } catch (err) {
+    console.warn('[Router] idle prefetch failed:', err);
+  }
 }

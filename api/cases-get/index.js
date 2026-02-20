@@ -1,12 +1,15 @@
 const { getContainer } = require('../shared/cosmos.js');
 
+const MAX_CASES = 500; // Safety limit to avoid unbounded reads
+
 module.exports = async function (context, req) {
   try {
     const container = await getContainer();
 
-    // Query all cases
+    // Paginated query with a safety cap
     const querySpec = {
-      query: 'SELECT * FROM c',
+      query: 'SELECT * FROM c OFFSET 0 LIMIT @limit',
+      parameters: [{ name: '@limit', value: MAX_CASES }],
     };
 
     const { resources: cases } = await container.items.query(querySpec).fetchAll();

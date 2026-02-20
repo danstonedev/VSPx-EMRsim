@@ -40,6 +40,11 @@ table.combined-neuroscreen-table {
   box-shadow: var(--elev-soft);
 }
 
+/* Tables with action columns use fixed layout for predictable column widths */
+table.combined-neuroscreen-table:has(.action-col) {
+  table-layout: fixed;
+}
+
 :root[data-theme='dark'] table.combined-neuroscreen-table {
   /* Use same border width for consistency */
   box-shadow: var(--elev-hero);
@@ -107,13 +112,19 @@ table.combined-neuroscreen-table {
 }
 
 /* Top-left corner rounding */
-.combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th.level-col {
-  border-top-left-radius: var(--table-radius-inner);
+.combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th.level-col,
+.combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th:first-child {
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+/* Remove right border when level-col spans to table edge (e.g., ICD-10 full-width header) */
+.combined-neuroscreen-thead tr .combined-neuroscreen-th.level-col:last-child {
+  border-right: none;
 }
 
 /* Top-right corner rounding */
 .combined-neuroscreen-thead tr:first-child .combined-neuroscreen-th:last-child {
-  border-top-right-radius: var(--table-radius-inner);
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Group headers (Left/Right in row 1) */
@@ -306,12 +317,28 @@ table.combined-neuroscreen-table {
 }
 
 /* Bottom corners */
-.combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td.level-col {
-  border-bottom-left-radius: var(--table-radius-inner);
+.combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td.level-col,
+.combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td:first-child {
+  border-bottom-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 .combined-neuroscreen-tbody tr:last-child .combined-neuroscreen-td:last-child {
-  border-bottom-right-radius: var(--table-radius-inner);
+  border-bottom-right-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+/* Top corners for headerless tables (no thead, tbody is first child) */
+.combined-neuroscreen-table
+  > .combined-neuroscreen-tbody:first-child
+  tr:first-child
+  .combined-neuroscreen-td:first-child {
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.combined-neuroscreen-table
+  > .combined-neuroscreen-tbody:first-child
+  tr:first-child
+  .combined-neuroscreen-td:last-child {
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Remove bottom border from last row */
@@ -319,11 +346,296 @@ table.combined-neuroscreen-table {
   border-bottom: none;
 }
 
-/* Action column utility */
+/* Action column utility - fixed narrow width for delete buttons */
 .combined-neuroscreen-th.action-col,
 .combined-neuroscreen-td.action-col {
   width: var(--table-col-action);
+  min-width: var(--table-col-action);
+  max-width: var(--table-col-action);
   text-align: center;
+  padding: var(--space-2, 0.5rem);
+}
+
+/* ICD-10 billing table: no divider between main cell and action column */
+.billing-icd10-table .combined-neuroscreen-td.level-col {
+  border-right: none;
+}
+
+.billing-icd10-table .combined-neuroscreen-td.action-col {
+  border-left: none;
+}
+
+/* ========================================
+   Billing Tables - Gray headers (override green level-col)
+   ======================================== */
+.billing-section-container .combined-neuroscreen-th.billing-header,
+.billing-linked-group .combined-neuroscreen-th.billing-header {
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  font-weight: 600;
+  font-size: var(--table-header-font);
+  white-space: nowrap;
+  text-align: left;
+  vertical-align: middle;
+  border-right: none;
+  border-bottom: 2px solid var(--color-border-strong);
+  padding-left: var(--table-cell-padding);
+}
+
+/* First billing header in row gets top-left radius */
+.billing-section-container
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.billing-header:first-child {
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-group
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.billing-header:first-child {
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+/* Last billing header in row gets top-right radius */
+.billing-section-container
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.billing-header:last-child,
+.billing-section-container
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.action-col:last-child {
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-group
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.billing-header:last-child,
+.billing-linked-group
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th.action-col:last-child {
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-groups {
+  display: grid;
+  gap: var(--space-3, 0.75rem);
+}
+
+.billing-dx-selector {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+}
+
+.billing-dx-selector__title {
+  font-size: var(--table-header-font);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.billing-dx-selector__controls {
+  display: grid;
+}
+
+.billing-linked-group {
+  border: 1px solid var(--table-border-color);
+  border-radius: var(--table-radius-outer);
+  background: var(--surface-card);
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+  box-shadow: none;
+}
+
+.billing-linked-group[open]:focus-within,
+.billing-linked-group[open]:has(.custom-select--open) {
+  z-index: 20;
+}
+
+.billing-linked-group__summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  font-weight: 600;
+  font-size: var(--table-font-size);
+  line-height: 1.3;
+  color: var(--table-head-text);
+  background: var(--surface-table-head);
+  border-radius: calc(var(--table-radius-outer) - 1px);
+  border-bottom: 1px solid transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.billing-linked-group__chevron {
+  display: inline-flex;
+  width: 1rem;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.billing-linked-group:not([open]) .billing-linked-group__chevron {
+  transform: rotate(-90deg);
+}
+
+.billing-linked-group[open] .billing-linked-group__summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: var(--table-border-color);
+}
+
+.billing-linked-group__summary-text {
+  flex: 1;
+}
+
+.billing-linked-group__order-badge {
+  border: 1px solid color-mix(in srgb, var(--table-head-text) 50%, transparent);
+  border-radius: var(--radius-sm, 4px);
+  padding: 0.12rem 0.4rem;
+  font-size: var(--font-sm, 0.8125rem);
+  color: var(--table-head-text);
+}
+
+.billing-linked-group__order-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.billing-linked-group__reorder-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--table-head-text) 50%, transparent);
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--table-head-text);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.billing-linked-group__reorder-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.billing-linked-group__reorder-btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--surface-table-head) 70%, white);
+}
+
+.billing-linked-group__remove-btn {
+  margin-left: auto;
+}
+
+.billing-linked-group[open] .billing-linked-group__summary {
+  border-bottom-color: var(--table-border-color);
+}
+
+.billing-linked-group__summary::-webkit-details-marker {
+  display: none;
+}
+
+.billing-linked-group__content {
+  padding: var(--space-3, 0.75rem);
+  background: var(--surface-card);
+  border-bottom-left-radius: calc(var(--table-radius-outer) - 1px);
+  border-bottom-right-radius: calc(var(--table-radius-outer) - 1px);
+  overflow: visible;
+}
+
+.billing-linked-subtables {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+  padding: 0;
+  background: transparent;
+}
+
+.billing-linked-subtable {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+}
+
+.billing-linked-subtable table.combined-neuroscreen-table {
+  border: 1px solid var(--table-border-color);
+  border-radius: calc(var(--table-radius-inner) - 1px);
+  box-shadow: none;
+}
+
+.billing-linked-subtable .combined-neuroscreen-th.billing-header {
+  background: var(--surface-secondary);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+/* Fix subtable corner bleeding by subtracting 1px for the inner border */
+.billing-linked-subtable
+  .combined-neuroscreen-tbody
+  tr:last-child
+  .combined-neuroscreen-td:first-child {
+  border-bottom-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-subtable
+  .combined-neuroscreen-tbody
+  tr:last-child
+  .combined-neuroscreen-td:last-child {
+  border-bottom-right-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-subtable .combined-neuroscreen-th.action-col {
+  text-align: center;
+}
+
+.billing-row-add-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-card);
+  color: var(--accent);
+  font-size: 1.15rem;
+  line-height: 1;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.billing-row-add-btn:hover {
+  background: var(--primary-light);
+}
+
+.billing-linked-subtable
+  table.combined-neuroscreen-table:has(.combined-neuroscreen-tbody:empty)
+  .combined-neuroscreen-th:first-child {
+  border-bottom-left-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.billing-linked-subtable
+  table.combined-neuroscreen-table:has(.combined-neuroscreen-tbody:empty)
+  .combined-neuroscreen-th:last-child {
+  border-bottom-right-radius: calc(var(--table-radius-inner) - 1px);
+}
+
+.compact-add-btn.compact-add-btn--inline {
+  margin: 0.15rem auto 0;
+}
+
+.billing-linked-empty-state {
+  border: 1px dashed var(--color-border-soft);
+  border-radius: calc(var(--table-radius-inner) - 1px);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  font-size: var(--table-font-size);
 }
 
 /* Cell text alignment utilities */
@@ -428,6 +740,16 @@ table.combined-neuroscreen-table {
 
 .combined-neuroscreen-table--compact .combined-neuroscreen-th.level-col {
   border-right-width: 2px;
+  border-top: none;
+  border-left: none;
+}
+
+/* Ensure the first header cell sits flush against the outer border */
+.combined-neuroscreen-table--compact
+  .combined-neuroscreen-thead
+  tr:first-child
+  .combined-neuroscreen-th:first-child {
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 .combined-neuroscreen-table--compact .combined-neuroscreen-td.level-col {
@@ -492,12 +814,14 @@ table.combined-neuroscreen-table {
 }
 
 /* ========================================
-   MMT / Bilateral Tables - Constrain first column
+   MMT / Bilateral Tables - First column sizing
    ======================================== */
 .mmt-section .combined-neuroscreen-table .combined-neuroscreen-th.level-col,
 .mmt-section .combined-neuroscreen-table .combined-neuroscreen-td.level-col {
-  width: 12rem;
-  max-width: 12rem;
+  width: auto;
+  min-width: 10rem;
+  max-width: none;
+  white-space: normal;
 }
 
 /* Responsive adjustments */
@@ -517,5 +841,28 @@ table.combined-neuroscreen-table {
   .combined-neuroscreen__input {
     font-size: var(--table-font-size-sm);
     padding: var(--space-1, 0.25rem);
+  }
+}
+
+/* ========================================
+   Treatment Plan - Schedule row (Frequency + Duration side by side)
+   ======================================== */
+.treatment-plan-schedule {
+  display: flex;
+  gap: var(--space-4, 1rem);
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.treatment-plan-schedule > * {
+  flex: 1;
+}
+
+.treatment-plan-schedule .form-field {
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .treatment-plan-schedule {
+    flex-direction: column;
   }
 }

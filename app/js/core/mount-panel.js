@@ -30,7 +30,9 @@ export function mountPanel(container, loader, props) {
     dispose() {
       try {
         cleanup && cleanup();
-      } catch {}
+      } catch (err) {
+        console.warn('[MountPanel] cleanup error:', err);
+      }
       cleanup = null;
     },
   };

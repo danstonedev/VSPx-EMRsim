@@ -1,0 +1,317 @@
+/* ──────────────────────────────────────────────────────────
+   Interview Q/A Panel – SubjectiveQA component styles
+   ────────────────────────────────────────────────────────── */
+
+/* ── Panel wrapper ─────────────────────────────────────── */
+.qa-panel {
+  margin-top: var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-card, #fff);
+  overflow: hidden;
+}
+
+/* ── Header bar ────────────────────────────────────────── */
+.qa-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: linear-gradient(
+    90deg,
+    var(--header-gradient-left, #009a44) 0%,
+    var(--header-gradient-right, #00783c) 100%
+  );
+  color: var(--white, #fff);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.075rem);
+  border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0;
+}
+
+.qa-panel__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.qa-panel__counter {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  font-variant-numeric: tabular-nums;
+}
+
+.qa-panel__counter--met {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.qa-panel__counter--under {
+  background: rgba(255, 255, 100, 0.25);
+}
+
+.qa-panel__target {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+}
+
+.qa-panel__target--met {
+  background: rgba(100, 255, 160, 0.3);
+}
+
+/* ── Body container ────────────────────────────────────── */
+.qa-panel__body {
+  padding: var(--space-3, 0.75rem);
+}
+
+.qa-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+/* ── Add button ────────────────────────────────────────── */
+.qa-panel__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: var(--space-3, 0.75rem);
+  padding: 0.45rem 1rem;
+  border: 1px dashed var(--color-border-strong, #009a44);
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--header-gradient-left, #009a44);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.qa-panel__add-btn:hover {
+  background: var(--header-gradient-left, #009a44);
+  color: var(--white, #fff);
+}
+
+/* ── Individual Q/A row ────────────────────────────────── */
+.qa-row {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-card, #fff);
+  position: relative;
+  transition:
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.qa-row:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.qa-row--dragging {
+  opacity: 0.4;
+}
+
+.qa-row--drag-over {
+  border-color: var(--header-gradient-left, #009a44);
+  box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.2);
+}
+
+/* Drag handle */
+.qa-row__handle {
+  flex-shrink: 0;
+  width: 1.4rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.35rem;
+  cursor: grab;
+  color: var(--text-muted, #8c8c8c);
+  font-size: 1.1rem;
+  user-select: none;
+  line-height: 1;
+}
+
+.qa-row__handle:active {
+  cursor: grabbing;
+}
+
+/* Row body */
+.qa-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* Number badge */
+.qa-row__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--header-gradient-left, #009a44);
+  color: var(--white, #fff);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+}
+
+/* Labels */
+.qa-row__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+}
+
+/* Textareas */
+.qa-row__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 2.4rem;
+  font-size: 0.925rem;
+}
+
+/* Closed-ended warning */
+.qa-row__closed-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm, 4px);
+  background: #fff8e1;
+  border-left: 3px solid #f5a623;
+  font-size: 0.82rem;
+  color: #7a5b00;
+  line-height: 1.4;
+}
+
+html[data-theme='dark'] .qa-row__closed-warning {
+  background: rgba(245, 166, 35, 0.12);
+  color: #ffc85c;
+  border-left-color: #ffa726;
+}
+
+.qa-row__closed-icon {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+/* ── Tag chips ─────────────────────────────────────────── */
+.qa-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.qa-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: 999px;
+  background: var(--surface-secondary, #f7f7f7);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted, #8c8c8c);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+  user-select: none;
+}
+
+.qa-tag-chip:hover {
+  border-color: var(--header-gradient-left, #009a44);
+  color: var(--header-gradient-left, #009a44);
+}
+
+.qa-tag-chip--active {
+  background: var(--header-gradient-left, #009a44);
+  border-color: var(--header-gradient-left, #009a44);
+  color: var(--white, #fff);
+}
+
+.qa-tag-chip--active:hover {
+  background: var(--header-gradient-right, #00783c);
+  color: var(--white, #fff);
+}
+
+/* ── Delete button ─────────────────────────────────────── */
+.qa-row__delete {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.35rem;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--text-muted, #8c8c8c);
+  transition: color 120ms ease;
+  line-height: 1;
+}
+
+.qa-row__delete:hover:not([disabled]) {
+  color: var(--color-danger, #d32f2f);
+}
+
+.qa-row__delete[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Dark theme ────────────────────────────────────────── */
+html[data-theme='dark'] .qa-panel {
+  border-color: var(--color-border, #3a3a3a);
+}
+
+html[data-theme='dark'] .qa-row {
+  border-color: var(--color-border, #3a3a3a);
+}
+
+html[data-theme='dark'] .qa-tag-chip {
+  background: var(--surface-secondary, #2a2a2a);
+  border-color: var(--color-border, #3a3a3a);
+}
+
+html[data-theme='dark'] .qa-row__delete:hover:not([disabled]) {
+  color: #ef5350;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .qa-row {
+    flex-direction: column;
+  }
+
+  .qa-row__handle {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 0;
+    padding-bottom: 0.2rem;
+  }
+
+  .qa-row__delete {
+    position: absolute;
+    top: var(--space-2, 0.5rem);
+    right: var(--space-2, 0.5rem);
+  }
+
+  .qa-panel__header {
+    flex-wrap: wrap;
+  }
+}

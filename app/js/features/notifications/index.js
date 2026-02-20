@@ -20,5 +20,7 @@ on('export:completed', (ev) => {
       iconSVG: checkIcon,
       timeoutMs: 3400,
     });
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 });

@@ -47,7 +47,10 @@ export function showToast(message, opts = {}) {
   if (opts.iconSVG) {
     const icon = document.createElement('span');
     icon.className = 'toast-icon';
-    icon.innerHTML = opts.iconSVG;
+    // Only accept known static SVG strings from internal callers
+    if (typeof opts.iconSVG === 'string' && opts.iconSVG.startsWith('<svg')) {
+      icon.innerHTML = opts.iconSVG;
+    }
     icon.setAttribute('aria-hidden', 'true');
     toast.appendChild(icon);
   }

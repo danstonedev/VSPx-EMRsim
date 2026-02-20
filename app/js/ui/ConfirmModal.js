@@ -43,7 +43,9 @@ export function showConfirmModal({
         const removeNow = () => {
           try {
             modal?.remove();
-          } catch {}
+          } catch {
+            /* element may not exist */
+          }
         };
 
         if (prefersReduce) {
@@ -60,7 +62,9 @@ export function showConfirmModal({
         }
 
         resolve(confirmed);
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     };
 
     const handleConfirm = () => {

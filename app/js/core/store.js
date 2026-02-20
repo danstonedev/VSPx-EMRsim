@@ -7,10 +7,8 @@ import { storage } from './adapters/storageAdapter.js';
 const CASES_KEY = 'pt_emr_cases';
 const CASE_COUNTER_KEY = 'pt_emr_case_counter';
 
+import { IS_LOCAL_DEV } from './constants.js';
 // Local dev detection (only auto-publish to server when running locally)
-const IS_LOCAL_DEV =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 // Explicit toggle for optional local server sync (avoids noisy 5173 errors by default)
 const USE_LOCAL_SERVER =
   typeof window !== 'undefined' &&
@@ -247,7 +245,9 @@ async function ensureCasesInitialized() {
             return serverJson;
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[Store] Local dev server sync failed:', err);
+      }
     }
 
     // Load cases from manifest (new file-based structure)
@@ -400,13 +400,10 @@ export const createCase = async (caseData) => {
   saveCasesToStorage(cases);
   // Auto-publish to local server if available
   scheduleAutoPublish();
-  // Auto-publish to Azure Cosmos DB (await for confirmation)
-  try {
-    await publishCaseToRemote(newCase.id);
-  } catch (e) {
-    console.warn('Cloud sync failed:', e);
-    throw e; // Re-throw so caller knows it failed
-  }
+  // Best-effort cloud sync — don't block local-first workflow
+  publishCaseToRemote(newCase.id).catch((e) => {
+    console.warn('Cloud sync failed (case still saved locally):', e);
+  });
 
   return newCase;
 };
@@ -432,13 +429,10 @@ export const updateCase = async (id, caseData) => {
   saveCasesToStorage(cases);
   // Auto-publish to local server if available
   scheduleAutoPublish();
-  // Auto-publish to Azure Cosmos DB (await for confirmation)
-  try {
-    await publishCaseToRemote(id);
-  } catch (e) {
-    console.warn('Cloud sync failed:', e);
-    throw e; // Re-throw so caller knows it failed
-  }
+  // Best-effort cloud sync — don't block local-first workflow
+  publishCaseToRemote(id).catch((e) => {
+    console.warn('Cloud sync failed (case still saved locally):', e);
+  });
 
   return cases[id];
 };
@@ -533,10 +527,8 @@ export const saveDraft = (caseId, encounter, draftData) => {
 
 export const loadDraft = (caseId, encounter) => {
   // Skip local draft loading for NEW cases in development mode only
-  const isDevelopmentMode =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const isNewCase = caseId === 'new';
-  const skipLoading = isDevelopmentMode && isNewCase;
+  const skipLoading = IS_LOCAL_DEV && isNewCase;
 
   if (skipLoading) {
     return null;

@@ -9,7 +9,18 @@ export class MobileNav {
     this.hamburgerBtn = null;
     this.overlay = null;
     this.drawer = null;
+    this._ac = new AbortController(); // central teardown for all listeners
     this.init();
+  }
+
+  destroy() {
+    this._ac.abort();
+    this.close();
+    try {
+      window.__MOBILE_NAV_ACTIVE = false;
+    } catch {
+      /* safe fallback */
+    }
   }
 
   init() {
@@ -18,7 +29,9 @@ export class MobileNav {
     // Signal that MobileNav is handling hamburger interactions on mobile
     try {
       window.__MOBILE_NAV_ACTIVE = true;
-    } catch {}
+    } catch {
+      /* safe fallback */
+    }
   }
 
   createElements() {
@@ -93,57 +106,77 @@ export class MobileNav {
     // Only bind events on mobile screens
     if (!this.isMobileScreen()) return;
 
+    const sig = { signal: this._ac.signal };
+
     // Hamburger button click
-    this.hamburgerBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.toggle();
-    });
+    this.hamburgerBtn.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        this.toggle();
+      },
+      sig,
+    );
 
     // Close button click
     const closeBtn = this.drawer?.querySelector('.mobile-nav-close');
     if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
+      closeBtn.addEventListener('click', () => this.close(), sig);
     }
 
     // Overlay click to close
-    this.overlay?.addEventListener('click', () => this.close());
+    this.overlay?.addEventListener('click', () => this.close(), sig);
 
     // Escape key to close
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) {
-        this.close();
-      }
-    });
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape' && this.isOpen) {
+          this.close();
+        }
+      },
+      sig,
+    );
 
     // Close on route change
-    window.addEventListener('hashchange', () => this.close());
+    window.addEventListener('hashchange', () => this.close(), sig);
 
     // Handle screen resize
-    window.addEventListener('resize', () => {
-      if (!this.isMobileScreen() && this.isOpen) {
-        this.close();
-      }
-    });
+    window.addEventListener(
+      'resize',
+      () => {
+        if (!this.isMobileScreen() && this.isOpen) {
+          this.close();
+        }
+      },
+      sig,
+    );
 
     // Wire theme + feedback links in the list
     const themeLink = this.drawer?.querySelector('.mobile-nav-theme-link');
-    if (themeLink && !themeLink._bound) {
-      themeLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        const t = document.getElementById('themeToggle');
-        if (t) t.click();
-      });
-      themeLink._bound = true;
+    if (themeLink) {
+      themeLink.addEventListener(
+        'click',
+        (e) => {
+          e.preventDefault();
+          const t = document.getElementById('themeToggle');
+          if (t) t.click();
+        },
+        sig,
+      );
     }
     const feedbackLink = this.drawer?.querySelector('.mobile-nav-feedback-link');
-    if (feedbackLink && !feedbackLink._bound) {
-      feedbackLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        const f = document.getElementById('feedbackBtn');
-        if (f) f.click();
-        this.close();
-      });
-      feedbackLink._bound = true;
+    if (feedbackLink) {
+      feedbackLink.addEventListener(
+        'click',
+        (e) => {
+          e.preventDefault();
+          const f = document.getElementById('feedbackBtn');
+          if (f) f.click();
+          this.close();
+        },
+        sig,
+      );
     }
   }
 
@@ -189,7 +222,9 @@ export class MobileNav {
     // Before hiding, move focus back to hamburger to avoid hiding focused descendant
     try {
       this.hamburgerBtn.focus();
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
 
     // Hide elements / accessibility state
     this.overlay.classList.remove('visible');
@@ -230,7 +265,9 @@ export function initMobileNav(opts = {}) {
     if (!hasCoarsePointer) {
       try {
         window.__MOBILE_NAV_FINE_POINTER = true;
-      } catch {}
+      } catch {
+        /* safe fallback */
+      }
     }
     // Debug aid: enable via ?debug=1
     if (location.search.includes('debug=1')) {
@@ -248,10 +285,19 @@ export function initMobileNav(opts = {}) {
 if (typeof window !== 'undefined' && !window.__MOBILE_NAV_RESIZE_WATCH) {
   try {
     window.__MOBILE_NAV_RESIZE_WATCH = true;
-    window.addEventListener('resize', () => {
-      if (!window.__MOBILE_NAV_ACTIVE && window.matchMedia('(max-width: 768px)').matches) {
-        initMobileNav();
-      }
-    });
-  } catch {}
+    const _resizeAc = new AbortController();
+    window.addEventListener(
+      'resize',
+      () => {
+        if (!window.__MOBILE_NAV_ACTIVE && window.matchMedia('(max-width: 768px)').matches) {
+          initMobileNav();
+          // Stop watching once initialized
+          _resizeAc.abort();
+        }
+      },
+      { signal: _resizeAc.signal },
+    );
+  } catch (e) {
+    console.warn('MobileNav resize watch setup failed:', e);
+  }
 }

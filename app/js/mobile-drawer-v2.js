@@ -36,7 +36,9 @@
       btn.setAttribute('aria-expanded', 'true');
       try {
         drawer.focus();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     }
 
     function close() {
@@ -46,7 +48,9 @@
       btn.setAttribute('aria-expanded', 'false');
       try {
         btn.focus();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     }
 
     function toggle() {
@@ -80,7 +84,9 @@
         toggle,
         elements: { btn, drawer, overlay },
       };
-    } catch {}
+    } catch {
+      /* safe fallback */
+    }
     return true;
   }
 

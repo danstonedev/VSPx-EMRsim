@@ -3,10 +3,24 @@
  * Manual Muscle Testing assessment component
  */
 import { el } from '../../../ui/utils.js';
-import { createBilateralTable } from './EditableTable.js';
+import { createEditableTable } from './EditableTable.js';
+
+const MMT_GRADES = [
+  { value: '', label: 'Not tested' },
+  { value: '0/5', label: '0/5 - No contraction' },
+  { value: '1/5', label: '1/5 - Trace contraction' },
+  { value: '2/5', label: '2/5 - Full ROM gravity eliminated' },
+  { value: '3/5', label: '3/5 - Full ROM against gravity' },
+  { value: '4-/5', label: '4-/5 - Less than normal resistance' },
+  { value: '4/5', label: '4/5 - Moderate resistance' },
+  { value: '4+/5', label: '4+/5 - Nearly normal resistance' },
+  { value: '5/5', label: '5/5 - Normal strength' },
+];
 
 /**
  * Creates a Manual Muscle Testing assessment section
+ * Uses createEditableTable directly for a professional grouped header
+ * with full add/delete support.
  * @param {string} regionKey - Region identifier
  * @param {object} region - Region configuration data
  * @param {object} mmtData - Current MMT data
@@ -17,31 +31,93 @@ export function createMmtSection(regionKey, region, mmtData, onChange) {
     class: 'assessment-section mmt-section mb-24',
   });
 
-  const mmtGrades = [
-    { value: '0/5', label: '0/5 - No contraction' },
-    { value: '1/5', label: '1/5 - Trace contraction' },
-    { value: '2/5', label: '2/5 - Full ROM gravity eliminated' },
-    { value: '3/5', label: '3/5 - Full ROM against gravity' },
-    { value: '4-/5', label: '4-/5 - Less than normal resistance' },
-    { value: '4/5', label: '4/5 - Moderate resistance' },
-    { value: '4+/5', label: '4+/5 - Nearly normal resistance' },
-    { value: '5/5', label: '5/5 - Normal strength' },
-  ];
+  // Group bilateral items by muscle name to combine L/R into one row
+  const grouped = {};
+  (region.mmt || []).forEach((item) => {
+    const baseName = item.name || item.muscle;
+    if (!grouped[baseName]) grouped[baseName] = baseName;
+  });
 
-  const table = createBilateralTable({
-    title: 'Manual Muscle Testing',
-    items: region.mmt,
-    data: mmtData,
-    onChange,
-    valueType: 'select',
-    options: mmtGrades,
-    normalValues: false, // remove Normal column entirely
-    // Notes column removed per latest requirements
-    notesColumn: false,
-    nameColumnLabel: 'Manual Muscle Testing', // use green title as first column header
-    nameColumnShortLabel: 'MMT',
-    showTitle: false, // hide green band title
-    // notesWidth no longer needed
+  // Convert grouped items to table data keyed by stable slug IDs
+  const tableData = {};
+  Object.keys(grouped).forEach((muscleName) => {
+    const rowId = `mmt-${muscleName.toLowerCase().replace(/\s+/g, '-')}`;
+    tableData[rowId] = {
+      name: muscleName,
+      left: '',
+      right: '',
+    };
+  });
+
+  // Overlay previously saved values (includes user-added rows)
+  if (mmtData && typeof mmtData === 'object') {
+    Object.keys(mmtData).forEach((id) => {
+      const saved = mmtData[id];
+      if (saved && typeof saved === 'object') {
+        if (tableData[id]) {
+          // Existing region-defined muscle — restore saved values
+          tableData[id].left = saved.left || '';
+          tableData[id].right = saved.right || '';
+          if (saved.name) tableData[id].name = saved.name;
+        } else {
+          // User-added muscle — re-create the row
+          tableData[id] = {
+            name: saved.name || '',
+            left: saved.left || '',
+            right: saved.right || '',
+          };
+        }
+      }
+      // Skip old numeric-keyed string values (legacy format)
+    });
+  }
+
+  // Use region name for the green level-col header (matches ROM pattern)
+  const regionLabel = (region.name || 'MMT').toUpperCase();
+
+  const table = createEditableTable({
+    title: '',
+    columns: [
+      {
+        field: 'name',
+        label: regionLabel,
+        short: 'MMT',
+        width: 'calc(50% - 30px)',
+        placeholder: 'Muscle name',
+      },
+      {
+        field: 'left',
+        label: 'Left',
+        width: 'calc(25% - 15px)',
+        type: 'select',
+        options: MMT_GRADES,
+      },
+      {
+        field: 'right',
+        label: 'Right',
+        width: 'calc(25% - 15px)',
+        type: 'select',
+        options: MMT_GRADES,
+      },
+    ],
+    data: tableData,
+    onChange: (newData) => {
+      const updatedData = {};
+      Object.keys(newData).forEach((rowId) => {
+        updatedData[rowId] = {
+          name: newData[rowId].name,
+          left: newData[rowId].left,
+          right: newData[rowId].right,
+        };
+      });
+      onChange(updatedData);
+    },
+    showAddButton: true,
+    compactAddButton: true,
+    addButtonText: '+ Add Muscle',
+    showDeleteButton: true,
+    actionsHeaderLabel: '',
+    className: 'bilateral-table no-normal mmt-bilateral-table',
   });
 
   container.appendChild(table.element);

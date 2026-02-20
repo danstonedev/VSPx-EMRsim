@@ -1,13 +1,18 @@
 // Case Drawer Controller: slide the existing .chart-navigation in/out on <900px viewports
 import { getRoute, onRouteChange } from '../../core/url.js';
 
+// Module-level AbortController for global listeners; abort + replace on re-init
+let _drawerAc = null;
+
 // Lightweight debug helper (enable via ?debug=1 in URL)
 const CD_DEBUG = typeof location !== 'undefined' && location.search.includes('debug=1');
 function cdDebug(...args) {
   if (CD_DEBUG) {
     try {
       console.warn('[CaseDrawer]', ...args);
-    } catch {}
+    } catch {
+      /* safe fallback */
+    }
   }
 }
 
@@ -110,7 +115,9 @@ export function initCaseDrawer() {
       // Round to device pixel to avoid subpixel jitter on transforms
       const w = Math.round(rect.width * window.devicePixelRatio) / window.devicePixelRatio;
       document.body.style.setProperty('--case-drawer-w', `${w}px`);
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
   }
 
   const overlay = ensureOverlay();
@@ -194,7 +201,9 @@ export function initCaseDrawer() {
     }
     try {
       handle.focus();
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
     const n = document.getElementById('caseDrawerLeftNudge');
     if (n) {
       n.setAttribute('aria-expanded', 'false');
@@ -243,25 +252,28 @@ export function initCaseDrawer() {
   }
 
   function attachEvents() {
+    // Abort previous listeners to avoid stacking on re-init
+    if (_drawerAc) _drawerAc.abort();
+    _drawerAc = new AbortController();
+    const sig = { signal: _drawerAc.signal };
+
     // Right-side handle is deprecated/hidden; skip attaching events to it
-    if (!overlay._caseDrawerBound) {
-      overlay.addEventListener('click', close);
-      overlay._caseDrawerBound = true;
-    }
-    if (!document._caseDrawerEscTrap) {
-      const onEsc = (e) => {
+    overlay.addEventListener('click', close, sig);
+
+    document.addEventListener(
+      'keydown',
+      (e) => {
         if (e.key === 'Escape') close();
-      };
-      document.addEventListener('keydown', onEsc);
-      document._caseDrawerEscTrap = true;
-    }
-    if (!window._caseDrawerHashClose) {
-      window.addEventListener('hashchange', close);
-      window._caseDrawerHashClose = true;
-    }
-    if (!window._caseDrawerResize) {
-      let resizeDebounceTimer = null;
-      const onResize = () => {
+      },
+      sig,
+    );
+
+    window.addEventListener('hashchange', close, sig);
+
+    let resizeDebounceTimer = null;
+    window.addEventListener(
+      'resize',
+      () => {
         // Debounce resize events for better performance
         if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
         resizeDebounceTimer = setTimeout(() => {
@@ -280,12 +292,13 @@ export function initCaseDrawer() {
             syncDrawerWidthVar();
           }
         }, 100); // 100ms debounce
-      };
-      window.addEventListener('resize', onResize, { passive: true });
-      window._caseDrawerResize = true;
-    }
-    if (!window._caseDrawerMediaListener) {
-      const onMediaChange = (e) => {
+      },
+      { passive: true, ...sig },
+    );
+
+    media.addEventListener(
+      'change',
+      (e) => {
         // Use requestAnimationFrame for smooth transitions
         requestAnimationFrame(() => {
           if (e.matches) {
@@ -301,10 +314,9 @@ export function initCaseDrawer() {
             updateNudgeVisibility();
           }
         });
-      };
-      media.addEventListener('change', onMediaChange);
-      window._caseDrawerMediaListener = true;
-    }
+      },
+      sig,
+    );
   }
 
   function initResponsiveState() {
@@ -412,8 +424,9 @@ function isEditorRoute() {
     const { path } = getRoute();
     return path === '/student/editor' || path === '/instructor/editor';
   } catch {
-    return false;
+    /* safe fallback */
   }
+  return false;
 }
 
 function hideNudgeAndClose() {

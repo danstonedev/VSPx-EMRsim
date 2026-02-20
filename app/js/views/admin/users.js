@@ -61,7 +61,11 @@ route('#/admin/users', async (appEl) => {
       const data = await res.json();
       renderUsers(data.users, tab === 'pending');
     } catch (e) {
-      content.innerHTML = `<p class="error">Error: ${e.message}</p>`;
+      content.textContent = '';
+      const errP = document.createElement('p');
+      errP.className = 'error';
+      errP.textContent = `Error: ${e.message}`;
+      content.appendChild(errP);
     }
   };
 
@@ -146,7 +150,6 @@ route('#/admin/users', async (appEl) => {
       await loadTab(currentTab);
     } catch (e) {
       row.style.opacity = '1';
-      // eslint-disable-next-line no-alert
       alert('Error: ' + e.message);
     }
   };
@@ -176,6 +179,7 @@ function formatDate(isoString) {
       d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     );
   } catch {
-    return isoString;
+    /* safe fallback */
   }
+  return isoString;
 }

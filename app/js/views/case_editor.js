@@ -304,7 +304,9 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
         switchTo(next);
       }
     });
-  } catch {}
+  } catch (err) {
+    console.warn('[CaseEditor] route change listener setup failed:', err);
+  }
 
   // Create the actual refresh function to replace the placeholder
   refreshChartProgress = createChartRefreshFunction({
@@ -345,7 +347,9 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
         { passive: true, signal: ac.signal },
       );
     }
-  } catch {}
+  } catch {
+    /* ResizeObserver may not be available */
+  }
 
   // Create main content container with sidebar offset + header
   const contentRoot = el('div', { id: 'section', class: 'section-content' });
@@ -443,7 +447,9 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
     () => {
       try {
         setupActiveSectionObserverWrapper();
-      } catch {}
+      } catch {
+        /* observer may not be available */
+      }
     },
     { passive: true, signal: ac.signal },
   );

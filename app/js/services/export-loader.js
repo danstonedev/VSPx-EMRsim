@@ -25,7 +25,7 @@ export async function ensureExportLibsLoaded() {
     try {
       await loadScript(fsUrl);
     } catch {
-      // non-fatal
+      /* safe fallback */
     }
   }
 }

@@ -183,7 +183,9 @@ export function createSaveWrapper(options) {
     try {
       const announcer = document.getElementById('route-announcer');
       if (announcer) announcer.textContent = 'Saving…';
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
 
     try {
       await originalSave(...args);
@@ -191,14 +193,18 @@ export function createSaveWrapper(options) {
       try {
         const announcer = document.getElementById('route-announcer');
         if (announcer) announcer.textContent = 'All changes saved';
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       if (window.refreshChartProgress) window.refreshChartProgress();
     } catch (error) {
       updateSaveStatus(chartNav, 'error');
       try {
         const announcer = document.getElementById('route-announcer');
         if (announcer) announcer.textContent = 'Save failed';
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       console.error('Save failed:', error);
     }
   };

@@ -129,7 +129,9 @@ function showSharePopup(url) {
     const removeNow = () => {
       try {
         overlay.remove();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     };
     if (prefersReduce) return removeNow();
     overlay.addEventListener('transitionend', removeNow, { once: true });
@@ -340,7 +342,9 @@ function showCaseCreationModal() {
     const removeNow = () => {
       try {
         modal.remove();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     };
     if (prefersReduce) return removeNow();
     modal.addEventListener('transitionend', removeNow, { once: true });
@@ -625,7 +629,9 @@ function showPromptGenerationModal() {
     const removeNow = () => {
       try {
         modal.remove();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     };
     if (prefersReduce) return removeNow();
     modal.addEventListener('transitionend', removeNow, { once: true });
@@ -1004,7 +1010,9 @@ route('#/instructor/cases', async (app) => {
                       showSharePopup(studentLink);
                       try {
                         await navigator.clipboard.writeText(studentLink);
-                      } catch {}
+                      } catch {
+                        /* clipboard write may not be available */
+                      }
                       const btn = e.currentTarget || e.target;
                       const originalNodes = Array.from(btn.childNodes);
                       // Replace button content safely without parsing HTML

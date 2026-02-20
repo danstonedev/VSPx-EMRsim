@@ -37,19 +37,19 @@
 }
 
 .table--bordered th:first-child {
-  border-top-left-radius: var(--table-radius-inner);
+  border-top-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 .table--bordered th:last-child {
-  border-top-right-radius: var(--table-radius-inner);
+  border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 .table--bordered tbody tr:last-child td:first-child {
-  border-bottom-left-radius: var(--table-radius-inner);
+  border-bottom-left-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 .table--bordered tbody tr:last-child td:last-child {
-  border-bottom-right-radius: var(--table-radius-inner);
+  border-bottom-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
 /* Cell borders variant */

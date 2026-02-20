@@ -3,7 +3,10 @@ import { el } from '../ui/utils.js';
 // SOAP sections loaded dynamically for better code splitting and performance
 
 /**
- * Creates a section wrapper with header and content
+ * Creates a section wrapper with header and content.
+ * Headers are clickable and toggle collapse/expand of the section content
+ * using a CSS grid animation for buttery-smooth height transitions.
+ *
  * @param {string} sectionId - Section ID
  * @param {string} title - Section title
  * @param {HTMLElement} content - Section content element
@@ -11,17 +14,54 @@ import { el } from '../ui/utils.js';
  * @returns {Object} Section wrapper elements
  */
 function createSectionWrapper(sectionId, title, content, cssClass) {
-  const header = el('div', { id: `section-${sectionId}`, class: 'editor-section-divider' }, [
-    el('h3', { class: 'section-title' }, title),
-  ]);
+  // Chevron indicator (CSS-only arrow, rotates on collapse)
+  const chevron = el('span', { class: 'section-chevron', 'aria-hidden': 'true' });
 
-  const wrapper = el('div', { class: 'editor-section', id: `wrap-${sectionId}` }, [header]);
+  const header = el(
+    'div',
+    {
+      id: `section-${sectionId}`,
+      class: 'editor-section-divider',
+      role: 'button',
+      tabindex: '0',
+      'aria-expanded': 'true',
+      'aria-controls': `content-${sectionId}`,
+    },
+    [chevron, el('h3', { class: 'section-title' }, title)],
+  );
+
+  // Collapsible wrapper using CSS grid rows (1fr → 0fr) for smooth animation
+  const collapseInner = el('div', { class: 'section-collapse-inner' });
+  const collapseWrapper = el('div', {
+    class: 'section-collapse-wrapper',
+    id: `content-${sectionId}`,
+  });
+  collapseWrapper.append(collapseInner);
 
   if (cssClass) {
     content.classList.add(cssClass);
   }
+  collapseInner.append(content);
 
-  wrapper.append(content);
+  const wrapper = el('div', { class: 'editor-section', id: `wrap-${sectionId}` }, [
+    header,
+    collapseWrapper,
+  ]);
+
+  // Toggle collapse/expand
+  const toggle = () => {
+    const isCollapsed = collapseWrapper.classList.toggle('collapsed');
+    header.setAttribute('aria-expanded', String(!isCollapsed));
+    header.classList.toggle('section-collapsed', isCollapsed);
+  };
+
+  header.addEventListener('click', toggle);
+  header.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  });
 
   return { header, wrapper };
 }

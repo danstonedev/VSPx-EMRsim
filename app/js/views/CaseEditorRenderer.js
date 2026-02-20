@@ -154,7 +154,7 @@ export function createPatientHeaderUpdater(c, caseWrapper, headerElements) {
       const h = headerElements.patientHeader.offsetHeight || 0;
       document.documentElement.style.setProperty('--patient-sticky-h', `${h}px`);
     } catch {
-      // Ignore errors
+      /* element may not exist */
     }
   };
 }
@@ -212,6 +212,7 @@ export function setupHeaderResizeObserver(patientHeader, ac) {
       return null;
     }
   } catch {
+    /* ResizeObserver may not be available */
     return null;
   }
 }

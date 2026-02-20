@@ -91,7 +91,9 @@ export function setupActiveSectionObserver(params) {
   // Clean up existing observer
   try {
     if (activeObserver) activeObserver.disconnect();
-  } catch {}
+  } catch {
+    /* observer may already be disconnected */
+  }
 
   const observer = createActiveSectionObserver(params);
 
@@ -132,7 +134,9 @@ export function performInitialScrollIfNeeded({
       if (window.__pendingAnchorScrollId && currentSectionId !== active) {
         window.__pendingAnchorScrollId = '';
       }
-    } catch {}
+    } catch {
+      /* pending anchor property may not exist */
+    }
 
     return result;
   }
@@ -158,7 +162,9 @@ export function performInitialScrollIfNeeded({
         needsInitialAnchorScroll: false,
       };
     }
-  } catch {}
+  } catch {
+    /* pending anchor scroll may not be available */
+  }
 
   if (needsInitialPercentScroll && Number.isFinite(initialScrollPercent)) {
     let okP = scrollToPercentWithinActive(initialScrollPercent, active);

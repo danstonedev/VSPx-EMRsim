@@ -25,7 +25,7 @@ export function createSpecialTestsSection(regionKey, region, testData, onChange)
     { value: 'unable', label: 'Unable to perform' },
   ];
 
-  // Convert region special tests to table format
+  // Convert region special tests to table format, then overlay any saved data
   const tableData = {};
   if (region.specialTests) {
     region.specialTests.forEach((test, index) => {
@@ -37,13 +37,50 @@ export function createSpecialTestsSection(regionKey, region, testData, onChange)
       };
     });
   }
+  // Overlay previously saved values (includes user-added rows)
+  if (testData && typeof testData === 'object') {
+    Object.keys(testData).forEach((id) => {
+      const saved = testData[id];
+      if (tableData[id]) {
+        // Existing region test — restore left/right (and name if edited)
+        tableData[id].left = saved.left || '';
+        tableData[id].right = saved.right || '';
+        if (saved.name) tableData[id].name = saved.name;
+      } else {
+        // User-added test — re-create the row
+        tableData[id] = {
+          name: saved.name || '',
+          left: saved.left || '',
+          right: saved.right || '',
+        };
+      }
+    });
+  }
 
   const table = createEditableTable({
     title: '', // hide green band title
     columns: [
-      { field: 'name', label: 'Special Tests', short: 'Tests', width: '50%' }, // short header on mobile
-      { field: 'left', label: 'Left', width: '25%', type: 'select', options: testResults },
-      { field: 'right', label: 'Right', width: '25%', type: 'select', options: testResults },
+      {
+        field: 'name',
+        label: 'Special Tests',
+        short: 'Tests',
+        width: 'calc(50% - 30px)',
+        placeholder: 'Test name',
+      },
+      {
+        field: 'left',
+        label: 'Left',
+        width: 'calc(25% - 15px)',
+        type: 'select',
+        options: testResults,
+      },
+      {
+        field: 'right',
+        label: 'Right',
+        width: 'calc(25% - 15px)',
+        type: 'select',
+        options: testResults,
+      },
     ],
     data: tableData,
     onChange: (newData) => {
@@ -58,7 +95,9 @@ export function createSpecialTestsSection(regionKey, region, testData, onChange)
       });
       onChange(updatedData);
     },
-    showAddButton: false,
+    showAddButton: true,
+    compactAddButton: true,
+    addButtonText: '+ Add Test',
     actionsHeaderLabel: '',
     // Mark as no-normal to ensure the 3-column mobile grid variant (no trailing empty track)
     className: 'special-tests-table bilateral-table no-normal',

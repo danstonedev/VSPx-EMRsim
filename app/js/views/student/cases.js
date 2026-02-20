@@ -126,7 +126,9 @@ function openCreateNoteModal() {
           card.style.transform = '';
         }
         overlay.remove();
-      } catch {}
+      } catch {
+        /* overlay or card may already be removed */
+      }
     };
     if (prefersReduce) return removeNow();
     overlay.addEventListener('transitionend', removeNow, { once: true });
@@ -153,7 +155,9 @@ function openCreateNoteModal() {
           card.style.opacity = '1';
           card.style.transform = 'scale(1)';
         }
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
       content.querySelector('#student-note-title-input')?.focus();
     }, 90);
   });
@@ -664,6 +668,7 @@ function safeJsonParse(str) {
   try {
     return str ? JSON.parse(str) : null;
   } catch {
+    /* invalid JSON — return null */
     return null;
   }
 }

@@ -14,8 +14,9 @@ function isDebug() {
     const params = new URLSearchParams(window.location.search || '');
     return params.get('debug') === '1';
   } catch {
-    return false;
+    /* safe fallback */
   }
+  return false;
 }
 function debugLog(...args) {
   if (isDebug()) console.warn(...args);
@@ -577,7 +578,8 @@ function migratePromEndfeel(d, onChange) {
     });
     d._promEndfeelMigrated = true;
     if (changed) onChange(d);
-  } catch {
+  } catch (err) {
+    console.warn('[RegionalAssessments] endfeel migration error:', err);
     d._promEndfeelMigrated = true;
   }
 }
@@ -586,13 +588,7 @@ function filterInvalidRegions(regions, onChange, dataRef) {
   const valid = (regions || []).filter((regionKey) => {
     const exists = Object.prototype.hasOwnProperty.call(regionalAssessments, regionKey);
     if (!exists && regionKey) {
-      try {
-        const isDev =
-          typeof window !== 'undefined' &&
-          window.location &&
-          (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-        if (isDev) debugWarn(`Regional assessment: Invalid region "${regionKey}" filtered out.`);
-      } catch {}
+      debugWarn(`Regional assessment: Invalid region "${regionKey}" filtered out.`);
     }
     return exists;
   });

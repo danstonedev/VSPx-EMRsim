@@ -19,13 +19,19 @@ export function render(container, options = {}) {
   function mergeDraftOverlays(out, draft) {
     try {
       if (draft.noteTitle) out.title = draft.noteTitle;
-    } catch {}
+    } catch (err) {
+      console.warn('[SignExport] merging draft noteTitle:', err);
+    }
     try {
       if (draft.snapshot) out.snapshot = { ...(out.snapshot || {}), ...draft.snapshot };
-    } catch {}
+    } catch (err) {
+      console.warn('[SignExport] merging draft snapshot:', err);
+    }
     try {
       if (draft.meta) out.meta = { ...(out.meta || {}), ...draft.meta };
-    } catch {}
+    } catch (err) {
+      console.warn('[SignExport] merging draft meta:', err);
+    }
   }
 
   function coalesce(...values) {
@@ -97,7 +103,9 @@ export function render(container, options = {}) {
       try {
         // Replace with empty node to drop listeners and DOM
         container.replaceChildren();
-      } catch {}
+      } catch {
+        /* element may not exist */
+      }
     },
   };
 }

@@ -103,6 +103,7 @@ export async function refreshChartNavigation(sidebar, config) {
     try {
       sidebar.replaceWith(newSidebar);
     } catch {
+      /* element may not exist */
       // Fallback: replace children if replaceWith is not supported
       sidebar.replaceChildren(...Array.from(newSidebar.children));
     }
@@ -115,6 +116,8 @@ export async function refreshChartNavigation(sidebar, config) {
         caseData: config.caseData || {},
         onEditorSettingsChange: config.onEditorSettingsChange,
       });
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
   }, 0);
 }

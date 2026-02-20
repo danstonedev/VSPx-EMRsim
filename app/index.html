@@ -275,7 +275,7 @@
       if (isLocal || debug) {
         import('./js/features/dev/unregister-sw.js');
       }
-    } catch {}
+    } catch { /* module may not be available */ }
   </script>
   </head>
   <body class="app-initializing">
@@ -525,7 +525,7 @@
           const bg =
             getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff';
           el.setAttribute('content', bg);
-        } catch {}
+        } catch { /* safe fallback */ }
       }
 
       window.toggleTheme = function toggleTheme() {
@@ -559,7 +559,7 @@
           savedTheme = 'light';
           try {
             storage.setItem('theme', 'light');
-          } catch {}
+          } catch { /* safe fallback */ }
         }
         const toggle = document.getElementById('themeToggle');
 
@@ -651,7 +651,7 @@
                   // content layout now handled by drawer offsets; no nav-collapsed toggle
                   setExpanded(nowOpen);
                 }
-              } catch {}
+              } catch { /* element may not exist */ }
             });
           }, 0);
         })();
@@ -696,7 +696,7 @@
                 apply(cached.date);
               }
             }
-          } catch {}
+          } catch { /* safe fallback */ }
 
           // Fetch from GitHub (unauthenticated; low rate limits but okay for a small page)
           fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${branch}`)
@@ -708,7 +708,7 @@
                 apply(dateStr);
                 try {
                   storage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), date: dateStr }));
-                } catch {}
+                } catch { /* safe fallback */ }
               }
             })
             .catch(() => {
@@ -870,7 +870,7 @@
                 previouslyFocused && previouslyFocused.focus ? previouslyFocused : feedbackBtn;
               try {
                 restore && restore.focus && restore.focus();
-              } catch {}
+              } catch { /* element may not exist */ }
             }
 
             if (closeControl) closeControl.addEventListener('click', closeModal);
@@ -910,7 +910,7 @@
             const { path } = (e && e.detail) ||
               (urlCore.getRoute && urlCore.getRoute()) || { path: '/' };
             announcer.textContent = `Navigated to ${path}`;
-          } catch {}
+          } catch { /* element may not exist */ }
         });
       }
     </script>
@@ -1003,7 +1003,7 @@
       // Re-sync case drawer after first app render in case early init missed sidebar
       import { initCaseDrawer } from './js/features/navigation/caseDrawer.js';
       window.addEventListener('app-ready', () => {
-        try { initCaseDrawer(); } catch {}
+        try { initCaseDrawer(); } catch (e) { console.warn('initCaseDrawer:', e); }
       }, { once: true });
     </script>
   </body>

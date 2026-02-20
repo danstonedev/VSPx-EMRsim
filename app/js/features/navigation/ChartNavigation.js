@@ -19,13 +19,16 @@ function loadCaseFileCollapsed() {
   try {
     return localStorage.getItem(CASEFILE_COLLAPSED_KEY) === '1';
   } catch {
-    return false;
+    /* safe fallback */
   }
+  return false;
 }
 function saveCaseFileCollapsed(v) {
   try {
     localStorage.setItem(CASEFILE_COLLAPSED_KEY, v ? '1' : '0');
-  } catch {}
+  } catch (err) {
+    console.warn('[ChartNav] saveCaseFileCollapsed:', err);
+  }
 }
 let caseFileCollapsed = loadCaseFileCollapsed();
 
@@ -34,14 +37,17 @@ const SECTION_COLLAPSE_KEY = 'sectionCollapse_v1';
 function loadSectionCollapseState() {
   try {
     return JSON.parse(localStorage.getItem(SECTION_COLLAPSE_KEY) || '{}') || {};
-  } catch {
-    return {};
+  } catch (err) {
+    console.warn('[ChartNav] loadSectionCollapseState:', err);
   }
+  return {};
 }
 function saveSectionCollapseState(state) {
   try {
     localStorage.setItem(SECTION_COLLAPSE_KEY, JSON.stringify(state || {}));
-  } catch {}
+  } catch (err) {
+    console.warn('[ChartNav] saveSectionCollapseState:', err);
+  }
 }
 let sectionCollapseState = loadSectionCollapseState();
 
@@ -986,7 +992,9 @@ function openViewArtifactModal(module, options = {}) {
                       img.src = o.url;
                       urlsToRevoke.push(o.url);
                     }
-                  } catch {}
+                  } catch (err) {
+                    console.warn('[ChartNav] attachment thumbnail load:', err);
+                  }
                 })();
               } else {
                 thumbWrap.appendChild(el('span', { style: 'font-size:18px;' }, '📄'));
@@ -1055,10 +1063,14 @@ function openViewArtifactModal(module, options = {}) {
                       const cleanup = () => {
                         try {
                           if (objectUrl) URL.revokeObjectURL(objectUrl);
-                        } catch {}
+                        } catch {
+                          /* element may not exist */
+                        }
                         try {
                           overlay.remove();
-                        } catch {}
+                        } catch {
+                          /* element may not exist */
+                        }
                       };
                       closeBtn.addEventListener('click', cleanup);
                       overlay.addEventListener('click', (e) => {
@@ -1150,7 +1162,9 @@ function openViewArtifactModal(module, options = {}) {
                       setTimeout(() => {
                         try {
                           URL.revokeObjectURL(o.url);
-                        } catch {}
+                        } catch {
+                          /* element may not exist */
+                        }
                       }, 5000);
                     }
                   } catch (e) {
@@ -1189,7 +1203,9 @@ function openViewArtifactModal(module, options = {}) {
                     };
                     onEdit?.(updated);
                     row.remove();
-                  } catch {}
+                  } catch (err) {
+                    console.warn('[ChartNav] update after attachment delete:', err);
+                  }
                 });
                 row.appendChild(delBtn);
               }
@@ -1218,7 +1234,9 @@ function openViewArtifactModal(module, options = {}) {
                 if (confirm('Remove this background document?')) {
                   try {
                     onRemove?.(module.id);
-                  } catch {}
+                  } catch (err) {
+                    console.warn('[ChartNav] onRemove callback:', err);
+                  }
                   overlay.remove();
                 }
               });
@@ -1227,7 +1245,9 @@ function openViewArtifactModal(module, options = {}) {
                 openEditArtifactModal(module, (updated) => {
                   try {
                     onEdit?.(updated);
-                  } catch {}
+                  } catch (err) {
+                    console.warn('[ChartNav] onEdit callback:', err);
+                  }
                   overlay.remove();
                 });
               });
@@ -1261,9 +1281,13 @@ function openViewArtifactModal(module, options = {}) {
       urlsToRevoke.forEach((u) => {
         try {
           URL.revokeObjectURL(u);
-        } catch {}
+        } catch {
+          /* element may not exist */
+        }
       });
-    } catch {}
+    } catch {
+      /* element may not exist */
+    }
   };
   const close = () => {
     cleanup();
@@ -2002,7 +2026,7 @@ export function createChartNavigation(config) {
       'treatment-performed',
     ],
     assessment: ['primary-impairments', 'icf-classification', 'pt-diagnosis', 'clinical-reasoning'],
-    plan: ['goal-setting', 'treatment-plan', 'in-clinic-treatment-plan'],
+    plan: ['goal-setting', 'in-clinic-treatment-plan', 'hep-plan'],
     billing: ['diagnosis-codes', 'cpt-codes', 'orders-referrals'],
   };
   const subsectionTitleMap = {
@@ -2023,6 +2047,7 @@ export function createChartNavigation(config) {
     'clinical-reasoning': 'Clinical Reasoning',
     'goal-setting': 'Goal Setting',
     'in-clinic-treatment-plan': 'In-Clinic Treatment Plan',
+    'hep-plan': 'HEP',
     'diagnosis-codes': 'Diagnosis Codes',
     'cpt-codes': 'CPT Codes',
     'billing-notes': 'Billing Notes',
@@ -2035,8 +2060,7 @@ export function createChartNavigation(config) {
     'icf-classification': 'ICF Classification',
     'pt-diagnosis': 'Physical Therapy Diagnosis & Prognosis',
     'clinical-reasoning': 'Clinical Impression',
-    'treatment-plan': 'Plan of Care',
-    'in-clinic-treatment-plan': 'Treatment Plan',
+    'in-clinic-treatment-plan': 'In-Clinic Treatment Plan',
     'goal-setting': 'Goals',
     'diagnosis-codes': 'ICD-10 Codes',
     'cpt-codes': 'CPT Codes',
@@ -2126,7 +2150,9 @@ export function createChartNavigation(config) {
         const curStr = JSON.stringify(current);
         if (origStr !== curStr) isDirty = true;
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[ChartNav] dirty check failed:', err);
+    }
 
     // New layout: label left, arrow (twisty) right, no progress dot. Status will be on card border.
     const navItem = el(
@@ -2145,7 +2171,9 @@ export function createChartNavigation(config) {
           try {
             scrollEl = navItem.closest('.chart-navigation');
             if (scrollEl) prevScroll = scrollEl.scrollTop;
-          } catch {}
+          } catch {
+            /* element may not exist */
+          }
           sectionCollapseState[section.id] = !isCollapsed;
           saveSectionCollapseState(sectionCollapseState);
           rebuild();
@@ -2160,7 +2188,9 @@ export function createChartNavigation(config) {
                 if (replacement) replacement.focus({ preventScroll: true });
               });
             }
-          } catch {}
+          } catch {
+            /* element may not exist */
+          }
         },
         onKeyDown: (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -2171,7 +2201,9 @@ export function createChartNavigation(config) {
             try {
               scrollEl = navItem.closest('.chart-navigation');
               if (scrollEl) prevScroll = scrollEl.scrollTop;
-            } catch {}
+            } catch {
+              /* element may not exist */
+            }
             sectionCollapseState[section.id] = !isCollapsed;
             saveSectionCollapseState(sectionCollapseState);
             rebuild();
@@ -2185,7 +2217,9 @@ export function createChartNavigation(config) {
                   if (replacement) replacement.focus({ preventScroll: true });
                 });
               }
-            } catch {}
+            } catch {
+              /* element may not exist */
+            }
           }
         },
         // Inline layout kept minimal; spacing now handled purely via CSS to avoid conflicts
@@ -2269,17 +2303,23 @@ export function createChartNavigation(config) {
                       try {
                         if (window.__pendingAnchorScrollId === sub.id)
                           window.__pendingAnchorScrollId = '';
-                      } catch {}
+                      } catch {
+                        /* safe fallback */
+                      }
                     });
                   };
-                } catch {}
+                } catch {
+                  /* safe fallback */
+                }
                 onSectionChange(section.id);
               } else {
                 // Same section: immediate scroll without leaving stale pending id
                 try {
                   if (window.__pendingAnchorScrollId === sub.id)
                     window.__pendingAnchorScrollId = '';
-                } catch {}
+                } catch {
+                  /* safe fallback */
+                }
                 requestAnimationFrame(() => {
                   const elTarget = document.getElementById(sub.id);
                   if (!elTarget || elTarget.offsetParent === null) return;
@@ -2332,7 +2372,9 @@ export function createChartNavigation(config) {
         computedCaseInfo.title = draft.noteTitle.trim();
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[ChartNav] note title resolution failed:', err);
+  }
 
   // Create the sidebar navigation
   // Modules available on the case object (draft-safe)
@@ -2469,7 +2511,9 @@ export function createChartNavigation(config) {
               if (hasPartial || (hasComplete && hasEmpty)) agg = 'partial';
               else if (hasComplete && !hasPartial && !hasEmpty) agg = 'complete';
               noteHeader.setAttribute('data-status', agg);
-            } catch {}
+            } catch {
+              /* element may not exist */
+            }
             // Toggle handler finds the adjacent note-sections wrapper
             const toggle = () => {
               try {
@@ -2498,11 +2542,15 @@ export function createChartNavigation(config) {
                     try {
                       container.style.maxHeight = 'none';
                       container.removeEventListener('transitionend', done);
-                    } catch {}
+                    } catch {
+                      /* element may not exist */
+                    }
                   };
                   container.addEventListener('transitionend', done);
                 }
-              } catch {}
+              } catch {
+                /* element may not exist */
+              }
             };
             noteHeader.addEventListener('click', toggle);
             noteHeader.addEventListener('keydown', (e) => {
@@ -2539,7 +2587,9 @@ export function createChartNavigation(config) {
                   if (!window.__initialCaseSnapshot && config.caseData) {
                     try {
                       window.__initialCaseSnapshot = JSON.parse(JSON.stringify(config.caseData));
-                    } catch {}
+                    } catch (err) {
+                      console.warn('[ChartNav] snapshot init failed:', err);
+                    }
                   }
                   const card = el(
                     'div',
@@ -2553,7 +2603,9 @@ export function createChartNavigation(config) {
                   try {
                     const prog = getProgressStatus(section.id, config.caseData);
                     card.classList.add(`section-status-${prog.status}`);
-                  } catch {}
+                  } catch {
+                    /* element may not exist */
+                  }
                   if (isActive) card.classList.add('active');
                   // Mark collapsed state on inner TOC for CSS animation
                   if (collapsed) {
@@ -2569,7 +2621,9 @@ export function createChartNavigation(config) {
                 window.__scrollToPendingSubsection = null;
                 try {
                   fn();
-                } catch {}
+                } catch {
+                  /* element may not exist */
+                }
               }
             };
             rebuild();
@@ -2602,7 +2656,9 @@ export function createChartNavigation(config) {
               import('../../core/prefetch.js').then(({ idleImport }) => {
                 idleImport(() => import('./sign-export-panel.js'));
               });
-            } catch {}
+            } catch {
+              /* safe fallback */
+            }
 
             return mountNode;
           })(),
@@ -2660,7 +2716,9 @@ export function createChartNavigation(config) {
           try {
             artifactBlock.style.maxHeight = 'none';
             artifactBlock.removeEventListener('transitionend', done);
-          } catch {}
+          } catch {
+            /* element may not exist */
+          }
         };
         artifactBlock.addEventListener('transitionend', done);
         caseFileCollapsed = false;
@@ -2676,7 +2734,9 @@ export function createChartNavigation(config) {
         }
       });
     }
-  } catch {}
+  } catch {
+    /* element may not exist */
+  }
 
   // Ensure content starts full width on small screens (nav closed)
   setTimeout(() => {

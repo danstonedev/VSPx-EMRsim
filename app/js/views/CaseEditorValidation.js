@@ -48,7 +48,7 @@ export function setupScrollHelpers(helpers) {
       scrollToPercentExact,
     };
   } catch {
-    // Non-breaking - debug helpers are optional
+    /* debug helpers are optional */
   }
 }
 
