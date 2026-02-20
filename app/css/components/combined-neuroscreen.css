@@ -193,6 +193,14 @@ table.combined-neuroscreen-table:has(.action-col) {
   color: var(--text-primary);
   border: none;
   border-bottom: 1px solid var(--color-border);
+  /* Allow focus rings / outlines on child inputs & selects to paint outside the cell */
+  overflow: visible;
+}
+
+/* Raise focused rows so search dropdowns & focus rings render above sibling rows */
+.combined-neuroscreen-row:focus-within {
+  position: relative;
+  z-index: 2;
 }
 
 /* Level column in body - label/parameter column */
@@ -428,6 +436,8 @@ table.combined-neuroscreen-table:has(.action-col) {
 .billing-dx-selector {
   display: grid;
   gap: var(--space-2, 0.5rem);
+  /* Padding so child focus rings / outlines are not clipped */
+  padding: 3px;
 }
 
 .billing-dx-selector__title {
@@ -438,6 +448,8 @@ table.combined-neuroscreen-table:has(.action-col) {
 
 .billing-dx-selector__controls {
   display: grid;
+  /* Room for input focus ring at container edges */
+  padding: 2px;
 }
 
 .billing-linked-group {
@@ -697,7 +709,7 @@ table.combined-neuroscreen-table:has(.action-col) {
 .combined-neuroscreen-table .custom-select:focus .custom-select__button,
 .combined-neuroscreen-table .custom-select--open .custom-select__button {
   background: var(--table-row-hover);
-  box-shadow: none;
+  box-shadow: var(--table-focus-ring);
 }
 
 .combined-neuroscreen-table .custom-select__option {

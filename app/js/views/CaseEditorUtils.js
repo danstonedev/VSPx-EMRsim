@@ -369,29 +369,45 @@ export function handleCaseInfoUpdate(
   updatedInfo,
   save,
   updatePatientHeader,
-  renderPatientHeaderActions,
+  renderPatientHeaderActions = () => {},
 ) {
   try {
-    c.caseTitle = updatedInfo.title;
-    c.title = updatedInfo.title;
-    c.setting = updatedInfo.setting;
-    c.patientAge = updatedInfo.age;
-    c.patientGender = updatedInfo.sex;
-    c.acuity = updatedInfo.acuity;
-    c.patientDOB = updatedInfo.dob;
+    // Only update metadata fields when explicitly provided (avoid stale snapshot overwrites)
+    if (updatedInfo.title != null) {
+      c.caseTitle = updatedInfo.title;
+      c.title = updatedInfo.title;
+      c.meta = c.meta || {};
+      c.meta.title = updatedInfo.title;
+    }
+    if (updatedInfo.setting != null) {
+      c.setting = updatedInfo.setting;
+      c.meta = c.meta || {};
+      c.meta.setting = updatedInfo.setting;
+    }
+    if (updatedInfo.acuity != null) {
+      c.acuity = updatedInfo.acuity;
+      c.meta = c.meta || {};
+      c.meta.acuity = updatedInfo.acuity;
+    }
+    if (updatedInfo.age != null) {
+      c.patientAge = updatedInfo.age;
+      c.snapshot = c.snapshot || {};
+      c.snapshot.age = updatedInfo.age;
+    }
+    if (updatedInfo.sex != null) {
+      c.patientGender = updatedInfo.sex;
+      c.snapshot = c.snapshot || {};
+      c.snapshot.sex = (updatedInfo.sex || '').toLowerCase() || 'unspecified';
+    }
+    if (updatedInfo.dob != null) {
+      c.patientDOB = updatedInfo.dob;
+      c.snapshot = c.snapshot || {};
+      c.snapshot.dob = updatedInfo.dob;
+    }
     if (Array.isArray(updatedInfo.modules)) {
       c.modules = updatedInfo.modules;
       draft.modules = updatedInfo.modules;
     }
-    // Keep canonical containers in sync
-    c.meta = c.meta || {};
-    c.meta.title = updatedInfo.title;
-    c.meta.setting = updatedInfo.setting;
-    c.meta.acuity = updatedInfo.acuity;
-    c.snapshot = c.snapshot || {};
-    c.snapshot.age = updatedInfo.age;
-    c.snapshot.sex = (updatedInfo.sex || '').toLowerCase() || 'unspecified';
-    c.snapshot.dob = updatedInfo.dob;
     updatePatientHeader();
     renderPatientHeaderActions();
     save();

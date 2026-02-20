@@ -1552,13 +1552,7 @@ export function openAddArtifactModal(onAdd) {
                 return;
               }
               const id = `${currentType}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-              const mod = { id, type: currentType, title, data: {} };
-              if (currentType === 'referral') {
-                mod.data = { ...ref };
-              } else if (ref.attachments && ref.attachments.length) {
-                // For non-referral types, still allow attachments
-                mod.data.attachments = [...ref.attachments];
-              }
+              const mod = { id, type: currentType, title, data: { ...ref } };
               onAdd?.(mod);
               overlay.remove();
             },
@@ -1874,12 +1868,7 @@ function openEditArtifactModal(module, onSave) {
                 titleInput.focus();
                 return;
               }
-              const updated = { id: module.id, type: currentType, title, data: {} };
-              if (currentType === 'referral') {
-                updated.data = { ...ref };
-              } else if (ref.attachments && ref.attachments.length) {
-                updated.data.attachments = [...ref.attachments];
-              }
+              const updated = { id: module.id, type: currentType, title, data: { ...ref } };
               onSave?.(updated);
               overlay.remove();
             },
@@ -2471,10 +2460,6 @@ export function createChartNavigation(config) {
                       const next = [...current, mod];
                       const payload = { ...(config.caseInfo || {}), modules: next };
                       config.onCaseInfoUpdate?.(payload);
-                      // Force page reload to refresh the UI and show the new artifact
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 300);
                     }),
                 });
                 // Warm the artifact panel code on idle

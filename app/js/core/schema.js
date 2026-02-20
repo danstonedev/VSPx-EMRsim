@@ -148,7 +148,6 @@ export function makeBlankCase() {
       progress: null,
       discharge: null,
     },
-    assets: [],
   };
 }
 
@@ -264,6 +263,15 @@ function syncExamAndFindings(caseData) {
 }
 
 function ensureModulesArray(caseData) {
+  // Migrate legacy assets field to modules
+  if (
+    Array.isArray(caseData.assets) &&
+    caseData.assets.length &&
+    !Array.isArray(caseData.modules)
+  ) {
+    caseData.modules = caseData.assets;
+  }
+  delete caseData.assets;
   if (!Array.isArray(caseData.modules)) caseData.modules = [];
 }
 

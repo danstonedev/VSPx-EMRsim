@@ -118,7 +118,7 @@
   --table-row-hover-strong: rgba(0, 154, 68, 0.15); /* Stronger hover for special cells */
   --table-row-hover-accent: rgba(0, 154, 68, 0.25); /* Accent cell hover */
   --table-row-hover-accent-strong: rgba(0, 154, 68, 0.35); /* Strong accent hover */
-  --table-focus-ring: 0 0 0 2px rgba(0, 154, 68, 0.1); /* Focus ring for inputs */
+  --table-focus-ring: 0 0 0 2.5px rgba(0, 154, 68, 0.28); /* Focus ring for inputs */
   --table-shadow: var(--elev-neutral-depth);       /* Standard table shadow */
 
   /* Max rows cap used by textarea auto-resize (can be overridden per route) */
