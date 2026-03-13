@@ -4,6 +4,7 @@
 import { el, textareaAutoResize } from '../../../ui/utils.js';
 import { textAreaField, selectField } from '../../../ui/form-components.js';
 import { createCustomSelect } from '../../../ui/CustomSelect.js';
+import { createPortalDropdown } from '../../../ui/portal-dropdown.js';
 
 /**
  * Treatment Plan Component - Comprehensive PT intervention planning
@@ -353,11 +354,8 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
     },
   });
 
-  const resultsList = el('div', {
-    class: 'billing-search-results',
-    style:
-      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 9999;',
-  });
+  const portal = createPortalDropdown(searchInput);
+  const resultsList = portal.dropdown;
 
   let highlightIndex = -1;
   let currentResults = [];
@@ -370,10 +368,10 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
   const renderResults = () => {
     resultsList.replaceChildren();
     if (!currentResults.length) {
-      resultsList.style.display = 'none';
+      portal.hide();
       return;
     }
-    resultsList.style.display = 'block';
+    portal.show();
     currentResults.forEach((item, idx) => {
       const { label, category } = item._norm || {};
 
@@ -427,7 +425,7 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
     data.inClinicInterventions[index].intervention = item.value;
 
     updateField('inClinicInterventions', data.inClinicInterventions);
-    resultsList.style.display = 'none';
+    portal.hide();
   };
 
   const commitSelection = () => {
@@ -454,7 +452,7 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
     }
   });
 
-  searchCell.append(searchInput, resultsList);
+  searchCell.append(searchInput);
   row.appendChild(searchCell);
 
   // 3. Dosage / Parameters
@@ -550,11 +548,8 @@ function _DEADCODE_createInterventionRowLinked(
       }, 200);
     },
   });
-  const resultsList = el('div', {
-    class: 'billing-search-results',
-    style:
-      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 9999;',
-  });
+  const portal = createPortalDropdown(searchInput);
+  const resultsList = portal.dropdown;
   let highlightIndex = -1;
   let currentResults = [];
   const applySelection = (item) => {
@@ -562,15 +557,15 @@ function _DEADCODE_createInterventionRowLinked(
     searchInput.value = item.value;
     entry.intervention = item.value;
     updateField('inClinicInterventions', data.inClinicInterventions);
-    resultsList.style.display = 'none';
+    portal.hide();
   };
   const renderResults = () => {
     resultsList.replaceChildren();
     if (!currentResults.length) {
-      resultsList.style.display = 'none';
+      portal.hide();
       return;
     }
-    resultsList.style.display = 'block';
+    portal.show();
     currentResults.forEach((item, idx) => {
       const { label, category } = item._norm || {};
       const resultRow = el(
@@ -635,9 +630,9 @@ function _DEADCODE_createInterventionRowLinked(
     }
   });
   document.addEventListener('click', (e) => {
-    if (!searchCell.contains(e.target)) resultsList.style.display = 'none';
+    if (!searchCell.contains(e.target)) portal.hide();
   });
-  searchCell.append(searchInput, resultsList);
+  searchCell.append(searchInput);
   row.appendChild(searchCell);
 
   // Dosage
@@ -791,11 +786,8 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
     },
   });
 
-  const resultsList = el('div', {
-    class: 'billing-search-results',
-    style:
-      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 9999;',
-  });
+  const portal = createPortalDropdown(searchInput);
+  const resultsList = portal.dropdown;
 
   let highlightIndex = -1;
   let currentResults = [];
@@ -808,10 +800,10 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
   const renderResults = () => {
     resultsList.replaceChildren();
     if (!currentResults.length) {
-      resultsList.style.display = 'none';
+      portal.hide();
       return;
     }
-    resultsList.style.display = 'block';
+    portal.show();
     currentResults.forEach((item, idx) => {
       const { label, category } = item._norm || {};
 
@@ -865,7 +857,7 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
     data.hepInterventions[index].intervention = item.value;
 
     updateField('hepInterventions', data.hepInterventions);
-    resultsList.style.display = 'none';
+    portal.hide();
   };
 
   const commitSelection = () => {
@@ -892,7 +884,7 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
     }
   });
 
-  searchCell.append(searchInput, resultsList);
+  searchCell.append(searchInput);
   row.appendChild(searchCell);
 
   // 2. Dosage / Parameters
