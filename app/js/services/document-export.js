@@ -1890,48 +1890,42 @@ export function exportToWord(caseData, draft) {
         createBodyParagraph('No goals documented', { indentLeft: FORMAT.indent.level1 }),
       );
     }
-    // Plan of Care next
-    elements.push(createSectionHeader('Plan of Care', 2));
-    if (plan.treatmentPlan)
-      elements.push(
-        createLabelValueLine('Treatment Plan & Interventions', plan.treatmentPlan, {
-          indentLeft: FORMAT.indent.level1,
-          bullet: false,
-        }),
-      );
-    if (plan.patientEducation)
-      elements.push(
-        createLabelValueLine('Patient Education', plan.patientEducation, {
-          indentLeft: FORMAT.indent.level1,
-          bullet: false,
-        }),
-      );
-    if (plan.treatmentPlan || plan.patientEducation) {
-      // already added above
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    // In-Clinic Treatment Plan (Frequency/Duration + Exercise table)
-    elements.push(createSectionHeader('Treatment Plan', 2));
-    const sched = [];
-    if (plan.frequency) sched.push(`Frequency: ${plan.frequency}`);
-    if (plan.duration) sched.push(`Duration: ${plan.duration}`);
-    if (sched.length) {
-      sched.forEach((line) => {
-        const [label, ...rest] = line.split(': ');
+    // In-Clinic Treatment Plan (Frequency/Duration + Interventions)
+    elements.push(createSectionHeader('In-Clinic Treatment Plan', 2));
+    const frequencyLabels = {
+      '1x-week': '1x/week',
+      '2x-week': '2x/week',
+      '3x-week': '3x/week',
+      '4x-week': '4x/week',
+      '5x-week': '5x/week',
+      '2x-day': '2x/day',
+      prn: 'PRN',
+    };
+    const durationLabels = {
+      '2-weeks': '2 weeks',
+      '4-weeks': '4 weeks',
+      '6-weeks': '6 weeks',
+      '8-weeks': '8 weeks',
+      '12-weeks': '12 weeks',
+      '16-weeks': '16 weeks',
+      '6-months': '6 months',
+      ongoing: 'Ongoing',
+    };
+    if (plan.frequency || plan.duration) {
+      if (plan.frequency)
         elements.push(
-          createLabelValueLine(label, rest.join(': '), {
+          createLabelValueLine('Frequency', frequencyLabels[plan.frequency] || plan.frequency, {
             indentLeft: FORMAT.indent.level1,
             bullet: false,
           }),
         );
-      });
+      if (plan.duration)
+        elements.push(
+          createLabelValueLine('Duration', durationLabels[plan.duration] || plan.duration, {
+            indentLeft: FORMAT.indent.level1,
+            bullet: false,
+          }),
+        );
     } else {
       elements.push(
         createBodyParagraph('— not documented', {
@@ -1941,13 +1935,29 @@ export function exportToWord(caseData, draft) {
         }),
       );
     }
-    // Exercise simple table
-    const exerciseRows =
+    // In-clinic interventions (new array format, with fallback to legacy exerciseTable)
+    const clinicInterventions = Array.isArray(plan.inClinicInterventions)
+      ? plan.inClinicInterventions
+      : [];
+    const legacyExerciseRows =
       plan.exerciseTable && typeof plan.exerciseTable === 'object'
         ? Object.values(plan.exerciseTable)
         : [];
-    if (exerciseRows && exerciseRows.length) {
-      exerciseRows.forEach((row) => {
+    if (clinicInterventions.length) {
+      clinicInterventions.forEach((row) => {
+        const name = (row.intervention || '').toString().trim();
+        if (!name) return;
+        const dosage = (row.dosage || '').toString().trim();
+        const text = dosage ? `${name} — ${dosage}` : name;
+        elements.push(
+          createLabelValueLine('', text, {
+            indentLeft: FORMAT.indent.level1,
+            bullet: true,
+          }),
+        );
+      });
+    } else if (legacyExerciseRows.length) {
+      legacyExerciseRows.forEach((row) => {
         const text = (row.exerciseText || row.exercise || '').toString();
         if (!text) return;
         elements.push(
@@ -1959,7 +1969,31 @@ export function exportToWord(caseData, draft) {
       });
     } else {
       elements.push(
-        createBodyParagraph('No in-clinic exercises documented', {
+        createBodyParagraph('No in-clinic interventions documented', {
+          indentLeft: FORMAT.indent.level1,
+        }),
+      );
+    }
+
+    // Home Exercise Program (HEP)
+    elements.push(createSectionHeader('Home Exercise Program (HEP)', 2));
+    const hepInterventions = Array.isArray(plan.hepInterventions) ? plan.hepInterventions : [];
+    if (hepInterventions.length) {
+      hepInterventions.forEach((row) => {
+        const name = (row.intervention || '').toString().trim();
+        if (!name) return;
+        const dosage = (row.dosage || '').toString().trim();
+        const text = dosage ? `${name} — ${dosage}` : name;
+        elements.push(
+          createLabelValueLine('', text, {
+            indentLeft: FORMAT.indent.level1,
+            bullet: true,
+          }),
+        );
+      });
+    } else {
+      elements.push(
+        createBodyParagraph('No HEP exercises documented', {
           indentLeft: FORMAT.indent.level1,
         }),
       );

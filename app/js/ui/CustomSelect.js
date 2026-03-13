@@ -33,6 +33,16 @@ export function createCustomSelect({
   let _scrollHandler = null;
   let _resizeHandler = null;
 
+  function addGlobalCloseListeners() {
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
+    document.addEventListener('focusin', handleFocusOutside, true);
+  }
+
+  function removeGlobalCloseListeners() {
+    document.removeEventListener('pointerdown', handlePointerDownOutside, true);
+    document.removeEventListener('focusin', handleFocusOutside, true);
+  }
+
   // Main container
   const container = el('div', {
     class: `custom-select ${className}`,
@@ -118,8 +128,7 @@ export function createCustomSelect({
     window.addEventListener('scroll', _scrollHandler, true); // capture phase for inner scrollables
     window.addEventListener('resize', _resizeHandler);
 
-    // Add click-outside listener
-    setTimeout(() => document.addEventListener('click', handleClickOutside), 0);
+    addGlobalCloseListeners();
   }
 
   // Close dropdown
@@ -131,7 +140,7 @@ export function createCustomSelect({
     dropdown.setAttribute('aria-hidden', 'true');
     activeIndex = -1;
     updateActiveOption();
-    document.removeEventListener('click', handleClickOutside);
+    removeGlobalCloseListeners();
 
     // Remove scroll/resize listeners
     if (_scrollHandler) window.removeEventListener('scroll', _scrollHandler, true);
@@ -219,8 +228,14 @@ export function createCustomSelect({
     }
   }
 
-  // Handle click outside to close (check both container and portal dropdown)
-  function handleClickOutside(e) {
+  // Handle interactions outside to close (check both container and portal dropdown)
+  function handlePointerDownOutside(e) {
+    if (!container.contains(e.target) && !dropdown.contains(e.target)) {
+      close();
+    }
+  }
+
+  function handleFocusOutside(e) {
     if (!container.contains(e.target) && !dropdown.contains(e.target)) {
       close();
     }
@@ -372,7 +387,7 @@ export function createCustomSelect({
     },
     destroy: () => {
       close();
-      document.removeEventListener('click', handleClickOutside);
+      removeGlobalCloseListeners();
       if (_scrollHandler) window.removeEventListener('scroll', _scrollHandler, true);
       if (_resizeHandler) window.removeEventListener('resize', _resizeHandler);
       clearTimeout(searchTimeout);
