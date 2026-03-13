@@ -1885,6 +1885,10 @@ html[data-theme='dark'] .theme-toggle .icon.moon {
   overflow: hidden;
   min-height: 0; /* required for grid 0fr to collapse fully */
 }
+/* When expanded, allow overflow so dropdowns (ICD-10, CPT) aren't clipped */
+.section-collapse-wrapper:not(.collapsed) .section-collapse-inner {
+  overflow: visible;
+}
 
 /* ─── Chevron indicator ───────────────────────────────────────────────── */
 .section-chevron {
