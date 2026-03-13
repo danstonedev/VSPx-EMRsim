@@ -267,6 +267,8 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
   <script type="module" src="js/features/debug/index.js"></script>
   <script type="module" src="js/features/notifications/index.js"></script>
@@ -999,8 +1001,8 @@
         overlay && overlay.classList.add('dark');
       }
       window.addEventListener('app-ready', () => clearOverlay('ready'), { once: true });
-      // Fallback safety: remove after 4000ms
-      setTimeout(() => clearOverlay('timeout'), 4000);
+      // Fallback safety: remove after 2000ms
+      setTimeout(() => clearOverlay('timeout'), 2000);
     </script>
     <script type="module">
       // Re-sync case drawer after first app render in case early init missed sidebar

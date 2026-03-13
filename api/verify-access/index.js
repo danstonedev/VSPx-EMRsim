@@ -1,12 +1,20 @@
 const crypto = require('crypto');
 
+function timeSafeCompare(a, b) {
+  const aBuf = Buffer.from(a.trim());
+  const bBuf = Buffer.from(b.trim());
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
 module.exports = async function (context, req) {
   const code = req.body && req.body.code;
-  const expected = process.env.ACCESS_CODE;
+  const studentCode = process.env.ACCESS_CODE;
+  const facultyCode = process.env.FACULTY_CODE;
 
-  if (!expected) {
-    // No access code configured — allow everyone through
-    context.res = { status: 200, body: { valid: true } };
+  // No codes configured — allow everyone through as faculty
+  if (!studentCode && !facultyCode) {
+    context.res = { status: 200, body: { valid: true, role: 'faculty' } };
     return;
   }
 
@@ -15,17 +23,17 @@ module.exports = async function (context, req) {
     return;
   }
 
-  // Constant-time comparison to prevent timing attacks
-  const codeBuffer = Buffer.from(code.trim());
-  const expectedBuffer = Buffer.from(expected.trim());
-
-  const valid =
-    codeBuffer.length === expectedBuffer.length &&
-    crypto.timingSafeEqual(codeBuffer, expectedBuffer);
-
-  if (valid) {
-    context.res = { status: 200, body: { valid: true } };
-  } else {
-    context.res = { status: 401, body: { valid: false, error: 'Invalid access code' } };
+  // Check faculty code first (higher privilege)
+  if (facultyCode && timeSafeCompare(code, facultyCode)) {
+    context.res = { status: 200, body: { valid: true, role: 'faculty' } };
+    return;
   }
+
+  // Check student code
+  if (studentCode && timeSafeCompare(code, studentCode)) {
+    context.res = { status: 200, body: { valid: true, role: 'student' } };
+    return;
+  }
+
+  context.res = { status: 401, body: { valid: false, error: 'Invalid access code' } };
 };

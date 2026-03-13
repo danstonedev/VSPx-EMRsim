@@ -3,9 +3,12 @@
  * The code is validated server-side via /api/verify-access.
  * A successful entry is stored in sessionStorage so the user
  * only needs to enter it once per browser session.
+ *
+ * Supports tiered access: student vs faculty codes grant different roles.
  */
 
 const STORAGE_KEY = 'pt_emr_access_granted';
+const ROLE_KEY = 'pt_emr_access_role';
 
 /** Check whether this session has already been granted access */
 export function isAccessGranted() {
@@ -16,10 +19,20 @@ export function isAccessGranted() {
   }
 }
 
-/** Mark the current session as granted */
-function grantAccess() {
+/** Get the current session role ('student' | 'faculty'). Defaults to 'student'. */
+export function getAccessRole() {
+  try {
+    return sessionStorage.getItem(ROLE_KEY) || 'student';
+  } catch {
+    return 'student';
+  }
+}
+
+/** Mark the current session as granted with a role */
+function grantAccess(role) {
   try {
     sessionStorage.setItem(STORAGE_KEY, '1');
+    sessionStorage.setItem(ROLE_KEY, role || 'student');
   } catch {
     // sessionStorage unavailable – gate will re-show on reload
   }
@@ -30,11 +43,23 @@ function grantAccess() {
  * once the user enters a valid code (or immediately if already granted).
  */
 export function showAccessGate() {
-  // Skip the gate on localhost (dev environment)
+  // Skip the gate on localhost (dev environment) — grant full faculty access
   const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return Promise.resolve();
+  if (host === 'localhost' || host === '127.0.0.1') {
+    grantAccess('faculty');
+    return Promise.resolve();
+  }
 
   if (isAccessGranted()) return Promise.resolve();
+
+  // Dismiss the init overlay — the access gate IS the loading screen now
+  try {
+    const initOverlay = document.getElementById('appInitOverlay');
+    if (initOverlay) initOverlay.remove();
+    document.body.classList.remove('app-initializing');
+  } catch {
+    /* overlay may not exist */
+  }
 
   // Fire a warm-up ping so the API function is ready when the user submits
   fetch('/api/verify-access', {
@@ -42,6 +67,13 @@ export function showAccessGate() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code: '' }),
   }).catch(() => {});
+
+  // Preload critical app modules in the background while user types the code
+  Promise.all([
+    import('../views/home.js'),
+    import('../core/store.js'),
+    import('./UserMenu.js'),
+  ]).catch(() => {});
 
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -100,7 +132,7 @@ export function showAccessGate() {
         if (res.ok) {
           const data = await res.json();
           if (data.valid) {
-            grantAccess();
+            grantAccess(data.role);
             overlay.classList.add('access-gate-fade-out');
             overlay.addEventListener('animationend', () => {
               overlay.remove();

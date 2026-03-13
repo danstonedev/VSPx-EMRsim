@@ -285,6 +285,12 @@ export function startRouter() {
     const debug = isDebugEnabled();
     if (debug && performance && performance.mark) performance.mark('router:render:start');
 
+    // Role-gate: redirect students away from faculty-only routes
+    if (isStudentOnly(path)) {
+      window.location.hash = '#/student/cases';
+      return;
+    }
+
     // Ensure the route module for this path is loaded and registered before resolving
     await ensureRouteModuleLoaded(path);
 
@@ -433,6 +439,9 @@ async function initializeApp() {
     console.warn('Access gate check failed:', e);
   }
 
+  // Apply role-based visibility to navigation
+  applyRoleVisibility();
+
   // Initialize user menu (auth UI)
   try {
     const { initUserMenu } = await import('../ui/UserMenu.js');
@@ -443,6 +452,47 @@ async function initializeApp() {
 
   // Start the router; route modules will be loaded on demand
   startRouter();
+}
+
+/** Check if the current role is student and the path is faculty-only */
+function isStudentOnly(path) {
+  try {
+    const role = sessionStorage.getItem('pt_emr_access_role') || 'student';
+    if (role === 'faculty') return false;
+    return (
+      path.startsWith('#/instructor') ||
+      path.startsWith('#/styleguide') ||
+      path.startsWith('#/admin')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Hide nav links and redirect routes that the current role shouldn't see */
+function applyRoleVisibility() {
+  try {
+    // Dynamic import would be circular; read sessionStorage directly
+    const role = sessionStorage.getItem('pt_emr_access_role') || 'student';
+    if (role === 'faculty') return; // faculty sees everything
+
+    // Hide Faculty, Style Guide nav links
+    const nav = document.getElementById('primaryNav');
+    if (nav) {
+      nav.querySelectorAll('a').forEach((link) => {
+        const href = link.getAttribute('href') || '';
+        if (
+          href.startsWith('#/instructor') ||
+          href.startsWith('#/styleguide') ||
+          href.startsWith('#/admin')
+        ) {
+          link.style.display = 'none';
+        }
+      });
+    }
+  } catch {
+    /* sessionStorage or DOM may be unavailable */
+  }
 }
 
 // Initialize the app when the DOM is ready
