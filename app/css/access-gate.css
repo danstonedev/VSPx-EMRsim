@@ -1,4 +1,4 @@
-/* Access Gate Overlay */
+/* Access Gate Overlay — UND themed */
 .access-gate-overlay {
   position: fixed;
   inset: 0;
@@ -6,36 +6,47 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(6px);
-  animation: access-gate-in 0.3s ease;
+  background: #000;
+  animation: access-gate-in 0.25s ease;
 }
 
 .access-gate-fade-out {
-  animation: access-gate-out 0.3s ease forwards;
+  animation: access-gate-out 0.25s ease forwards;
 }
 
 .access-gate-card {
-  background: var(--color-surface, #fff);
-  border-radius: 12px;
-  padding: 2.5rem 2rem;
+  background: #fff;
+  border-radius: 8px;
+  padding: 2.5rem 2rem 2rem;
   max-width: 380px;
   width: 90%;
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  border-top: 4px solid #009a44;
+}
+
+.access-gate-logo {
+  width: 200px;
+  height: auto;
+  margin: 0 auto 1.25rem;
+  display: block;
 }
 
 .access-gate-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem;
-  color: var(--color-text, #1e293b);
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.35rem;
+  color: #000;
 }
 
 .access-gate-subtitle {
-  font-size: 0.95rem;
-  color: var(--color-text-secondary, #64748b);
+  font-size: 0.9rem;
+  color: #555;
   margin: 0 0 1.5rem;
+  line-height: 1.4;
 }
 
 .access-gate-form {
@@ -47,19 +58,19 @@
 .access-gate-input {
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  border: 2px solid var(--color-border, #cbd5e1);
-  border-radius: 8px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
   text-align: center;
-  letter-spacing: 0.15em;
-  background: var(--color-surface, #fff);
-  color: var(--color-text, #1e293b);
+  letter-spacing: 0.12em;
+  background: #fafafa;
+  color: #000;
   transition: border-color 0.2s;
 }
 
 .access-gate-input:focus {
   outline: none;
-  border-color: var(--color-primary, #2563eb);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #009a44;
+  box-shadow: 0 0 0 3px rgba(0, 154, 68, 0.15);
 }
 
 .access-gate-btn {
@@ -67,9 +78,9 @@
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
-  background: var(--color-primary, #2563eb);
+  background: #009a44;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     background 0.2s,
@@ -77,7 +88,7 @@
 }
 
 .access-gate-btn:hover {
-  background: var(--color-primary-dark, #1d4ed8);
+  background: #007a35;
 }
 
 .access-gate-btn:disabled {
@@ -87,9 +98,15 @@
 
 .access-gate-error {
   font-size: 0.875rem;
-  color: var(--color-error, #dc2626);
+  color: #dc2626;
   min-height: 1.25rem;
   margin: 0.25rem 0 0;
+}
+
+.access-gate-footer {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: #888;
 }
 
 @keyframes access-gate-in {
