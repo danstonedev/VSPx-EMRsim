@@ -77,7 +77,7 @@ html[data-theme='dark'] .custom-select:focus .custom-select__button {
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: 10100;
   margin-top: 4px;
   max-height: 240px;
   overflow-y: auto;
