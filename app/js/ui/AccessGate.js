@@ -32,6 +32,13 @@ function grantAccess() {
 export function showAccessGate() {
   if (isAccessGranted()) return Promise.resolve();
 
+  // Fire a warm-up ping so the API function is ready when the user submits
+  fetch('/api/verify-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: '' }),
+  }).catch(() => {});
+
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'access-gate-overlay';
