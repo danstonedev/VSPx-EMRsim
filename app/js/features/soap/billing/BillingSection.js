@@ -399,7 +399,19 @@ export const PTBilling = {
 
       searchInput.addEventListener('input', performSearch);
       searchInput.addEventListener('keydown', (e) => {
-        if (!currentResults.length) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          portal.hide();
+          searchInput.blur();
+          return;
+        }
+        if (!currentResults.length) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            portal.hide();
+          }
+          return;
+        }
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           highlightIndex = (highlightIndex + 1) % currentResults.length;
@@ -1176,7 +1188,19 @@ function createCPTSearchRowForDiagnosis(codeEntry, index, data, updateField, ren
 
   searchInput.addEventListener('input', () => performSearch());
   searchInput.addEventListener('keydown', (e) => {
-    if (!currentResults.length) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      portal.hide();
+      searchInput.blur();
+      return;
+    }
+    if (!currentResults.length) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        portal.hide();
+      }
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       highlightIndex = (highlightIndex + 1) % currentResults.length;
@@ -1441,7 +1465,19 @@ function createCPTSearchRow(codeEntry, index, data, updateField, renderCallback)
 
   searchInput.addEventListener('input', () => performSearch());
   searchInput.addEventListener('keydown', (e) => {
-    if (!currentResults.length) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      portal.hide();
+      searchInput.blur();
+      return;
+    }
+    if (!currentResults.length) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        portal.hide();
+      }
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       highlightIndex = (highlightIndex + 1) % currentResults.length;
