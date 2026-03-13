@@ -69,7 +69,8 @@ export function createCustomSelect({
 
   // Prevent clicks inside the dropdown from stealing focus away from the
   // container — avoids handleFocusOutside closing it prematurely.
-  dropdown.addEventListener('pointerdown', (e) => e.preventDefault());
+  // NOTE: mousedown (not pointerdown) is what controls focus change behavior.
+  dropdown.addEventListener('mousedown', (e) => e.preventDefault());
 
   // Create option elements
   const optionElements = options.map((opt, index) => {

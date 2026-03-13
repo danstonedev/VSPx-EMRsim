@@ -16,7 +16,8 @@ export function createPortalDropdown(anchorEl, cssClass) {
   // search input.  Without this, clicking a non-focusable result row causes
   // the input to blur → focusin fires on <body> → handleFocusOutside hides
   // the dropdown before the click event can register.
-  dropdown.addEventListener('pointerdown', (e) => e.preventDefault());
+  // NOTE: mousedown (not pointerdown) is what controls focus change behavior.
+  dropdown.addEventListener('mousedown', (e) => e.preventDefault());
 
   function addGlobalCloseListeners() {
     document.addEventListener('pointerdown', handlePointerDownOutside, true);
