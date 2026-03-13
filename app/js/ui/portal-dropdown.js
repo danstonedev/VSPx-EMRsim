@@ -12,6 +12,28 @@ export function createPortalDropdown(anchorEl, cssClass) {
       'position:fixed; border:1px solid var(--color-border); border-radius:0 0 8px 8px; overflow-y:auto; overflow-x:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.16); max-height:260px; display:none; background:white; z-index:10100;',
   });
 
+  function addGlobalCloseListeners() {
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
+    document.addEventListener('focusin', handleFocusOutside, true);
+  }
+
+  function removeGlobalCloseListeners() {
+    document.removeEventListener('pointerdown', handlePointerDownOutside, true);
+    document.removeEventListener('focusin', handleFocusOutside, true);
+  }
+
+  function handlePointerDownOutside(event) {
+    if (!anchorEl.contains(event.target) && !dropdown.contains(event.target)) {
+      hide();
+    }
+  }
+
+  function handleFocusOutside(event) {
+    if (!anchorEl.contains(event.target) && !dropdown.contains(event.target)) {
+      hide();
+    }
+  }
+
   function position() {
     const rect = anchorEl.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -40,6 +62,7 @@ export function createPortalDropdown(anchorEl, cssClass) {
     _resizeH = () => position();
     window.addEventListener('scroll', _scrollH, true);
     window.addEventListener('resize', _resizeH);
+    addGlobalCloseListeners();
   }
 
   function hide() {
@@ -48,6 +71,7 @@ export function createPortalDropdown(anchorEl, cssClass) {
     if (_resizeH) window.removeEventListener('resize', _resizeH);
     _scrollH = null;
     _resizeH = null;
+    removeGlobalCloseListeners();
   }
 
   function destroy() {
