@@ -425,6 +425,14 @@ function matchRoute(routePath, actualPath) {
 
 // Initialization function that loads all modules and starts the router
 async function initializeApp() {
+  // Check access gate before starting the app
+  try {
+    const { showAccessGate } = await import('../ui/AccessGate.js');
+    await showAccessGate();
+  } catch (e) {
+    console.warn('Access gate check failed:', e);
+  }
+
   // Initialize user menu (auth UI)
   try {
     const { initUserMenu } = await import('../ui/UserMenu.js');

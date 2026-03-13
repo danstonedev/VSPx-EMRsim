@@ -1,0 +1,111 @@
+/* Access Gate Overlay */
+.access-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  animation: access-gate-in 0.3s ease;
+}
+
+.access-gate-fade-out {
+  animation: access-gate-out 0.3s ease forwards;
+}
+
+.access-gate-card {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.access-gate-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--color-text, #1e293b);
+}
+
+.access-gate-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0 0 1.5rem;
+}
+
+.access-gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.access-gate-input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--color-border, #cbd5e1);
+  border-radius: 8px;
+  text-align: center;
+  letter-spacing: 0.15em;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1e293b);
+  transition: border-color 0.2s;
+}
+
+.access-gate-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.access-gate-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #2563eb);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+
+.access-gate-btn:hover {
+  background: var(--color-primary-dark, #1d4ed8);
+}
+
+.access-gate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.access-gate-error {
+  font-size: 0.875rem;
+  color: var(--color-error, #dc2626);
+  min-height: 1.25rem;
+  margin: 0.25rem 0 0;
+}
+
+@keyframes access-gate-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes access-gate-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

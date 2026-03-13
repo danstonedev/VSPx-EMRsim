@@ -12,6 +12,11 @@
   },
   "routes": [
     {
+      "route": "/api/verify-access",
+      "methods": ["POST"],
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/api/cases",
       "methods": ["POST", "DELETE"],
       "allowedRoles": ["faculty", "admin"]
