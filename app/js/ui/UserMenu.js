@@ -42,18 +42,8 @@ export async function updateUserMenu(container) {
     // Logged in - show user dropdown
     const dropdown = createUserDropdown(user);
     container.appendChild(dropdown);
-  } else {
-    // Not logged in - show login button
-    const loginBtn = el(
-      'a',
-      {
-        href: getLoginUrl(window.location.href),
-        class: 'user-menu__login-btn',
-      },
-      'Sign In',
-    );
-    container.appendChild(loginBtn);
   }
+  // Sign-in button hidden until Entra ID auth is approved
 }
 
 /**

@@ -4,6 +4,64 @@
 import { el } from '../../../ui/utils.js';
 import { createCustomSelect } from '../../../ui/CustomSelect.js';
 
+/**
+ * Creates a portal-based search results dropdown that escapes overflow:hidden ancestors.
+ * The dropdown is appended to document.body with position:fixed and positioned
+ * relative to the anchor element (the search input).
+ */
+function createPortalDropdown(anchorEl, cssClass) {
+  const dropdown = el('div', {
+    class: cssClass || 'billing-search-results',
+    style:
+      'position:fixed; border:1px solid var(--color-border); border-radius:0 0 8px 8px; overflow-y:auto; overflow-x:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.16); max-height:260px; display:none; background:white; z-index:10100;',
+  });
+
+  function position() {
+    const rect = anchorEl.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropH = Math.min(dropdown.scrollHeight || 260, 260);
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.style.width = `${rect.width}px`;
+    if (spaceBelow < dropH && spaceAbove > spaceBelow) {
+      dropdown.style.top = 'auto';
+      dropdown.style.bottom = `${window.innerHeight - rect.top + 2}px`;
+      dropdown.style.borderRadius = '8px 8px 0 0';
+    } else {
+      dropdown.style.top = `${rect.bottom + 2}px`;
+      dropdown.style.bottom = 'auto';
+      dropdown.style.borderRadius = '0 0 8px 8px';
+    }
+  }
+
+  let _scrollH, _resizeH;
+
+  function show() {
+    if (dropdown.parentNode !== document.body) document.body.appendChild(dropdown);
+    dropdown.style.display = 'block';
+    position();
+    _scrollH = () => position();
+    _resizeH = () => position();
+    window.addEventListener('scroll', _scrollH, true);
+    window.addEventListener('resize', _resizeH);
+  }
+
+  function hide() {
+    dropdown.style.display = 'none';
+    if (_scrollH) window.removeEventListener('scroll', _scrollH, true);
+    if (_resizeH) window.removeEventListener('resize', _resizeH);
+    _scrollH = null;
+    _resizeH = null;
+  }
+
+  function destroy() {
+    hide();
+    if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+  }
+
+  return { dropdown, show, hide, destroy, position };
+}
+
 function ensureSinglePrimaryDiagnosis(diagnosisCodes) {
   if (!Array.isArray(diagnosisCodes) || diagnosisCodes.length === 0) return;
   const firstWithCode = diagnosisCodes.findIndex((entry) => entry?.code);
@@ -302,11 +360,11 @@ export const PTBilling = {
         placeholder: 'Search and add ICD-10 diagnosis…',
       });
 
-      const resultsList = el('div', {
-        class: 'billing-search-results billing-dx-selector__results',
-        style:
-          'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 1000;',
-      });
+      const portal = createPortalDropdown(
+        searchInput,
+        'billing-search-results billing-dx-selector__results',
+      );
+      const resultsList = portal.dropdown;
 
       const allOptions = getPTICD10Codes()
         .filter((opt) => opt.value)
@@ -317,10 +375,10 @@ export const PTBilling = {
       const renderResults = () => {
         resultsList.replaceChildren();
         if (!currentResults.length) {
-          resultsList.style.display = 'none';
+          portal.hide();
           return;
         }
-        resultsList.style.display = 'block';
+        portal.show();
         currentResults.forEach((item, idx) => {
           const { code, desc, friendlyLabel } = item._norm || {};
           const rightText = desc && desc.toLowerCase() !== friendlyLabel?.toLowerCase() ? desc : '';
@@ -414,7 +472,7 @@ export const PTBilling = {
         }
       });
 
-      searchWrap.append(searchInput, resultsList);
+      searchWrap.append(searchInput);
       controls.appendChild(searchWrap);
       diagnosisContainer.appendChild(controls);
     }
@@ -1080,11 +1138,8 @@ function createCPTSearchRowForDiagnosis(codeEntry, index, data, updateField, ren
     style: 'width: 100%;',
   });
 
-  const resultsList = el('div', {
-    class: 'billing-search-results',
-    style:
-      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 1000;',
-  });
+  const portal = createPortalDropdown(searchInput);
+  const resultsList = portal.dropdown;
 
   let highlightIndex = -1;
   let currentResults = [];
@@ -1099,10 +1154,10 @@ function createCPTSearchRowForDiagnosis(codeEntry, index, data, updateField, ren
   const renderResults = () => {
     resultsList.replaceChildren();
     if (!currentResults.length) {
-      resultsList.style.display = 'none';
+      portal.hide();
       return;
     }
-    resultsList.style.display = 'block';
+    portal.show();
     currentResults.forEach((item, idx) => {
       const { code, desc, friendlyLabel } = item._norm || {};
       const rightText = desc && desc.toLowerCase() !== friendlyLabel?.toLowerCase() ? desc : '';
@@ -1193,7 +1248,7 @@ function createCPTSearchRowForDiagnosis(codeEntry, index, data, updateField, ren
     }
   });
 
-  searchCell.append(searchInput, resultsList);
+  searchCell.append(searchInput);
   row.appendChild(searchCell);
 
   const unitsInput = el('input', {
@@ -1348,12 +1403,8 @@ function createCPTSearchRow(codeEntry, index, data, updateField, renderCallback)
     style: 'width: 100%;',
   });
 
-  // Results list container
-  const resultsList = el('div', {
-    class: 'billing-search-results',
-    style:
-      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 1000;',
-  });
+  const portal = createPortalDropdown(searchInput);
+  const resultsList = portal.dropdown;
 
   let highlightIndex = -1;
   let currentResults = [];
@@ -1368,10 +1419,10 @@ function createCPTSearchRow(codeEntry, index, data, updateField, renderCallback)
   const renderResults = () => {
     resultsList.replaceChildren();
     if (!currentResults.length) {
-      resultsList.style.display = 'none';
+      portal.hide();
       return;
     }
-    resultsList.style.display = 'block';
+    portal.show();
     currentResults.forEach((item, idx) => {
       const { code, desc, friendlyLabel } = item._norm || {};
       const rightText = desc && desc.toLowerCase() !== friendlyLabel?.toLowerCase() ? desc : '';
@@ -1462,7 +1513,7 @@ function createCPTSearchRow(codeEntry, index, data, updateField, renderCallback)
     }
   });
 
-  searchCell.append(searchInput, resultsList);
+  searchCell.append(searchInput);
   row.appendChild(searchCell);
 
   // Linked diagnosis cell
