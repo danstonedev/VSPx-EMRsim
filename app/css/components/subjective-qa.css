@@ -149,30 +149,26 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2, 0.5rem);
+  gap: 0;
 }
 
-/* Number badge */
-.qa-row__number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm, 4px);
-  background: var(--header-gradient-left, #009a44);
-  color: var(--white, #fff);
-  font-size: 0.75rem;
-  font-weight: 700;
-  margin-right: 0.3rem;
-  vertical-align: middle;
-}
-
-/* Labels */
+/* Labels – match .form-label spacing */
 .qa-row__label {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text, #1a1a1a);
+  margin-bottom: calc(var(--space-1, 0.25rem) / 2);
+}
+
+/* Add top spacing before "Patient Response" label (not the first label) */
+.qa-row__label ~ .qa-row__label {
+  margin-top: var(--space-3, 0.75rem);
+}
+
+/* Closed-ended warning also needs top spacing */
+/* Reduce gap before label that follows a warning */
+.qa-row__closed-warning + .qa-row__label {
+  margin-top: var(--space-2, 0.5rem);
 }
 
 /* Textareas */
@@ -181,6 +177,7 @@
   resize: vertical;
   min-height: 2.4rem;
   font-size: 0.925rem;
+  margin-bottom: 0;
 }
 
 /* Closed-ended warning */
@@ -188,6 +185,7 @@
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
+  margin-top: var(--space-2, 0.5rem);
   padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm, 4px);
   background: #fff8e1;

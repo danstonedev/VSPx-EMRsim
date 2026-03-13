@@ -1778,7 +1778,7 @@ function getPTCPTCodes() {
 // }
 
 // Helper: Normalize code/description
-function normalizeOption(opt) {
+export function normalizeOption(opt) {
   const rawCode = (opt?.value || '').trim();
   const rawLabel = (opt?.label || '').trim();
   const rawDesc = (opt?.description || '').trim();
@@ -1795,7 +1795,7 @@ function normalizeOption(opt) {
 }
 
 // Helper: Score match
-function scoreOption(item, q) {
+export function scoreOption(item, q) {
   const norm = item._norm || normalizeOption(item);
   const code = (norm.code || item.value || '').toLowerCase();
   const desc = (norm.desc || item.description || '').toLowerCase();
@@ -1813,7 +1813,7 @@ function scoreOption(item, q) {
 /**
  * Top 25 ICD-10 diagnosis codes commonly used in Physical Therapy
  */
-function getPTICD10Codes() {
+export function getPTICD10Codes() {
   return [
     { value: '', label: 'Select ICD-10 Code...', description: '' },
 

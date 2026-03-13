@@ -41,20 +41,25 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     onUpdate(data);
   };
 
-  // History of Present Illness section with anchor (includes Chief Concern)
+  // History of Present Illness section with anchor (includes Chief Concern + Interview Q/A)
   const hpiSection = el('div', { id: 'hpi', class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, 'History'),
     textAreaField({
       label: 'Chief Concern',
       value: data.chiefComplaint,
       onChange: (v) => updateField('chiefComplaint', v),
-      placeholder: "Primary reason for seeking physical therapy (in patient's own words)...",
+      hint: "Patient's primary complaint in their own words — avoid paraphrasing or interpreting",
     }),
     textAreaField({
-      label: 'Detailed history of current condition',
+      label: 'History of Present Illness',
       value: data.historyOfPresentIllness,
       onChange: (v) => updateField('historyOfPresentIllness', v),
-      placeholder: 'Include onset, mechanism of injury, previous episodes, progression...',
+      hint: 'Onset & mechanism, duration, prior episodes, progression, prior treatments and response',
+    }),
+    // Interview Q/A — structured open-ended questions
+    createInterviewQAPanel(data, (updated) => {
+      data.qaItems = updated.qaItems;
+      onUpdate(data);
     }),
   ]);
   section.append(hpiSection);
@@ -66,17 +71,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
   ]);
   section.append(painSection);
 
-  // Interview Q/A section with anchor — structured open-ended questions
-  const qaSection = el('div', { id: 'interview-qa', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Interview Q/A'),
-    createInterviewQAPanel(data, (updated) => {
-      // Merge qaItems back into data and persist
-      data.qaItems = updated.qaItems;
-      onUpdate(data);
-    }),
-  ]);
-  section.append(qaSection);
-
   // Functional status section with anchor
   const functionalSection = el('div', { id: 'functional-status', class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, 'Functional Status'),
@@ -84,19 +78,19 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       label: 'Current Functional Limitations',
       value: data.functionalLimitations,
       onChange: (v) => updateField('functionalLimitations', v),
-      placeholder: 'Describe specific activities or movements that are limited...',
+      hint: 'Mobility, ADLs, work tasks, recreation, sport — what is limited, avoided, or requires modification',
     }),
     textAreaField({
       label: 'Prior Level of Function',
       value: data.priorLevel,
       onChange: (v) => updateField('priorLevel', v),
-      placeholder: "Describe patient's functional level before current episode...",
+      hint: 'Employment status, recreational activities, independence with ADLs prior to this episode',
     }),
     textAreaField({
       label: 'Patient Goals & Expectations',
       value: data.patientGoals,
       onChange: (v) => updateField('patientGoals', v),
-      placeholder: 'What does the patient hope to achieve through PT?',
+      hint: 'Functional outcome goals: specific activities, roles, or performance levels the patient wants to achieve',
     }),
   ]);
   section.append(functionalSection);
@@ -111,19 +105,19 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
         label: 'Current Medications',
         value: data.medicationsCurrent,
         onChange: (v) => updateField('medicationsCurrent', v),
-        placeholder: 'List current medications, dosages, and relevance to condition...',
+        hint: 'Include dosage, frequency, and clinical relevance (e.g., NSAIDs, muscle relaxants, anticoagulants, blood thinners)',
       }),
       textAreaField({
-        label: 'Red Flags/Screening',
+        label: 'Red Flags / Screening',
         value: data.redFlags,
         onChange: (v) => updateField('redFlags', v),
-        placeholder: 'Note any red flags or screening findings...',
+        hint: 'Cauda equina signs, unexplained weight loss, night pain, fever, bowel/bladder changes, bilateral neurological symptoms, malignancy history',
       }),
       textAreaField({
         label: 'Additional Relevant History',
         value: data.additionalHistory,
         onChange: (v) => updateField('additionalHistory', v),
-        placeholder: 'Include surgical history, imaging results, prior therapy...',
+        hint: 'Prior surgeries, imaging results, previous PT episodes and response, relevant co-morbidities, family history',
       }),
     ],
   );

@@ -61,7 +61,7 @@ export const PainAssessment = {
         label: 'Location(s)',
         value: data.painLocation,
         onChange: (v) => updateField('painLocation', v),
-        placeholder: 'Describe location, radiation, pattern of pain...',
+        hint: 'Primary location, radiation distribution, dermatome or peripheral nerve referral pattern if applicable',
       }),
     );
 
@@ -113,7 +113,7 @@ export const PainAssessment = {
         label: 'Aggravating Factors',
         value: data.aggravatingFactors,
         onChange: (v) => updateField('aggravatingFactors', v),
-        placeholder: 'Activities, positions, movements that worsen symptoms...',
+        hint: 'Specific movements, postures, loading conditions, or times of day that increase symptoms',
       }),
     );
 
@@ -123,7 +123,7 @@ export const PainAssessment = {
         label: 'Easing Factors',
         value: data.easingFactors,
         onChange: (v) => updateField('easingFactors', v),
-        placeholder: 'Activities, positions, treatments that improve symptoms...',
+        hint: 'Rest, specific positions, heat/cold, medications, or movements that provide relief',
       }),
     );
 

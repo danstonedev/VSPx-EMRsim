@@ -14,18 +14,9 @@ export function createAssessmentSection(assessmentData, onUpdate) {
   const section = el('div', { class: 'assessment-section' });
 
   // Assessment data should always be an object
-  const data = assessmentData || {
-    primaryImpairments: '',
-    bodyFunctions: '',
-    activityLimitations: '',
-    participationRestrictions: '',
-    ptDiagnosis: '',
-    prognosis: '',
-    prognosticFactors: '',
-    clinicalReasoning: '',
-  };
+  const data = assessmentData || {};
 
-  // Initialize data structure if needed
+  // Initialize data structure if needed (keep primaryImpairments for backward compat with saved data)
   const finalData = {
     primaryImpairments: '',
     bodyFunctions: '',
@@ -44,43 +35,11 @@ export function createAssessmentSection(assessmentData, onUpdate) {
     onUpdate(finalData);
   };
 
-  // Primary Impairments
-  const impairmentSection = el('div', { id: 'primary-impairments', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Primary Impairments'),
-    textAreaField({
-      label: 'Key Physical Impairments Identified',
-      value: finalData.primaryImpairments,
-      onChange: (v) => updateField('primaryImpairments', v),
-    }),
-  ]);
-  section.append(impairmentSection);
-
-  // ICF Classification
-  const icfSection = el('div', { id: 'icf-classification', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'ICF Classification'),
-    textAreaField({
-      label: 'Body Functions & Structures',
-      value: finalData.bodyFunctions,
-      onChange: (v) => updateField('bodyFunctions', v),
-    }),
-    textAreaField({
-      label: 'Activity Limitations',
-      value: finalData.activityLimitations,
-      onChange: (v) => updateField('activityLimitations', v),
-    }),
-    textAreaField({
-      label: 'Participation Restrictions',
-      value: finalData.participationRestrictions,
-      onChange: (v) => updateField('participationRestrictions', v),
-    }),
-  ]);
-  section.append(icfSection);
-
-  // PT Diagnosis & Prognosis
+  // PT Diagnosis & Prognosis (top of section, includes clinical reasoning)
   const diagnosisSection = el('div', { id: 'pt-diagnosis', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Physical Therapy Diagnosis & Prognosis'),
+    el('h4', { class: 'subsection-title' }, 'Physical Therapy Diagnosis'),
     inputField({
-      label: 'PT Diagnosis/Movement System Diagnosis',
+      label: 'PT Diagnosis / Movement System Diagnosis',
       value: finalData.ptDiagnosis,
       onChange: (v) => updateField('ptDiagnosis', v),
       placeholder: 'e.g., Lumbar extension syndrome with mobility deficits',
@@ -98,23 +57,37 @@ export function createAssessmentSection(assessmentData, onUpdate) {
       onChange: (v) => updateField('prognosis', v),
     }),
     textAreaField({
-      label: 'Prognostic Factors',
-      value: finalData.prognosticFactors,
-      onChange: (v) => updateField('prognosticFactors', v),
+      label: 'Clinical Impression',
+      value: finalData.clinicalReasoning,
+      onChange: (v) => updateField('clinicalReasoning', v),
+      hint: 'Movement system diagnosis, contributing factors, tissue vs. movement-based hypothesis, response to examination findings',
     }),
   ]);
   section.append(diagnosisSection);
 
-  // Clinical Reasoning
-  const reasoningSection = el('div', { id: 'clinical-reasoning', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Clinical Impression'),
+  // ICF Classification
+  const icfSection = el('div', { id: 'icf-classification', class: 'section-anchor' }, [
+    el('h4', { class: 'subsection-title' }, 'ICF Summary'),
     textAreaField({
-      label: 'Clinical Reasoning & Hypothesis',
-      value: finalData.clinicalReasoning,
-      onChange: (v) => updateField('clinicalReasoning', v),
+      label: 'Body Functions, Structures & Impairments',
+      value: finalData.bodyFunctions,
+      onChange: (v) => updateField('bodyFunctions', v),
+      hint: 'ICF b/s codes: muscle strength, joint mobility, pain, sensory integrity, posture, tissue integrity',
+    }),
+    textAreaField({
+      label: 'Activity Limitations',
+      value: finalData.activityLimitations,
+      onChange: (v) => updateField('activityLimitations', v),
+      hint: 'ICF d codes: walking, stairs, transfers, lifting, self-care, driving, occupational tasks',
+    }),
+    textAreaField({
+      label: 'Participation Restrictions',
+      value: finalData.participationRestrictions,
+      onChange: (v) => updateField('participationRestrictions', v),
+      hint: 'Social roles, occupational demands, recreational activities, and community engagement affected by condition',
     }),
   ]);
-  section.append(reasoningSection);
+  section.append(icfSection);
 
   return section;
 }

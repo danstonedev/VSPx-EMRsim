@@ -62,6 +62,10 @@ export const REGIONS = {
   'upper-extremity': {
     name: 'Upper Extremity',
     items: [
+      { level: 'C1', reflex: null },
+      { level: 'C2', reflex: null },
+      { level: 'C3', reflex: null },
+      { level: 'C4', reflex: null },
       { level: 'C5', reflex: 'Biceps' },
       { level: 'C6', reflex: 'Brachioradialis' },
       { level: 'C7', reflex: 'Triceps' },
@@ -167,7 +171,7 @@ export function createCombinedNeuroscreenSection(
     // Table header
     const thead = el('thead', { class: 'combined-neuroscreen-thead' });
     const headerRow1 = el('tr', {}, [
-      el('th', { rowspan: '2', class: 'combined-neuroscreen-th level-col' }, 'Spinal Level'),
+      el('th', { rowspan: '2', class: 'combined-neuroscreen-th level-col' }, 'Nerve Root'),
       el('th', { colspan: '3', class: 'combined-neuroscreen-th left-group' }, 'Left'),
       el('th', { colspan: '3', class: 'combined-neuroscreen-th right-group' }, 'Right'),
     ]);

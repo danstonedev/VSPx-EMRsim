@@ -2007,8 +2007,6 @@ export function createChartNavigation(config) {
     subjective: ['hpi', 'pain-assessment', 'functional-status', 'additional-history'],
     objective: [
       'general-observations',
-      'inspection',
-      'palpation',
       'regional-assessment',
       'neurological-screening',
       'functional-movement',
@@ -2024,8 +2022,6 @@ export function createChartNavigation(config) {
     'functional-status': 'Functional Status',
     'additional-history': 'Additional History',
     'general-observations': 'General Observations & Vital Signs',
-    inspection: 'Inspection',
-    palpation: 'Palpation',
     'regional-assessment': 'Regional Assessment',
     'neurological-screening': 'Neurological Screening',
     'functional-movement': 'Functional Movement',

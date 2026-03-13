@@ -28,29 +28,12 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   );
 
   section.append(
-    buildObservationsSection(data.observations, (field, value) =>
-      updateField(`observations.${field}`, value),
-    ),
-  );
-
-  // Inspection
-  section.append(
-    buildTextAreaSection(
-      'inspection',
-      'Inspection',
-      'Visual Assessment (swelling, deformity, skin changes, asymmetry)',
-      data.inspection.visual || '',
+    buildObservationsSection(
+      data.observations,
+      (field, value) => updateField(`observations.${field}`, value),
+      data.inspection,
       (v) => updateField('inspection.visual', v),
-    ),
-  );
-
-  // Palpation
-  section.append(
-    buildTextAreaSection(
-      'palpation',
-      'Palpation',
-      'Tenderness, Temperature, Muscle Tone, Tissue Quality',
-      data.palpation.findings || '',
+      data.palpation,
       (v) => updateField('palpation.findings', v),
     ),
   );
@@ -156,9 +139,10 @@ export function createObjectiveSection(objectiveData, onUpdate) {
     buildTextAreaSection(
       'functional-movement',
       'Functional Movement Assessment',
-      'Transfers, Ambulation, ADL Performance, Movement Patterns',
+      'Observations',
       data.functional.assessment || '',
       (v) => updateField('functional.assessment', v),
+      'Transfers, bed mobility, ambulation quality, ADL performance, movement pattern deviations, compensatory strategies',
     ),
   );
 
@@ -169,21 +153,25 @@ export function createObjectiveSection(objectiveData, onUpdate) {
       label: 'Patient Education',
       value: data.treatmentPerformed.patientEducation || '',
       onChange: (v) => updateField('treatmentPerformed.patientEducation', v),
+      hint: 'HEP instructions, posture/ergonomics, activity modification, body mechanics, self-management strategies',
     }),
     textAreaField({
       label: 'Modalities',
       value: data.treatmentPerformed.modalities || '',
       onChange: (v) => updateField('treatmentPerformed.modalities', v),
+      hint: 'E-stim, ultrasound, heat/cold, TENS, iontophoresis — include parameters and region treated',
     }),
     textAreaField({
       label: 'Therapeutic Exercise',
       value: data.treatmentPerformed.therapeuticExercise || '',
       onChange: (v) => updateField('treatmentPerformed.therapeuticExercise', v),
+      hint: 'Exercises performed, sets/reps/duration, resistance, progression from prior visit',
     }),
     textAreaField({
       label: 'Manual Therapy',
       value: data.treatmentPerformed.manualTherapy || '',
       onChange: (v) => updateField('treatmentPerformed.manualTherapy', v),
+      hint: 'Technique(s), region(s) treated, grade/amplitude, number of sets, patient response',
     }),
   ]);
   section.append(performed);
@@ -295,10 +283,10 @@ function makeUpdateField(data, onUpdate) {
   };
 }
 
-function buildTextAreaSection(id, title, label, value, onChange) {
+function buildTextAreaSection(id, title, label, value, onChange, hint) {
   return el('div', { id, class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, title),
-    textAreaField({ label, value, onChange }),
+    textAreaField({ label, value, onChange, hint }),
   ]);
 }
 
@@ -501,27 +489,42 @@ function buildVitalsSection(vitals, onChange) {
   return container;
 }
 
-function buildObservationsSection(observations, onChange) {
+function buildObservationsSection(
+  observations,
+  onChange,
+  inspection,
+  onInspectionChange,
+  palpation,
+  onPalpationChange,
+) {
   const container = el('div', { id: 'general-observations', class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, 'General Observations'),
   ]);
 
   container.append(
     textAreaField({
-      label: 'General Appearance',
-      hint: 'Mental Status & Affect (e.g., Alert & Oriented x3, Anxious)',
+      label: 'Mental Status & Affect',
+      hint: 'Orientation, affect, behavior (e.g., A&Ox3, cooperative, anxious, pain behavior)',
       value: observations.generalAppearance,
       onChange: (v) => onChange('generalAppearance', v),
     }),
     textAreaField({
-      label: 'Posture',
+      label: 'Posture & Alignment',
+      hint: 'Static posture, gait pattern, movement quality, compensation strategies',
       value: observations.posture,
       onChange: (v) => onChange('posture', v),
     }),
     textAreaField({
-      label: 'Gait',
-      value: observations.gait,
-      onChange: (v) => onChange('gait', v),
+      label: 'Inspection',
+      hint: 'Visual Assessment (swelling, deformity, skin changes, asymmetry)',
+      value: inspection?.visual || '',
+      onChange: onInspectionChange,
+    }),
+    textAreaField({
+      label: 'Palpation',
+      hint: 'Tenderness, Temperature, Muscle Tone, Tissue Quality',
+      value: palpation?.findings || '',
+      onChange: onPalpationChange,
     }),
   );
   return container;

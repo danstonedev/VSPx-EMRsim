@@ -45,96 +45,112 @@ export const TreatmentPlan = {
     });
     inClinicSection.append(inClinicContent);
 
-    // Treatment Schedule: Frequency + Duration side by side
-    const scheduleRow = el('div', { class: 'treatment-plan-schedule' });
-    const freqField = selectField({
-      label: 'Frequency',
-      value: data.frequency || '',
-      options: getFrequencyOptions(),
-      onChange: (v) => updateField('frequency', v),
-    });
-    const durField = selectField({
-      label: 'Duration',
-      value: data.duration || '',
-      options: getDurationOptions(),
-      onChange: (v) => updateField('duration', v),
-    });
-    scheduleRow.append(freqField, durField);
-    inClinicContent.append(scheduleRow);
-
     if (!Array.isArray(data.inClinicInterventions)) {
-      // Migrate from old exerciseTable if it exists and inClinicInterventions doesn't
       if (data.exerciseTable && Object.keys(data.exerciseTable).length > 0) {
         data.inClinicInterventions = Object.values(data.exerciseTable).map((row) => ({
           intervention: row.exerciseText || '',
           dosage: '',
-          rationale: '',
         }));
       } else {
         data.inClinicInterventions = [];
       }
     }
 
-    const interventionsContainer = el('div', {
-      style: 'margin-bottom: 24px;',
-    });
+    const interventionsContainer = el('div', { style: 'margin-bottom: 24px;' });
     inClinicContent.append(interventionsContainer);
 
     function renderInterventions() {
       interventionsContainer.replaceChildren();
-
       const table = el('table', {
         class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
+        style: 'width: 100%;',
       });
-
-      // Colgroup: Intervention (auto), Dosage (10rem), Purpose (auto), Action (3.75rem)
-      const colgroup = el('colgroup', {}, [
-        el('col', { style: 'width: auto;' }),
-        el('col', { style: 'width: 10rem;' }),
-        el('col', { style: 'width: auto;' }),
-        el('col', { style: 'width: 3.75rem;' }),
-      ]);
-      table.appendChild(colgroup);
-
-      const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
-        el('tr', {}, [
-          el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Intervention'),
-          el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Dose'),
-          el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Purpose'),
-          el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, ''),
+      table.appendChild(
+        el('colgroup', {}, [
+          el('col', { style: 'width: 2rem;' }),
+          el('col', { style: 'width: auto;' }),
+          el('col', { style: 'width: 10rem;' }),
+          el('col', { style: 'width: 3.75rem;' }),
         ]),
-      ]);
-      table.appendChild(thead);
-
-      const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
-
-      data.inClinicInterventions.forEach((entry, index) => {
-        const row = createInterventionRow(entry, index, data, updateField, renderInterventions);
-        tbody.appendChild(row);
-      });
-      table.appendChild(tbody);
-      interventionsContainer.appendChild(table);
-
-      const addButton = el(
-        'div',
+      );
+      const addBtn = el(
+        'button',
         {
-          class: 'compact-add-btn',
+          type: 'button',
+          class: 'billing-row-add-btn',
           title: 'Add Intervention',
           onclick: () => {
-            data.inClinicInterventions.push({ intervention: '', dosage: '', rationale: '' });
+            data.inClinicInterventions.push({ intervention: '', dosage: '' });
             updateField('inClinicInterventions', data.inClinicInterventions);
             renderInterventions();
           },
         },
         '+',
       );
-
-      interventionsContainer.append(addButton);
+      table.appendChild(
+        el('thead', { class: 'combined-neuroscreen-thead' }, [
+          el('tr', { class: 'treatment-plan-schedule-row' }, [
+            el(
+              'th',
+              {
+                colspan: '2',
+                class: 'combined-neuroscreen-th billing-header',
+                style: 'font-weight: normal; padding: 6px 10px;',
+              },
+              [
+                selectField({
+                  label: 'Frequency',
+                  value: data.frequency || '',
+                  options: getFrequencyOptions(),
+                  onChange: (v) => updateField('frequency', v),
+                }),
+              ],
+            ),
+            el(
+              'th',
+              {
+                colspan: '2',
+                class: 'combined-neuroscreen-th billing-header',
+                style: 'font-weight: normal; padding: 6px 10px;',
+              },
+              [
+                selectField({
+                  label: 'Duration',
+                  value: data.duration || '',
+                  options: getDurationOptions(),
+                  onChange: (v) => updateField('duration', v),
+                }),
+              ],
+            ),
+          ]),
+          el('tr', {}, [
+            el(
+              'th',
+              { class: 'combined-neuroscreen-th billing-header intervention-drag-handle-col' },
+              '',
+            ),
+            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Intervention'),
+            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Dose'),
+            el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, [addBtn]),
+          ]),
+        ]),
+      );
+      const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
+      data.inClinicInterventions.forEach((entry, index) => {
+        tbody.appendChild(
+          createInterventionRow(entry, index, data, updateField, renderInterventions),
+        );
+      });
+      enableTableDragReorder(tbody, data.inClinicInterventions, () => {
+        updateField('inClinicInterventions', data.inClinicInterventions);
+        renderInterventions();
+      });
+      table.appendChild(tbody);
+      interventionsContainer.appendChild(table);
     }
 
-    // Initial render
     if (data.inClinicInterventions.length === 0) {
-      data.inClinicInterventions.push({ intervention: '', dosage: '', rationale: '' });
+      data.inClinicInterventions.push({ intervention: '', dosage: '' });
     }
     renderInterventions();
 
@@ -177,20 +193,24 @@ export const TreatmentPlan = {
         class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
       });
 
-      // Colgroup: Intervention (auto), Dosage (10rem), Purpose (auto), Action (3.75rem)
+      // Colgroup: Handle (2rem), Exercise (auto), Dosage (10rem), Action (3.75rem)
       const colgroup = el('colgroup', {}, [
+        el('col', { style: 'width: 2rem;' }),
         el('col', { style: 'width: auto;' }),
         el('col', { style: 'width: 10rem;' }),
-        el('col', { style: 'width: auto;' }),
         el('col', { style: 'width: 3.75rem;' }),
       ]);
       table.appendChild(colgroup);
 
       const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
         el('tr', {}, [
+          el(
+            'th',
+            { class: 'combined-neuroscreen-th billing-header intervention-drag-handle-col' },
+            '',
+          ),
           el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Exercise / Activity'),
           el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Dose / Frequency'),
-          el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Purpose'),
           el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, ''),
         ]),
       ]);
@@ -201,6 +221,10 @@ export const TreatmentPlan = {
       data.hepInterventions.forEach((entry, index) => {
         const row = createHepRow(entry, index, data, updateField, renderHep);
         tbody.appendChild(row);
+      });
+      enableTableDragReorder(tbody, data.hepInterventions, () => {
+        updateField('hepInterventions', data.hepInterventions);
+        renderHep();
       });
       table.appendChild(tbody);
       hepContainer.appendChild(table);
@@ -291,7 +315,22 @@ function getDurationOptions() {
 }
 
 function createInterventionRow(entry, index, data, updateField, renderCallback) {
-  const row = el('tr', { class: 'combined-neuroscreen-row' });
+  const row = el('tr', {
+    class: 'combined-neuroscreen-row intervention-row',
+    'data-row-index': String(index),
+  });
+
+  // Drag handle
+  const handleCell = el(
+    'td',
+    {
+      class: 'combined-neuroscreen-td intervention-drag-handle',
+      draggable: 'true',
+      title: 'Drag to reorder',
+    },
+    '⠿',
+  );
+  row.appendChild(handleCell);
 
   // 1. Intervention Search/Input
   const searchCell = el('td', {
@@ -437,26 +476,7 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
   dosageCell.appendChild(dosageInput);
   row.appendChild(dosageCell);
 
-  // 3. Purpose / Goal
-  const rationaleInput = el(
-    'textarea',
-    {
-      class: 'combined-neuroscreen__input resize-vertical',
-      rows: 1,
-      placeholder: 'Why are you doing this?',
-      onblur: (e) => {
-        data.inClinicInterventions[index].rationale = e.target.value;
-        updateField('inClinicInterventions', data.inClinicInterventions);
-      },
-    },
-    entry.rationale || '',
-  );
-  textareaAutoResize(rationaleInput);
-  const rationaleCell = el('td', { class: 'combined-neuroscreen-td' });
-  rationaleCell.appendChild(rationaleInput);
-  row.appendChild(rationaleCell);
-
-  // 5. Action (Remove button)
+  // 4. Action (Remove button)
   const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
   const removeButton = el(
     'button',
@@ -477,8 +497,278 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
   return row;
 }
 
+function createInterventionRowLinked_REMOVED() {
+  // dead code stub — kept for rollback reference
+  return null; // replaced by createInterventionRow
+}
+
+function _DEADCODE_createInterventionRowLinked(
+  entry,
+  localIndex,
+  updateField,
+  data,
+  renderCallback,
+  onRemove,
+) {
+  const row = el('tr', {
+    class: 'combined-neuroscreen-row intervention-row',
+    'data-row-index': String(localIndex),
+  });
+
+  // Drag handle
+  row.appendChild(
+    el(
+      'td',
+      {
+        class: 'combined-neuroscreen-td intervention-drag-handle',
+        draggable: 'true',
+        title: 'Drag to reorder',
+      },
+      '⠿',
+    ),
+  );
+
+  // Intervention search
+  const searchCell = el('td', {
+    class: 'combined-neuroscreen-td',
+    style: 'position: relative; overflow: visible;',
+  });
+  const interventions = getPTInterventions().map((opt) => ({
+    ...opt,
+    _norm: normalizeInterventionOption(opt),
+  }));
+  const searchInput = el('input', {
+    type: 'text',
+    value: entry.intervention || '',
+    class: 'combined-neuroscreen__input combined-neuroscreen__input--left',
+    placeholder: 'Search or type intervention...',
+    style: 'width: 100%;',
+    onblur: (e) => {
+      setTimeout(() => {
+        entry.intervention = e.target.value;
+        updateField('inClinicInterventions', data.inClinicInterventions);
+      }, 200);
+    },
+  });
+  const resultsList = el('div', {
+    class: 'billing-search-results',
+    style:
+      'position: absolute; top: calc(100% + 2px); left: 0; width: 100%; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; overflow-y: auto; overflow-x: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.16); max-height: 260px; display: none; background: white; z-index: 9999;',
+  });
+  let highlightIndex = -1;
+  let currentResults = [];
+  const applySelection = (item) => {
+    if (!item) return;
+    searchInput.value = item.value;
+    entry.intervention = item.value;
+    updateField('inClinicInterventions', data.inClinicInterventions);
+    resultsList.style.display = 'none';
+  };
+  const renderResults = () => {
+    resultsList.replaceChildren();
+    if (!currentResults.length) {
+      resultsList.style.display = 'none';
+      return;
+    }
+    resultsList.style.display = 'block';
+    currentResults.forEach((item, idx) => {
+      const { label, category } = item._norm || {};
+      const resultRow = el(
+        'div',
+        {
+          class: 'billing-search-result-row',
+          style:
+            'padding: 0.45rem 0.65rem; display:flex; justify-content:space-between; align-items:flex-start; gap: 0.65rem; cursor:pointer; font-size: 0.95rem; background: ' +
+            (idx === highlightIndex ? 'rgba(0,154,68,0.12);' : 'white;'),
+          onmouseenter: () => {
+            highlightIndex = idx;
+            Array.from(resultsList.children).forEach((c, ci) => {
+              c.style.background = ci === idx ? 'rgba(0,154,68,0.12)' : 'white';
+            });
+          },
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            applySelection(item);
+          },
+        },
+        [
+          el('div', { style: 'flex:1;' }, label || item.value),
+          el(
+            'div',
+            { style: 'color: var(--text-muted); font-size:0.85rem; white-space:nowrap;' },
+            category || '',
+          ),
+        ],
+      );
+      resultsList.appendChild(resultRow);
+    });
+  };
+  searchInput.addEventListener('input', () => {
+    const q = (searchInput.value || '').trim().toLowerCase();
+    if (!q) {
+      currentResults = [];
+      renderResults();
+      return;
+    }
+    currentResults = interventions
+      .map((item) => ({ ...item, _score: scoreInterventionOption(item, q) }))
+      .filter((i) => i._score > 0)
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 15);
+    highlightIndex = currentResults.length ? 0 : -1;
+    renderResults();
+  });
+  searchInput.addEventListener('keydown', (e) => {
+    if (!currentResults.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightIndex = (highlightIndex + 1) % currentResults.length;
+      renderResults();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightIndex = (highlightIndex - 1 + currentResults.length) % currentResults.length;
+      renderResults();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      applySelection(currentResults[highlightIndex >= 0 ? highlightIndex : 0]);
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!searchCell.contains(e.target)) resultsList.style.display = 'none';
+  });
+  searchCell.append(searchInput, resultsList);
+  row.appendChild(searchCell);
+
+  // Dosage
+  const dosageInput = el(
+    'textarea',
+    {
+      class: 'combined-neuroscreen__input resize-vertical',
+      rows: 1,
+      placeholder: 'e.g., 3x10, 30s hold',
+      onblur: (e) => {
+        entry.dosage = e.target.value;
+        updateField('inClinicInterventions', data.inClinicInterventions);
+      },
+    },
+    entry.dosage || '',
+  );
+  textareaAutoResize(dosageInput);
+  const dosageCell = el('td', { class: 'combined-neuroscreen-td' });
+  dosageCell.appendChild(dosageInput);
+  row.appendChild(dosageCell);
+
+  // Remove
+  const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
+  actionCell.appendChild(
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'remove-btn',
+        onclick: onRemove,
+      },
+      '×',
+    ),
+  );
+  row.appendChild(actionCell);
+
+  return row;
+}
+
+/**
+ * Animated collapse/expand toggle for plan ICD-10 group cards.
+ */
+function bindPlanAnimatedToggle(detailsEl, summaryEl, contentEl, code, expandState) {
+  let animating = false;
+  let safetyTimer = null;
+  const cleanup = () => {
+    if (safetyTimer) {
+      clearTimeout(safetyTimer);
+      safetyTimer = null;
+    }
+    contentEl.style.overflow = '';
+    contentEl.style.height = '';
+    contentEl.style.opacity = '';
+    contentEl.style.transition = '';
+    animating = false;
+  };
+  summaryEl.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (animating) return;
+    const isOpen = detailsEl.hasAttribute('open');
+    animating = true;
+    if (isOpen) {
+      const startHeight = contentEl.scrollHeight;
+      contentEl.style.overflow = 'hidden';
+      contentEl.style.height = `${startHeight}px`;
+      contentEl.style.opacity = '1';
+      requestAnimationFrame(() => {
+        contentEl.style.transition = 'height 220ms ease, opacity 180ms ease';
+        contentEl.style.height = '0px';
+        contentEl.style.opacity = '0';
+      });
+      const onEnd = (e) => {
+        if (e && e.target !== contentEl) return;
+        if (e && e.propertyName !== 'height') return;
+        detailsEl.removeAttribute('open');
+        expandState.set(code, false);
+        cleanup();
+        contentEl.removeEventListener('transitionend', onEnd);
+      };
+      contentEl.addEventListener('transitionend', onEnd);
+      safetyTimer = setTimeout(() => {
+        contentEl.removeEventListener('transitionend', onEnd);
+        detailsEl.removeAttribute('open');
+        expandState.set(code, false);
+        cleanup();
+      }, 300);
+      return;
+    }
+    detailsEl.setAttribute('open', 'open');
+    contentEl.style.overflow = 'hidden';
+    contentEl.style.height = '0px';
+    contentEl.style.opacity = '0';
+    requestAnimationFrame(() => {
+      const targetHeight = contentEl.scrollHeight;
+      contentEl.style.transition = 'height 220ms ease, opacity 180ms ease';
+      contentEl.style.height = `${targetHeight}px`;
+      contentEl.style.opacity = '1';
+    });
+    const onEnd = (e) => {
+      if (e && e.target !== contentEl) return;
+      if (e && e.propertyName !== 'height') return;
+      expandState.set(code, true);
+      cleanup();
+      contentEl.removeEventListener('transitionend', onEnd);
+    };
+    contentEl.addEventListener('transitionend', onEnd);
+    safetyTimer = setTimeout(() => {
+      contentEl.removeEventListener('transitionend', onEnd);
+      expandState.set(code, true);
+      cleanup();
+    }, 300);
+  });
+}
+
 function createHepRow(entry, index, data, updateField, renderCallback) {
-  const row = el('tr', { class: 'combined-neuroscreen-row' });
+  const row = el('tr', {
+    class: 'combined-neuroscreen-row intervention-row',
+    'data-row-index': String(index),
+  });
+
+  // Drag handle
+  const handleCell = el(
+    'td',
+    {
+      class: 'combined-neuroscreen-td intervention-drag-handle',
+      draggable: 'true',
+      title: 'Drag to reorder',
+    },
+    '⠿',
+  );
+  row.appendChild(handleCell);
 
   // 1. Intervention Search/Input
   const searchCell = el('td', {
@@ -624,26 +914,7 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
   dosageCell.appendChild(dosageInput);
   row.appendChild(dosageCell);
 
-  // 3. Purpose / Goal
-  const rationaleInput = el(
-    'textarea',
-    {
-      class: 'combined-neuroscreen__input resize-vertical',
-      rows: 1,
-      placeholder: 'Why are you doing this?',
-      onblur: (e) => {
-        data.hepInterventions[index].rationale = e.target.value;
-        updateField('hepInterventions', data.hepInterventions);
-      },
-    },
-    entry.rationale || '',
-  );
-  textareaAutoResize(rationaleInput);
-  const rationaleCell = el('td', { class: 'combined-neuroscreen-td' });
-  rationaleCell.appendChild(rationaleInput);
-  row.appendChild(rationaleCell);
-
-  // 4. Action (Remove button)
+  // 3. Action (Remove button)
   const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
   const removeButton = el(
     'button',
@@ -662,6 +933,65 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
   row.appendChild(actionCell);
 
   return row;
+}
+
+/**
+ * Drag-and-drop reorder for table bodies (mirrors enableDragReorder in SubjectiveQA)
+ * @param {HTMLElement} tbody - the <tbody> to attach events to
+ * @param {Array} items - the data array being reordered (mutated in place)
+ * @param {Function} onReorder - called after a successful drop
+ */
+function enableTableDragReorder(tbody, items, onReorder) {
+  let dragSrcIndex = null;
+
+  tbody.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.intervention-row');
+    if (!row || !e.target.classList.contains('intervention-drag-handle')) {
+      e.preventDefault();
+      return;
+    }
+    dragSrcIndex = parseInt(row.getAttribute('data-row-index'), 10);
+    row.classList.add('intervention-row--dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(dragSrcIndex));
+  });
+
+  tbody.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.intervention-row');
+    if (!target || parseInt(target.getAttribute('data-row-index'), 10) === dragSrcIndex) return;
+    tbody
+      .querySelectorAll('.intervention-row--drag-over')
+      .forEach((r) => r.classList.remove('intervention-row--drag-over'));
+    target.classList.add('intervention-row--drag-over');
+  });
+
+  tbody.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('.intervention-row');
+    if (target) target.classList.remove('intervention-row--drag-over');
+  });
+
+  tbody.addEventListener('drop', (e) => {
+    e.preventDefault();
+    tbody
+      .querySelectorAll('.intervention-row--drag-over')
+      .forEach((r) => r.classList.remove('intervention-row--drag-over'));
+    const targetRow = e.target.closest('.intervention-row');
+    if (!targetRow) return;
+    const toIndex = parseInt(targetRow.getAttribute('data-row-index'), 10);
+    if (toIndex === dragSrcIndex || dragSrcIndex === null) return;
+    const [moved] = items.splice(dragSrcIndex, 1);
+    items.splice(toIndex, 0, moved);
+    onReorder();
+  });
+
+  tbody.addEventListener('dragend', () => {
+    tbody
+      .querySelectorAll('.intervention-row--dragging')
+      .forEach((r) => r.classList.remove('intervention-row--dragging'));
+    dragSrcIndex = null;
+  });
 }
 
 function normalizeInterventionOption(opt) {

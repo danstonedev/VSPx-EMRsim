@@ -30,6 +30,8 @@ export function createCustomSelect({
   let activeIndex = -1;
   let searchBuffer = '';
   let searchTimeout = null;
+  let _scrollHandler = null;
+  let _resizeHandler = null;
 
   // Main container
   const container = el('div', {
@@ -48,9 +50,9 @@ export function createCustomSelect({
   button.appendChild(buttonText);
   button.appendChild(arrow);
 
-  // Dropdown list
+  // Dropdown list — portaled to document.body to escape overflow:hidden ancestors
   const dropdown = el('div', {
-    class: 'custom-select__dropdown',
+    class: 'custom-select__dropdown custom-select__dropdown--portal',
     role: 'listbox',
     'aria-hidden': 'true',
   });
@@ -74,7 +76,7 @@ export function createCustomSelect({
   optionElements.forEach((optEl) => dropdown.appendChild(optEl));
 
   container.appendChild(button);
-  container.appendChild(dropdown);
+  // Dropdown is appended to body on open, not to container
 
   // Update button text based on current value
   function updateButtonText() {
@@ -95,13 +97,26 @@ export function createCustomSelect({
     container.setAttribute('aria-expanded', 'true');
     dropdown.setAttribute('aria-hidden', 'false');
 
+    // Portal dropdown to body so it escapes overflow:hidden ancestors
+    document.body.appendChild(dropdown);
+
     // Set active index to currently selected option
     activeIndex = options.findIndex((opt) => opt.value === currentValue);
     if (activeIndex === -1 && options.length > 0) activeIndex = 0;
     updateActiveOption();
 
-    // Position dropdown (handle viewport overflow)
+    // Position dropdown using fixed coords
     positionDropdown();
+
+    // Reposition on scroll/resize so portal stays aligned
+    _scrollHandler = () => {
+      if (isOpen) positionDropdown();
+    };
+    _resizeHandler = () => {
+      if (isOpen) positionDropdown();
+    };
+    window.addEventListener('scroll', _scrollHandler, true); // capture phase for inner scrollables
+    window.addEventListener('resize', _resizeHandler);
 
     // Add click-outside listener
     setTimeout(() => document.addEventListener('click', handleClickOutside), 0);
@@ -117,6 +132,17 @@ export function createCustomSelect({
     activeIndex = -1;
     updateActiveOption();
     document.removeEventListener('click', handleClickOutside);
+
+    // Remove scroll/resize listeners
+    if (_scrollHandler) window.removeEventListener('scroll', _scrollHandler, true);
+    if (_resizeHandler) window.removeEventListener('resize', _resizeHandler);
+    _scrollHandler = null;
+    _resizeHandler = null;
+
+    // Remove portal from body
+    if (dropdown.parentNode === document.body) {
+      document.body.removeChild(dropdown);
+    }
   }
 
   // Toggle dropdown
@@ -125,17 +151,26 @@ export function createCustomSelect({
     else open();
   }
 
-  // Position dropdown to avoid viewport overflow
+  // Position portal dropdown using fixed coordinates from trigger rect
   function positionDropdown() {
     const rect = container.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = dropdown.offsetHeight || 200; // Estimated
+    const dropdownHeight = dropdown.scrollHeight || 200;
+    const openAbove = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
 
-    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+    dropdown.style.position = 'fixed';
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.style.width = `${rect.width}px`;
+
+    if (openAbove) {
       dropdown.classList.add('custom-select__dropdown--above');
+      dropdown.style.top = 'auto';
+      dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
     } else {
       dropdown.classList.remove('custom-select__dropdown--above');
+      dropdown.style.top = `${rect.bottom + 4}px`;
+      dropdown.style.bottom = 'auto';
     }
   }
 
@@ -184,9 +219,9 @@ export function createCustomSelect({
     }
   }
 
-  // Handle click outside to close
+  // Handle click outside to close (check both container and portal dropdown)
   function handleClickOutside(e) {
-    if (!container.contains(e.target)) {
+    if (!container.contains(e.target) && !dropdown.contains(e.target)) {
       close();
     }
   }
@@ -338,7 +373,11 @@ export function createCustomSelect({
     destroy: () => {
       close();
       document.removeEventListener('click', handleClickOutside);
+      if (_scrollHandler) window.removeEventListener('scroll', _scrollHandler, true);
+      if (_resizeHandler) window.removeEventListener('resize', _resizeHandler);
       clearTimeout(searchTimeout);
+      // Remove portal if still attached
+      if (dropdown.parentNode) dropdown.remove();
       container.remove();
     },
   };

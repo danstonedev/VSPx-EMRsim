@@ -24,6 +24,10 @@ const NEUROSCREEN_REGIONS = {
   'upper-extremity': {
     name: 'Upper Extremity',
     items: [
+      { level: 'C1', reflex: null },
+      { level: 'C2', reflex: null },
+      { level: 'C3', reflex: null },
+      { level: 'C4', reflex: null },
       { level: 'C5', reflex: 'Biceps' },
       { level: 'C6', reflex: 'Brachioradialis' },
       { level: 'C7', reflex: 'Triceps' },
@@ -926,7 +930,7 @@ export function exportToWord(caseData, draft) {
     const detailedHistory =
       subj.historyOfPresentIllness || getSafeValue(caseData, 'history.hpi') || '';
     if (chiefConcern) hpiLines.push(`Chief Concern: ${chiefConcern}`);
-    if (detailedHistory) hpiLines.push(`Detailed History of Current Condition: ${detailedHistory}`);
+    if (detailedHistory) hpiLines.push(`History of Present Illness: ${detailedHistory}`);
     if (hpiLines.length) {
       if (chiefConcern)
         elements.push(
@@ -934,7 +938,7 @@ export function exportToWord(caseData, draft) {
         );
       if (detailedHistory)
         elements.push(
-          createLabelValueLine('Detailed History of Current Condition', detailedHistory, {
+          createLabelValueLine('History of Present Illness', detailedHistory, {
             indentLeft: FORMAT.indent.level1,
           }),
         );
@@ -1029,7 +1033,7 @@ export function exportToWord(caseData, draft) {
         );
       if (subj.redFlags)
         elements.push(
-          createLabelValueLine('Red Flags/Screening', subj.redFlags, {
+          createLabelValueLine('Red Flags / Screening', subj.redFlags, {
             indentLeft: FORMAT.indent.level1,
           }),
         );
@@ -1119,9 +1123,9 @@ export function exportToWord(caseData, draft) {
     // General Observations
     elements.push(createSectionHeader('General Observations', 2));
     const obsFields = [
-      { label: 'General Appearance', value: obs.generalAppearance },
-      { label: 'Posture', value: obs.posture },
-      { label: 'Gait', value: obs.gait },
+      { label: 'Mental Status & Affect', value: obs.generalAppearance },
+      { label: 'Posture & Alignment', value: obs.posture },
+      { label: 'Gait', value: obs.gait }, // legacy field — printed if populated from older cases
     ];
 
     let hasObs = false;
@@ -1743,58 +1747,8 @@ export function exportToWord(caseData, draft) {
       ...assess,
     };
 
-    elements.push(createSectionHeader('Primary Impairments', 2));
-    if (assess.primaryImpairments) {
-      elements.push(
-        ...createBulletedList(
-          [`Key Physical Impairments Identified: ${assess.primaryImpairments}`],
-          FORMAT.indent.level1,
-        ),
-      );
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    elements.push(createSectionHeader('ICF Classification', 2));
-    const hasIcf = !!(
-      assess.bodyFunctions ||
-      assess.activityLimitations ||
-      assess.participationRestrictions
-    );
-    if (hasIcf) {
-      if (assess.bodyFunctions)
-        elements.push(
-          createLabelValueLine('Body Functions', assess.bodyFunctions, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (assess.activityLimitations)
-        elements.push(
-          createLabelValueLine('Activity Limitations', assess.activityLimitations, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (assess.participationRestrictions)
-        elements.push(
-          createLabelValueLine('Participation Restrictions', assess.participationRestrictions, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    elements.push(createSectionHeader('Physical Therapy Diagnosis & Prognosis', 2));
+    // PT Diagnosis & Prognosis (first)
+    elements.push(createSectionHeader('Physical Therapy Diagnosis', 2));
     const dxProg = [];
     const prognosisMap = {
       excellent: 'Excellent - Full recovery expected',
@@ -1808,7 +1762,6 @@ export function exportToWord(caseData, draft) {
       const progLabel = prognosisMap[assess.prognosis] || assess.prognosis;
       dxProg.push(`Prognosis: ${progLabel}`);
     }
-    if (assess.prognosticFactors) dxProg.push(`Prognostic Factors: ${assess.prognosticFactors}`);
     if (dxProg.length) {
       dxProg.forEach((line) => {
         const [label, ...rest] = line.split(': ');
@@ -1826,14 +1779,41 @@ export function exportToWord(caseData, draft) {
         }),
       );
     }
-    elements.push(createSectionHeader('Clinical Impression', 2));
     if (assess.clinicalReasoning) {
       elements.push(
-        createBodyParagraph(assess.clinicalReasoning, {
+        createLabelValueLine('Clinical Impression', assess.clinicalReasoning, {
           indentLeft: FORMAT.indent.level1,
-          keepLines: true,
+          bullet: false,
         }),
       );
+    }
+
+    // ICF Summary (second)
+    elements.push(createSectionHeader('ICF Summary', 2));
+    const hasIcf = !!(
+      assess.bodyFunctions ||
+      assess.activityLimitations ||
+      assess.participationRestrictions
+    );
+    if (hasIcf) {
+      if (assess.bodyFunctions)
+        elements.push(
+          createLabelValueLine('Body Functions, Structures & Impairments', assess.bodyFunctions, {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      if (assess.activityLimitations)
+        elements.push(
+          createLabelValueLine('Activity Limitations', assess.activityLimitations, {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      if (assess.participationRestrictions)
+        elements.push(
+          createLabelValueLine('Participation Restrictions', assess.participationRestrictions, {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
     } else {
       elements.push(
         createBodyParagraph('— not documented', {
@@ -1862,39 +1842,53 @@ export function exportToWord(caseData, draft) {
     };
     // SMART Goals first
     elements.push(createSectionHeader('Goals', 2));
-    const goalRows =
-      plan.goalsTable && typeof plan.goalsTable === 'object' ? Object.values(plan.goalsTable) : [];
-    if (goalRows && goalRows.length) {
+
+    const icfDomainLabels = {
+      body: 'Body Functions & Impairments',
+      activity: 'Activity Limitations',
+      participation: 'Participation Restrictions',
+    };
+    const timeframeLabels = {
+      '1-week': '1 week',
+      '2-weeks': '2 weeks',
+      '4-weeks': '4 weeks',
+      '6-weeks': '6 weeks',
+      '8-weeks': '8 weeks',
+      '12-weeks': '12 weeks',
+      discharge: 'By D/C',
+    };
+
+    // Support new goals array and legacy goalsTable object
+    let goalRows = [];
+    if (Array.isArray(plan.goals) && plan.goals.length) {
+      goalRows = plan.goals;
+    } else if (plan.goalsTable && typeof plan.goalsTable === 'object') {
+      goalRows = Object.values(plan.goalsTable)
+        .filter((r) => r.goalText || r.goal)
+        .map((r) => ({ goal: r.goalText || r.goal || '', timeframe: '', icfDomain: '' }));
+    }
+
+    if (goalRows.length) {
       goalRows.forEach((row) => {
-        const text = (row.goalText || row.goal || '').toString();
+        const text = (row.goal || row.goalText || '').toString().trim();
         if (!text) return;
+        const meta = [];
+        if (row.timeframe && timeframeLabels[row.timeframe])
+          meta.push(timeframeLabels[row.timeframe]);
+        if (row.icfDomain && icfDomainLabels[row.icfDomain])
+          meta.push(icfDomainLabels[row.icfDomain]);
+        const fullText = meta.length ? `${text}  [${meta.join(' · ')}]` : text;
         elements.push(
-          createLabelValueLine('', text, {
+          createLabelValueLine('', fullText, {
             indentLeft: FORMAT.indent.level1,
             bullet: true,
           }),
         );
       });
     } else {
-      const hadAny = !!(plan.shortTermGoals || plan.longTermGoals);
-      if (hadAny) {
-        if (plan.shortTermGoals)
-          elements.push(
-            createLabelValueLine('Short-term Goals', plan.shortTermGoals, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
-        if (plan.longTermGoals)
-          elements.push(
-            createLabelValueLine('Long-term Goals', plan.longTermGoals, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
-      } else {
-        elements.push(
-          createBodyParagraph('No goals documented', { indentLeft: FORMAT.indent.level1 }),
-        );
-      }
+      elements.push(
+        createBodyParagraph('No goals documented', { indentLeft: FORMAT.indent.level1 }),
+      );
     }
     // Plan of Care next
     elements.push(createSectionHeader('Plan of Care', 2));

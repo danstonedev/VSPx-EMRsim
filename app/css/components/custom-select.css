@@ -94,6 +94,18 @@ html[data-theme='dark'] .custom-select:focus .custom-select__button {
     visibility 150ms;
 }
 
+/* Portal dropdown: fixed-positioned on document.body, always visible when present */
+.custom-select__dropdown--portal {
+  position: fixed;
+  left: auto;
+  right: auto;
+  margin-top: 0;
+  /* When portaled, show immediately — open/close managed by JS add/remove from DOM */
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .custom-select--open .custom-select__dropdown {
   opacity: 1;
   visibility: visible;

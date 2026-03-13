@@ -3,21 +3,6 @@
 
 import { el, textareaAutoResize } from '../../../ui/utils.js';
 
-/** Category tag options for Q/A items */
-const QA_TAGS = [
-  'Pain',
-  'Function',
-  'Work',
-  'ADLs',
-  'Red Flags',
-  'Neuro',
-  'Psychosocial',
-  'Medication',
-  'Sleep',
-  'Goals',
-  'Adherence',
-];
-
 /** Patterns that indicate a closed-ended (yes/no) question */
 const CLOSED_PATTERNS = [
   /^do you\b/i,
@@ -35,8 +20,6 @@ const CLOSED_PATTERNS = [
   /^would you\b/i,
   /^will you\b/i,
 ];
-
-const QA_TARGET = 10;
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -74,11 +57,8 @@ function createQARow(item, index, { onUpdate, onDelete, totalCount }) {
   // Main content area
   const body = el('div', { class: 'qa-row__body' });
 
-  // Number badge
-  const badge = el('span', { class: 'qa-row__number' }, `Q${index + 1}`);
-
   // Question textarea
-  const questionLabel = el('label', { class: 'qa-row__label' }, [badge, ' Question']);
+  const questionLabel = el('label', { class: 'qa-row__label' }, 'Question');
   const questionTA = el('textarea', {
     class: 'qa-row__textarea form-textarea',
     rows: 2,
@@ -131,35 +111,6 @@ function createQARow(item, index, { onUpdate, onDelete, totalCount }) {
   });
 
   body.append(questionLabel, questionTA, closedWarning, responseLabel, responseTA);
-
-  // Tag chips
-  const tagsRow = el('div', { class: 'qa-row__tags' });
-  QA_TAGS.forEach((tag) => {
-    const active = (item.tags || []).includes(tag);
-    const chip = el(
-      'button',
-      {
-        type: 'button',
-        class: `qa-tag-chip ${active ? 'qa-tag-chip--active' : ''}`,
-        onclick: () => {
-          if (!item.tags) item.tags = [];
-          const idx = item.tags.indexOf(tag);
-          if (idx >= 0) {
-            item.tags.splice(idx, 1);
-            chip.classList.remove('qa-tag-chip--active');
-          } else {
-            item.tags.push(tag);
-            chip.classList.add('qa-tag-chip--active');
-          }
-          item.updatedAt = now();
-          onUpdate();
-        },
-      },
-      tag,
-    );
-    tagsRow.appendChild(chip);
-  });
-  body.appendChild(tagsRow);
 
   row.appendChild(body);
 
@@ -257,22 +208,11 @@ export function createInterviewQAPanel(data, onUpdate) {
 
   const wrapper = el('div', { class: 'qa-panel' });
 
-  // ── Header with count indicator
+  // ── Header
   const header = el('div', { class: 'qa-panel__header' });
   const title = el('span', { class: 'qa-panel__title' }, 'Interview Q/A');
 
-  const counter = el('span', { class: 'qa-panel__counter' });
-  const updateCounter = () => {
-    const count = data.qaItems.length;
-    const atTarget = count >= QA_TARGET;
-    counter.textContent = `Q/A completed: ${count}`;
-    counter.className = `qa-panel__counter ${atTarget ? 'qa-panel__counter--met' : 'qa-panel__counter--under'}`;
-    targetBadge.textContent = atTarget ? '✓ Target met' : `Target: ${QA_TARGET}`;
-    targetBadge.className = `qa-panel__target ${atTarget ? 'qa-panel__target--met' : ''}`;
-  };
-  const targetBadge = el('span', { class: 'qa-panel__target' });
-
-  header.append(title, el('span', { class: 'qa-panel__header-right' }, [counter, targetBadge]));
+  header.append(title);
 
   // ── Body (contains rows)
   const body = el('div', { class: 'qa-panel__body' });
@@ -289,7 +229,6 @@ export function createInterviewQAPanel(data, onUpdate) {
         createQARow(item, idx, {
           onUpdate: () => {
             persist();
-            updateCounter();
           },
           onDelete: (id) => {
             data.qaItems = data.qaItems.filter((i) => i.id !== id);
@@ -300,7 +239,6 @@ export function createInterviewQAPanel(data, onUpdate) {
         }),
       );
     });
-    updateCounter();
   };
 
   enableDragReorder(listContainer, data.qaItems, () => {
