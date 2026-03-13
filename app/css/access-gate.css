@@ -18,7 +18,7 @@
   background: #fff;
   border-radius: 8px;
   padding: 2.5rem 2rem 2rem;
-  max-width: 380px;
+  max-width: 440px;
   width: 90%;
   text-align: center;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -26,25 +26,34 @@
 }
 
 .access-gate-logo {
-  width: 200px;
+  width: 300px;
   height: auto;
-  margin: 0 auto 1.25rem;
+  margin: 0 auto 1.5rem;
   display: block;
 }
 
 .access-gate-title {
   font-family: 'Oswald', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.15rem;
   color: #000;
 }
 
-.access-gate-subtitle {
-  font-size: 0.9rem;
-  color: #555;
+.access-gate-line2 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 0.1rem;
+  line-height: 1.4;
+}
+
+.access-gate-line3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
   margin: 0 0 1.5rem;
   line-height: 1.4;
 }

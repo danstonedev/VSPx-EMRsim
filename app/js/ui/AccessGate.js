@@ -52,9 +52,10 @@ export function showAccessGate() {
 
     overlay.innerHTML = `
       <div class="access-gate-card">
-        <img class="access-gate-logo" src="/img/EMRsim-green.png" alt="UND PT EMR-Sim" />
-        <h1 class="access-gate-title">PT EMR Simulator</h1>
-        <p class="access-gate-subtitle">Enter the access code provided by your instructor to continue.</p>
+        <img class="access-gate-logo" src="/img/EMRsim-green.png" alt="EMR-Sim" />
+        <h1 class="access-gate-title">University of North Dakota</h1>
+        <p class="access-gate-line2">School of Medicine &amp; Health Sciences</p>
+        <p class="access-gate-line3">Department of Physical Therapy</p>
         <form class="access-gate-form" autocomplete="off">
           <label for="access-code-input" class="sr-only">Access code</label>
           <input
@@ -68,7 +69,7 @@ export function showAccessGate() {
           <button type="submit" class="access-gate-btn">Enter</button>
         </form>
         <p class="access-gate-error" aria-live="polite"></p>
-        <p class="access-gate-footer">University of North Dakota &mdash; Department of Physical Therapy</p>
+        <p class="access-gate-footer">UND School of Medicine &amp; Health Sciences</p>
       </div>
     `;
 
