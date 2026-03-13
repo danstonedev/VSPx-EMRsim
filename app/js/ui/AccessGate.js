@@ -30,6 +30,10 @@ function grantAccess() {
  * once the user enters a valid code (or immediately if already granted).
  */
 export function showAccessGate() {
+  // Skip the gate on localhost (dev environment)
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return Promise.resolve();
+
   if (isAccessGranted()) return Promise.resolve();
 
   // Fire a warm-up ping so the API function is ready when the user submits
@@ -48,7 +52,7 @@ export function showAccessGate() {
 
     overlay.innerHTML = `
       <div class="access-gate-card">
-        <img class="access-gate-logo" src="img/EMRsim-green.png" alt="UND PT EMR-Sim" />
+        <img class="access-gate-logo" src="/img/EMRsim-green.png" alt="UND PT EMR-Sim" />
         <h1 class="access-gate-title">PT EMR Simulator</h1>
         <p class="access-gate-subtitle">Enter the access code provided by your instructor to continue.</p>
         <form class="access-gate-form" autocomplete="off">
