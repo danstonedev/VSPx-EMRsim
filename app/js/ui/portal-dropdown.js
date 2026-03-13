@@ -12,6 +12,12 @@ export function createPortalDropdown(anchorEl, cssClass) {
       'position:fixed; border:1px solid var(--color-border); border-radius:0 0 8px 8px; overflow-y:auto; overflow-x:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.16); max-height:260px; display:none; background:white; z-index:10100;',
   });
 
+  // Prevent clicks inside the dropdown from stealing focus away from the
+  // search input.  Without this, clicking a non-focusable result row causes
+  // the input to blur → focusin fires on <body> → handleFocusOutside hides
+  // the dropdown before the click event can register.
+  dropdown.addEventListener('pointerdown', (e) => e.preventDefault());
+
   function addGlobalCloseListeners() {
     document.addEventListener('pointerdown', handlePointerDownOutside, true);
     document.addEventListener('focusin', handleFocusOutside, true);
@@ -23,18 +29,28 @@ export function createPortalDropdown(anchorEl, cssClass) {
   }
 
   function handlePointerDownOutside(event) {
+    // Auto-cleanup if anchor was removed from DOM (re-render orphan)
+    if (!anchorEl.isConnected) {
+      destroy();
+      return;
+    }
     if (!anchorEl.contains(event.target) && !dropdown.contains(event.target)) {
       hide();
     }
   }
 
   function handleFocusOutside(event) {
+    if (!anchorEl.isConnected) {
+      destroy();
+      return;
+    }
     if (!anchorEl.contains(event.target) && !dropdown.contains(event.target)) {
       hide();
     }
   }
 
   function position() {
+    if (!anchorEl.isConnected) return;
     const rect = anchorEl.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -55,13 +71,20 @@ export function createPortalDropdown(anchorEl, cssClass) {
   let _scrollH, _resizeH;
 
   function show() {
+    // Anchor removed from DOM → auto-destroy the orphaned portal
+    if (!anchorEl.isConnected) {
+      destroy();
+      return;
+    }
     if (dropdown.parentNode !== document.body) document.body.appendChild(dropdown);
     dropdown.style.display = 'block';
     position();
-    _scrollH = () => position();
-    _resizeH = () => position();
-    window.addEventListener('scroll', _scrollH, true);
-    window.addEventListener('resize', _resizeH);
+    if (!_scrollH) {
+      _scrollH = () => position();
+      _resizeH = () => position();
+      window.addEventListener('scroll', _scrollH, true);
+      window.addEventListener('resize', _resizeH);
+    }
     addGlobalCloseListeners();
   }
 

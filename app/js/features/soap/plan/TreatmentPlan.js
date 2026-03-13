@@ -629,9 +629,6 @@ function _DEADCODE_createInterventionRowLinked(
       applySelection(currentResults[highlightIndex >= 0 ? highlightIndex : 0]);
     }
   });
-  document.addEventListener('click', (e) => {
-    if (!searchCell.contains(e.target)) portal.hide();
-  });
   searchCell.append(searchInput);
   row.appendChild(searchCell);
 

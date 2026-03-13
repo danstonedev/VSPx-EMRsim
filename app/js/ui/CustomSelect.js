@@ -67,6 +67,10 @@ export function createCustomSelect({
     'aria-hidden': 'true',
   });
 
+  // Prevent clicks inside the dropdown from stealing focus away from the
+  // container — avoids handleFocusOutside closing it prematurely.
+  dropdown.addEventListener('pointerdown', (e) => e.preventDefault());
+
   // Create option elements
   const optionElements = options.map((opt, index) => {
     const optEl = el(
