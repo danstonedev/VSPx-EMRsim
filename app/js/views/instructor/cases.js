@@ -9,10 +9,10 @@ import { createCustomSelect } from '../../ui/CustomSelect.js';
 import { showConfirmModal } from '../../ui/ConfirmModal.js';
 import { createCaseBadge, createAuthorBadge } from '../../ui/CaseBadge.js';
 // Lazy-load store functions to avoid static/dynamic import mix warnings
-async function _listCases() {
+async function _listCases(opts) {
   const store = await import('../../core/store.js');
   if (typeof store.listCaseSummaries === 'function') {
-    return store.listCaseSummaries();
+    return store.listCaseSummaries(opts);
   }
   // Fallback for older bundles: load full cases and map to summaries
   if (typeof store.listCases === 'function') {
@@ -885,7 +885,18 @@ route('#/instructor/cases', async (app) => {
     app.append(loadingIndicator);
 
     try {
-      allCases = await _listCases();
+      allCases = await _listCases({
+        onRemoteUpdate: (merged) => {
+          allCases = merged;
+          // Re-render the table container in-place
+          const tableContainer = document.getElementById('table-container');
+          if (tableContainer && tableContainer.parentElement) {
+            const container = tableContainer.parentElement;
+            const newContainer = renderSearchAndTable();
+            container.replaceChildren(...newContainer.children);
+          }
+        },
+      });
     } catch (error) {
       console.error('Failed to load cases:', error);
       app.replaceChildren(); // Clear loading indicator

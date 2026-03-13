@@ -61,12 +61,14 @@ export function showAccessGate() {
     /* overlay may not exist */
   }
 
-  // Fire a warm-up ping so the API function is ready when the user submits
+  // Fire warm-up pings so API functions are ready when the user submits
   fetch('/api/verify-access', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code: '' }),
   }).catch(() => {});
+  // Warm up the cases API (Cosmos DB cold start) so case lists load fast
+  fetch('/api/cases', { method: 'GET' }).catch(() => {});
 
   // Preload critical app modules in the background while user types the code
   Promise.all([

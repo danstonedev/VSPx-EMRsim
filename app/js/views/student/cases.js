@@ -1,10 +1,10 @@
 import { route } from '../../core/router.js';
 import { navigate as urlNavigate } from '../../core/url.js';
 import { createCaseBadge, createAuthorBadge } from '../../ui/CaseBadge.js';
-async function _listCaseSummaries() {
+async function _listCaseSummaries(opts) {
   const store = await import('../../core/store.js');
   if (typeof store.listCaseSummaries === 'function') {
-    return store.listCaseSummaries();
+    return store.listCaseSummaries(opts);
   }
   // Fallback for older bundles: load full cases and map to summaries
   if (typeof store.listCases === 'function') {
@@ -562,7 +562,8 @@ function appendNoCasesPanel(app) {
   );
 }
 
-function makeCasesPanel(app, cases, drafts) {
+function makeCasesPanel(app, initialCases, drafts) {
+  let cases = initialCases;
   let searchTerm = '';
 
   const casesPanel = el('div', { class: 'panel' }, [
@@ -662,6 +663,12 @@ function makeCasesPanel(app, cases, drafts) {
   }
 
   renderTable();
+
+  // Return updater for background remote data refresh
+  return function updateCases(newCases) {
+    cases = newCases;
+    renderTable();
+  };
 }
 
 function safeJsonParse(str) {
@@ -741,12 +748,28 @@ function renderBlankNotesPanel(app) {
 route('#/student/cases', async (app) => {
   app.replaceChildren();
   try {
-    const cases = await _listCaseSummaries();
+    let updateCases = null;
+    const cases = await _listCaseSummaries({
+      onRemoteUpdate: (merged) => {
+        if (updateCases) {
+          updateCases(merged);
+        } else {
+          // Remote arrived before initial render finished — re-render fully
+          app.replaceChildren();
+          const drafts = scanDrafts(storage);
+          makeCasesPanel(app, merged, drafts);
+          renderBlankNotesPanel(app);
+        }
+      },
+    });
     if (!Array.isArray(cases))
       return appendErrorPanel(app, 'Could not load cases. Please check the console for details.');
-    if (cases.length === 0) return appendNoCasesPanel(app);
     const drafts = scanDrafts(storage);
-    makeCasesPanel(app, cases, drafts);
+    if (cases.length === 0) {
+      appendNoCasesPanel(app);
+    } else {
+      updateCases = makeCasesPanel(app, cases, drafts);
+    }
     renderBlankNotesPanel(app);
   } catch (error) {
     console.error('Failed to render student cases:', error);

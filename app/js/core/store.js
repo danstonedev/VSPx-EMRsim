@@ -586,7 +586,7 @@ export const listDrafts = () => {
 };
 
 // --- Manifest-first summaries (no full case JSON) ---
-export const listCaseSummaries = async () => {
+export const listCaseSummaries = async ({ onRemoteUpdate } = {}) => {
   const manifest = await getManifest();
   const stored = loadCasesFromStorage();
 
@@ -608,30 +608,7 @@ export const listCaseSummaries = async () => {
     };
   });
 
-  // Fetch and merge remote cases (cloud database)
-  try {
-    const remoteCases = await fetchRemoteCases();
-    Object.keys(remoteCases).forEach((id) => {
-      const rc = remoteCases[id];
-      // Remote cases override or add to the list
-      summaryMap[id] = {
-        id: id,
-        title: rc.title || rc.caseObj?.meta?.title || 'Untitled Case',
-        latestVersion: rc.latestVersion || 0,
-        isStored: true,
-        source: 'cloud',
-        isBuiltIn: false,
-        createdBy: rc.createdBy,
-        createdByName: rc.createdByName,
-        createdAt: rc.createdAt,
-        updatedAt: rc.updatedAt,
-      };
-    });
-  } catch (e) {
-    console.warn('Failed to fetch remote case summaries:', e);
-  }
-
-  // Mark local-only cases (in storage but not in manifest or cloud)
+  // Mark local-only cases (in storage but not in manifest)
   Object.keys(stored).forEach((id) => {
     if (!summaryMap[id]) {
       summaryMap[id] = {
@@ -644,6 +621,54 @@ export const listCaseSummaries = async () => {
       };
     }
   });
+
+  // Fetch remote cases in the background so UI is never blocked
+  if (typeof onRemoteUpdate === 'function') {
+    fetchRemoteCases()
+      .then((remoteCases) => {
+        if (!remoteCases || Object.keys(remoteCases).length === 0) return;
+        const merged = { ...summaryMap };
+        Object.keys(remoteCases).forEach((id) => {
+          const rc = remoteCases[id];
+          merged[id] = {
+            id: id,
+            title: rc.title || rc.caseObj?.meta?.title || 'Untitled Case',
+            latestVersion: rc.latestVersion || 0,
+            isStored: true,
+            source: 'cloud',
+            isBuiltIn: false,
+            createdBy: rc.createdBy,
+            createdByName: rc.createdByName,
+            createdAt: rc.createdAt,
+            updatedAt: rc.updatedAt,
+          };
+        });
+        onRemoteUpdate(Object.values(merged));
+      })
+      .catch((e) => console.warn('Background remote fetch failed:', e));
+  } else {
+    // Legacy callers: still fetch but don't block
+    try {
+      const remoteCases = await fetchRemoteCases();
+      Object.keys(remoteCases).forEach((id) => {
+        const rc = remoteCases[id];
+        summaryMap[id] = {
+          id: id,
+          title: rc.title || rc.caseObj?.meta?.title || 'Untitled Case',
+          latestVersion: rc.latestVersion || 0,
+          isStored: true,
+          source: 'cloud',
+          isBuiltIn: false,
+          createdBy: rc.createdBy,
+          createdByName: rc.createdByName,
+          createdAt: rc.createdAt,
+          updatedAt: rc.updatedAt,
+        };
+      });
+    } catch (e) {
+      console.warn('Failed to fetch remote case summaries:', e);
+    }
+  }
 
   return Object.values(summaryMap);
 };
