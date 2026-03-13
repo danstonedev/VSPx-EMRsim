@@ -1,5 +1,21 @@
 import { el } from './utils.js';
 
+/** Registry of all live portal instances, keyed by anchor element. */
+const portalRegistry = new Map();
+
+/**
+ * Destroy all portal-dropdown instances whose anchor lives inside `container`.
+ * Call this before `container.replaceChildren()` to avoid orphaned portals on
+ * document.body.
+ */
+export function destroyPortalsIn(container) {
+  for (const [anchor, portal] of portalRegistry) {
+    if (container.contains(anchor)) {
+      portal.destroy();
+    }
+  }
+}
+
 /**
  * Creates a portal-based search results dropdown that escapes overflow:hidden ancestors.
  * The dropdown is appended to document.body with position:fixed and positioned
@@ -101,7 +117,11 @@ export function createPortalDropdown(anchorEl, cssClass) {
   function destroy() {
     hide();
     if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+    portalRegistry.delete(anchorEl);
   }
+
+  // Track this portal so destroyPortalsIn() can clean it up
+  portalRegistry.set(anchorEl, { destroy });
 
   return { dropdown, show, hide, destroy, position };
 }

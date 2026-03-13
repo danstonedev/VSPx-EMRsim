@@ -64,6 +64,8 @@ function safeCleanup() {
   } catch (err) {
     console.warn('[Router] view cleanup error:', err);
   }
+  // Remove any modal overlays left on document.body by previous views
+  document.querySelectorAll('body > .modal-overlay').forEach((el) => el.remove());
 }
 
 function postRenderPerfAndPrefetch(routeType, path, debug) {

@@ -84,6 +84,13 @@ export function initCaseDrawer() {
     // Sidebar not yet in DOM (likely rendered after route/view init). Observe and retry once found.
     if (!window._caseDrawerObserverAttached) {
       const mo = new MutationObserver(() => {
+        // Stop observing if we've navigated away from the editor
+        if (!isEditorRoute()) {
+          mo.disconnect();
+          window._caseDrawerObserverAttached = false;
+          cdDebug('initCaseDrawer:observer-disconnected (left editor route)');
+          return;
+        }
         const s = document.querySelector('.chart-navigation');
         if (s) {
           mo.disconnect();

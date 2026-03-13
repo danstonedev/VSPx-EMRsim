@@ -117,7 +117,7 @@ function openCreateNoteModal() {
     const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const removeNow = () => {
       try {
-        document.removeEventListener('keydown', onKey);
+        ac.abort();
         // Clean inline fallback styles if applied
         overlay.style.opacity = '';
         const card = overlay.querySelector('.popup-card-base');
@@ -136,11 +136,15 @@ function openCreateNoteModal() {
   }
   overlay.append(content);
   document.body.append(overlay);
-  // Esc to close
-  const onKey = (e) => {
-    if (e.key === 'Escape') close();
-  };
-  document.addEventListener('keydown', onKey);
+  // Esc to close (auto-cleaned via AbortController)
+  const ac = new AbortController();
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key === 'Escape') close();
+    },
+    { signal: ac.signal },
+  );
   requestAnimationFrame(() => {
     overlay.classList.add('is-open');
     content.classList.add('is-open');

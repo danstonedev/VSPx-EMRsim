@@ -3,7 +3,7 @@
 
 import { el } from '../../../ui/utils.js';
 import { createCustomSelect } from '../../../ui/CustomSelect.js';
-import { createPortalDropdown } from '../../../ui/portal-dropdown.js';
+import { createPortalDropdown, destroyPortalsIn } from '../../../ui/portal-dropdown.js';
 
 function ensureSinglePrimaryDiagnosis(diagnosisCodes) {
   if (!Array.isArray(diagnosisCodes) || diagnosisCodes.length === 0) return;
@@ -286,6 +286,7 @@ export const PTBilling = {
 
     // Function to render diagnosis codes
     function renderDiagnosisCodes() {
+      destroyPortalsIn(diagnosisContainer);
       diagnosisContainer.replaceChildren();
 
       const header = el('div', { class: 'billing-dx-selector__title' }, 'Diagnosis Codes (ICD-10)');
@@ -471,6 +472,7 @@ export const PTBilling = {
         },
       );
 
+      destroyPortalsIn(linkedBillingContainer);
       linkedBillingContainer.replaceChildren();
 
       syncLinkedDiagnosisAssignments(data);
@@ -811,6 +813,7 @@ export function createBillingCodesWidget(data, updateField) {
   });
 
   function render() {
+    destroyPortalsIn(container);
     container.replaceChildren();
 
     syncLinkedDiagnosisAssignments(data);

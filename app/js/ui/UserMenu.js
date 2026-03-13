@@ -51,7 +51,12 @@ export async function updateUserMenu(container) {
  * @param {Object} user
  * @returns {HTMLElement}
  */
+let _userMenuAC;
 function createUserDropdown(user) {
+  // Abort any previous document-level listeners from a prior dropdown
+  if (_userMenuAC) _userMenuAC.abort();
+  _userMenuAC = new AbortController();
+
   const wrapper = el('div', { class: 'user-menu__dropdown' });
 
   // Trigger button
@@ -204,10 +209,14 @@ function createUserDropdown(user) {
   });
 
   // Close on outside click
-  document.addEventListener('click', () => {
-    menu.hidden = true;
-    trigger.setAttribute('aria-expanded', 'false');
-  });
+  document.addEventListener(
+    'click',
+    () => {
+      menu.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    },
+    { signal: _userMenuAC.signal },
+  );
 
   // Close on escape
   wrapper.addEventListener('keydown', (e) => {

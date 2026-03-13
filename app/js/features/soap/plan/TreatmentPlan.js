@@ -4,7 +4,7 @@
 import { el, textareaAutoResize } from '../../../ui/utils.js';
 import { textAreaField, selectField } from '../../../ui/form-components.js';
 import { createCustomSelect } from '../../../ui/CustomSelect.js';
-import { createPortalDropdown } from '../../../ui/portal-dropdown.js';
+import { createPortalDropdown, destroyPortalsIn } from '../../../ui/portal-dropdown.js';
 
 /**
  * Treatment Plan Component - Comprehensive PT intervention planning
@@ -61,6 +61,7 @@ export const TreatmentPlan = {
     inClinicContent.append(interventionsContainer);
 
     function renderInterventions() {
+      destroyPortalsIn(interventionsContainer);
       interventionsContainer.replaceChildren();
       const table = el('table', {
         class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
@@ -188,6 +189,7 @@ export const TreatmentPlan = {
     hepContent.append(hepContainer);
 
     function renderHep() {
+      destroyPortalsIn(hepContainer);
       hepContainer.replaceChildren();
 
       const table = el('table', {
@@ -346,11 +348,8 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
     placeholder: 'Search or type intervention...',
     style: 'width: 100%;',
     onblur: (e) => {
-      // Delay to allow click on results
-      setTimeout(() => {
-        data.inClinicInterventions[index].intervention = e.target.value;
-        updateField('inClinicInterventions', data.inClinicInterventions);
-      }, 200);
+      entry.intervention = e.target.value;
+      updateField('inClinicInterventions', data.inClinicInterventions);
     },
   });
 
@@ -554,10 +553,8 @@ function _DEADCODE_createInterventionRowLinked(
     placeholder: 'Search or type intervention...',
     style: 'width: 100%;',
     onblur: (e) => {
-      setTimeout(() => {
-        entry.intervention = e.target.value;
-        updateField('inClinicInterventions', data.inClinicInterventions);
-      }, 200);
+      entry.intervention = e.target.value;
+      updateField('inClinicInterventions', data.inClinicInterventions);
     },
   });
   const portal = createPortalDropdown(searchInput);
@@ -799,11 +796,8 @@ function createHepRow(entry, index, data, updateField, renderCallback) {
     placeholder: 'Search or type exercise...',
     style: 'width: 100%;',
     onblur: (e) => {
-      // Delay to allow click on results
-      setTimeout(() => {
-        data.hepInterventions[index].intervention = e.target.value;
-        updateField('hepInterventions', data.hepInterventions);
-      }, 200);
+      entry.intervention = e.target.value;
+      updateField('hepInterventions', data.hepInterventions);
     },
   });
 
