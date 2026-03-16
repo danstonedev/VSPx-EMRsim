@@ -396,11 +396,31 @@ function decideAndSetTreatmentPlanText(draft, evalPlan) {
 }
 
 function setPlanTablesFromEval(draft, evalPlan) {
+  if (Array.isArray(evalPlan.goals) && evalPlan.goals.length) {
+    draft.plan.goals = evalPlan.goals;
+  }
   if (evalPlan.exerciseTable && typeof evalPlan.exerciseTable === 'object') {
     draft.plan.exerciseTable = evalPlan.exerciseTable;
+    draft.plan.inClinicInterventions = Object.values(evalPlan.exerciseTable).map((row) => ({
+      intervention: row.exerciseText || row.exercise || '',
+      dosage: '',
+    }));
+  }
+  if (Array.isArray(evalPlan.inClinicInterventions) && evalPlan.inClinicInterventions.length) {
+    draft.plan.inClinicInterventions = evalPlan.inClinicInterventions;
   }
   if (evalPlan.goalsTable && typeof evalPlan.goalsTable === 'object') {
     draft.plan.goalsTable = evalPlan.goalsTable;
+    draft.plan.goals = Object.values(evalPlan.goalsTable)
+      .filter((row) => row?.goalText || row?.goal)
+      .map((row) => ({
+        goal: row.goalText || row.goal || '',
+        timeframe: row.timeframe || '',
+        icfDomain: row.icfDomain || '',
+      }));
+  }
+  if (Array.isArray(evalPlan.hepInterventions) && evalPlan.hepInterventions.length) {
+    draft.plan.hepInterventions = evalPlan.hepInterventions;
   }
 }
 
@@ -618,9 +638,8 @@ function createDefaultDraft() {
       visibility: {
         subjective: {
           hpi: true,
-          'pain-assessment': true,
           'functional-status': true,
-          'additional-history': true,
+          'pain-assessment': true,
         },
         objective: {
           'general-observations': true,

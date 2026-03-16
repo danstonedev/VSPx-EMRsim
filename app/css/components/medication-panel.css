@@ -1,0 +1,425 @@
+/* ──────────────────────────────────────────────────────────
+   Medication Panel – MedicationPanel component
+   ────────────────────────────────────────────────────────── */
+
+/* ── Panel wrapper ─────────────────────────────────────── */
+.med-panel {
+  margin-top: var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-card, #fff);
+  overflow: hidden;
+}
+
+/* ── Header bar ────────────────────────────────────────── */
+.med-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.075rem);
+  border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0;
+}
+
+.med-panel__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ── Badge (sits on dark header — needs high contrast) ── */
+.med-panel__badge {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.med-panel__badge--empty {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Body ──────────────────────────────────────────────── */
+.med-panel__body {
+  padding: var(--space-3, 0.75rem);
+}
+
+/* ── Search ────────────────────────────────────────────── */
+.med-panel__search-wrap {
+  position: relative;
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.med-panel__search-input {
+  width: 100%;
+  font-size: 0.95rem !important;
+}
+
+.med-panel__search-hint {
+  font-size: 0.78rem;
+  color: var(--text-tertiary, #98a2b3);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+/* ── Portal dropdown results ───────────────────────────── */
+.med-panel__results {
+  position: fixed;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: 0 0 8px 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  max-height: 300px;
+  display: none;
+  background: var(--surface-card, #fff);
+  z-index: 10100;
+}
+
+.med-panel__result-row {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-subtle, #e4e7ec);
+  transition: background 100ms ease;
+}
+
+.med-panel__result-row:last-child {
+  border-bottom: none;
+}
+
+.med-panel__result-row--active {
+  background: rgba(0, 154, 68, 0.08);
+}
+
+.med-panel__result-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary, #344054);
+}
+
+.med-panel__result-brand {
+  font-weight: 400;
+  color: var(--text-secondary, #667085);
+  font-size: 0.85rem;
+}
+
+.med-panel__result-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin-top: 2px;
+}
+
+.med-panel__result-class {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #667085);
+}
+
+.med-panel__result-alerts {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--und-orange, #ff671f);
+}
+
+/* ── Medication chip list ──────────────────────────────── */
+.med-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+/* ── Individual medication chip ────────────────────────── */
+.med-panel__chip {
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-alt, #f7f8f9);
+}
+
+.med-panel__chip--flagged {
+  border-left: 3px solid var(--und-orange, #ff671f);
+}
+
+/* ── Chip top row: name left, tags right ───────────────── */
+.med-panel__chip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.med-panel__chip-name-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.med-panel__chip-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-primary, #344054);
+  flex-shrink: 0;
+}
+
+.med-panel__chip-brand {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #667085);
+  white-space: nowrap;
+}
+
+.med-panel__chip-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+  flex-wrap: nowrap;
+}
+
+.med-panel__chip-class {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #667085);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.med-panel__alert-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.med-panel__alert-tag--fall {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.med-panel__alert-tag--bleed {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.med-panel__alert-tag--bone {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+.med-panel__alert-tag--cardio {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.med-panel__alert-tag--neuro {
+  background: rgba(168, 85, 247, 0.1);
+  color: #9333ea;
+}
+
+.med-panel__alert-tag--pain {
+  background: rgba(0, 154, 68, 0.1);
+  color: var(--und-green-dark, #006630);
+}
+
+.med-panel__alert-tag--endo {
+  background: rgba(234, 88, 12, 0.1);
+  color: #c2410c;
+}
+
+/* ── Dose / Frequency row ──────────────────────────────── */
+.med-panel__chip-details {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.med-panel__chip-input {
+  flex: 1;
+  font-size: 0.85rem !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 var(--space-2, 0.5rem) !important;
+}
+
+.med-panel__chip-select {
+  flex: 1;
+  font-size: 0.85rem !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 var(--space-2, 0.5rem) !important;
+  cursor: pointer;
+}
+
+/* ── Info link (MedlinePlus) ───────────────────────────── */
+.med-panel__chip-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 1rem;
+  color: var(--color-link, #2563eb);
+  text-decoration: none;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.med-panel__chip-info:hover {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-link-hover, #1d4ed8);
+}
+
+.med-panel__chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--text-tertiary, #98a2b3);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.med-panel__chip-remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-danger, #dc2626);
+}
+
+/* ── Notes ─────────────────────────────────────────────── */
+.med-panel__notes-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #667085);
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.med-panel__notes-input {
+  font-size: 0.9rem !important;
+}
+
+/* ── Dark theme overrides ──────────────────────────────── */
+html[data-theme='dark'] .med-panel {
+  border-color: var(--neutral-600, #475467);
+  background: var(--surface-card, #1d2939);
+}
+
+html[data-theme='dark'] .med-panel__header {
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+}
+
+html[data-theme='dark'] .med-panel__badge {
+  background: rgba(0, 154, 68, 0.2);
+  color: var(--und-green-light, #00c853);
+}
+
+html[data-theme='dark'] .med-panel__badge--empty {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary, #98a2b3);
+}
+
+html[data-theme='dark'] .med-panel__search-hint {
+  color: var(--text-tertiary, #667085);
+}
+
+html[data-theme='dark'] .med-panel__results {
+  background: var(--surface-card, #1d2939);
+  border-color: var(--neutral-600, #475467);
+}
+
+html[data-theme='dark'] .med-panel__result-row--active {
+  background: rgba(0, 154, 68, 0.15);
+}
+
+html[data-theme='dark'] .med-panel__result-name {
+  color: var(--text-primary, #e4e7ec);
+}
+
+html[data-theme='dark'] .med-panel__result-row {
+  border-color: var(--neutral-700, #344054);
+}
+
+html[data-theme='dark'] .med-panel__chip {
+  background: var(--neutral-800, #1d2939);
+  border-color: var(--neutral-600, #475467);
+}
+
+html[data-theme='dark'] .med-panel__chip--flagged {
+  border-left-color: var(--und-orange, #ff671f);
+}
+
+html[data-theme='dark'] .med-panel__chip-name {
+  color: var(--text-primary, #e4e7ec);
+}
+
+html[data-theme='dark'] .med-panel__chip-brand {
+  color: var(--text-tertiary, #667085);
+}
+
+html[data-theme='dark'] .med-panel__chip-class {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #98a2b3);
+}
+
+html[data-theme='dark'] .med-panel__chip-remove:hover {
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+
+html[data-theme='dark'] .med-panel__chip-info {
+  color: var(--color-link, #60a5fa);
+}
+
+html[data-theme='dark'] .med-panel__chip-info:hover {
+  background: rgba(96, 165, 250, 0.12);
+  color: #93bbfd;
+}
+
+html[data-theme='dark'] .med-panel__notes-label {
+  color: var(--text-secondary, #98a2b3);
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .med-panel__chip-details {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .med-panel__chip-remove {
+    align-self: flex-end;
+  }
+
+  .med-panel__result-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}

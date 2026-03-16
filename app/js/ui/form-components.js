@@ -204,8 +204,9 @@ export function inputField(options = {}) {
 }
 
 function buildInputFieldContainer({ label, id, required, node, hint, error, disabled }) {
+  if (hint && !node.placeholder) node.placeholder = hint;
   const fieldElements = [buildLabelEl(label, id, required)];
-  const inputWrapper = buildInputWrapper(node, hint, error);
+  const inputWrapper = buildInputWrapper(node, null, error);
   fieldElements.push(inputWrapper);
   return buildFieldContainer('input', disabled, error, fieldElements);
 }
@@ -286,10 +287,11 @@ function buildTextareaFieldContainer({
   maxLength,
   value,
 }) {
+  if (hint && !node.placeholder) node.placeholder = hint;
   const fieldElements = [buildLabelEl(label, id, required)];
   const wrapper = buildInputWrapper(node);
   appendCharCount(wrapper, node, maxLength, value);
-  appendHintAndError(wrapper, hint, error);
+  appendHintAndError(wrapper, null, error);
   fieldElements.push(wrapper);
   return buildFieldContainer('textarea', disabled, error, fieldElements);
 }

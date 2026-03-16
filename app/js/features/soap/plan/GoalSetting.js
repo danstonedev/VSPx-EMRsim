@@ -1,7 +1,7 @@
 // GoalSetting.js - SMART Goals with ICF domain linkage and timeframe
 // Students must link each goal to an ICF domain and a target timeframe
 
-import { el } from '../../../ui/utils.js';
+import { el, textareaAutoResize } from '../../../ui/utils.js';
 
 const TIMEFRAME_OPTIONS = [
   { value: '', label: '— timeframe —' },
@@ -35,7 +35,9 @@ function migrateGoals(data) {
 }
 
 function makeSelect(options, value, onChange) {
-  const sel = el('select', { class: 'goal-select combined-neuroscreen__input' });
+  const sel = el('select', {
+    class: 'goal-select combined-neuroscreen__input combined-neuroscreen__input--left',
+  });
   options.forEach((opt) => {
     const o = el('option', { value: opt.value }, opt.label);
     if (opt.value === value) o.selected = true;
@@ -73,10 +75,7 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
     style: 'width: 100%; resize: vertical;',
   });
   goalInput.value = entry.goal || '';
-  goalInput.addEventListener('input', () => {
-    goalInput.style.height = 'auto';
-    goalInput.style.height = `${goalInput.scrollHeight}px`;
-  });
+  textareaAutoResize(goalInput);
   goalInput.addEventListener('blur', () => {
     data.goals[index].goal = goalInput.value;
     updateField('goals', data.goals);
@@ -93,6 +92,16 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
     }),
   );
   row.appendChild(tfCell);
+
+  // ICF domain select
+  const icfCell = el('td', { class: 'combined-neuroscreen-td' });
+  icfCell.appendChild(
+    makeSelect(ICF_OPTIONS, entry.icfDomain || '', (v) => {
+      data.goals[index].icfDomain = v;
+      updateField('goals', data.goals);
+    }),
+  );
+  row.appendChild(icfCell);
 
   // Remove button
   const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
@@ -180,7 +189,13 @@ export const GoalSetting = {
       class: 'section-anchor goal-setting-subsection',
     });
 
-    const container = el('div');
+    section.append(
+      el('h4', { class: 'subsection-title', style: 'margin-bottom: 8px;' }, 'SMART Goals'),
+    );
+
+    const container = el('div', {
+      class: 'billing-section-container',
+    });
     section.append(container);
 
     function renderGoals() {
@@ -195,7 +210,8 @@ export const GoalSetting = {
         el('colgroup', {}, [
           el('col', { style: 'width: 2rem;' }),
           el('col', { style: 'width: auto;' }),
-          el('col', { style: 'width: 9rem;' }),
+          el('col', { style: 'width: 10rem;' }),
+          el('col', { style: 'width: 14rem;' }),
           el('col', { style: 'width: 3.75rem;' }),
         ]),
       );
@@ -225,6 +241,7 @@ export const GoalSetting = {
             ),
             el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Goal'),
             el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Timeframe'),
+            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'ICF Domain'),
             el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, [addBtn]),
           ]),
         ]),

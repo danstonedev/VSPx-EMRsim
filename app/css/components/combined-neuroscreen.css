@@ -84,6 +84,10 @@ table.combined-neuroscreen-table:has(.action-col) {
   border: none;
   border-bottom: 2px solid var(--color-border-strong);
 }
+/* Center non-label column headers (Left, Right, etc.) */
+.combined-neuroscreen-th:not(.level-col):not(.action-col) {
+  text-align: center;
+}
 
 :root[data-theme='dark'] .combined-neuroscreen-th {
   background: var(--surface-table-head);
@@ -371,6 +375,40 @@ table.combined-neuroscreen-table:has(.action-col) {
 
 .billing-icd10-table .combined-neuroscreen-td.action-col {
   border-left: none;
+}
+
+/* Goal-setting subsection vertical spacing */
+.goal-setting-subsection {
+  padding-top: var(--space-4, 1rem);
+  padding-bottom: var(--space-4, 1rem);
+}
+
+/* Treatment plan / HEP inputs: match standard form-input sizing */
+.billing-section-container .combined-neuroscreen__input,
+.billing-linked-group .combined-neuroscreen__input,
+.goal-setting-subsection .combined-neuroscreen__input {
+  font-size: 1rem;
+  padding: 0 var(--space-3, 0.75rem);
+  height: 44px;
+  min-height: 44px;
+  text-align: left;
+  box-sizing: border-box;
+  line-height: 44px;
+}
+.billing-section-container textarea.combined-neuroscreen__input,
+.billing-linked-group textarea.combined-neuroscreen__input,
+.goal-setting-subsection textarea.combined-neuroscreen__input {
+  line-height: normal;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Treatment-plan dosage cells should start at the same visual height as adjacent inputs/selects */
+.treatment-plan-subsection .intervention-row textarea.combined-neuroscreen__input {
+  min-height: 44px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  line-height: 1.25;
 }
 
 /* ========================================

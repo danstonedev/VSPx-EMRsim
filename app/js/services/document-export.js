@@ -6,6 +6,7 @@
 /* global docx */
 import { regionalAssessments } from '../features/soap/objective/RegionalAssessments.js';
 import { getRimsLabel } from '../features/soap/objective/RimsSection.js';
+import { getPTCPTCodes, getPTICD10Codes } from '../features/soap/billing/BillingSection.js';
 
 // Define NEUROSCREEN_REGIONS inline to avoid dynamic import issues
 const NEUROSCREEN_REGIONS = {
@@ -2059,142 +2060,7 @@ export function exportToWord(caseData, draft) {
           // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
           let displayText = row.label;
           if (!displayText && row.code) {
-            // Try to find the label from the ICD-10 codes list based on the code
-            const icdCodesList = [
-              // Lumbar
-              { value: 'M54.5', label: 'M54.5 - Low back pain' },
-              {
-                value: 'M51.36',
-                label: 'M51.36 - Other intervertebral disc degeneration, lumbar region',
-              },
-              { value: 'M54.16', label: 'M54.16 - Radiculopathy, lumbar region' },
-              // Cervical
-              { value: 'M54.2', label: 'M54.2 - Cervicalgia' },
-              {
-                value: 'M50.30',
-                label: 'M50.30 - Other cervical disc degeneration, unspecified cervical region',
-              },
-              { value: 'M54.12', label: 'M54.12 - Radiculopathy, cervical region' },
-              // Thoracic
-              { value: 'M54.6', label: 'M54.6 - Pain in thoracic spine' },
-              { value: 'M54.14', label: 'M54.14 - Radiculopathy, thoracic region' },
-              // Shoulder
-              { value: 'M75.41', label: 'M75.41 - Impingement syndrome of right shoulder' },
-              { value: 'M75.42', label: 'M75.42 - Impingement syndrome of left shoulder' },
-              { value: 'M75.21', label: 'M75.21 - Bicipital tendinitis, right shoulder' },
-              { value: 'M75.22', label: 'M75.22 - Bicipital tendinitis, left shoulder' },
-              { value: 'M25.511', label: 'M25.511 - Pain in right shoulder' },
-              { value: 'M25.512', label: 'M25.512 - Pain in left shoulder' },
-              { value: 'M75.30', label: 'M75.30 - Calcific tendinitis of unspecified shoulder' },
-              {
-                value: 'M75.100',
-                label: 'M75.100 - Unspecified rotator cuff tear or rupture of unspecified shoulder',
-              },
-              {
-                value: 'M75.101',
-                label: 'M75.101 - Unspecified rotator cuff tear, right shoulder',
-              },
-              { value: 'M75.102', label: 'M75.102 - Unspecified rotator cuff tear, left shoulder' },
-              { value: 'M75.111', label: 'M75.111 - Incomplete rotator cuff tear, right shoulder' },
-              { value: 'M75.112', label: 'M75.112 - Incomplete rotator cuff tear, left shoulder' },
-              { value: 'M75.121', label: 'M75.121 - Complete rotator cuff tear, right shoulder' },
-              { value: 'M75.122', label: 'M75.122 - Complete rotator cuff tear, left shoulder' },
-              { value: 'M75.01', label: 'M75.01 - Adhesive capsulitis of right shoulder' },
-              { value: 'M75.02', label: 'M75.02 - Adhesive capsulitis of left shoulder' },
-              { value: 'S43.401A', label: 'S43.401A - Unspecified sprain of right shoulder joint' },
-              { value: 'S43.402A', label: 'S43.402A - Unspecified sprain of left shoulder joint' },
-              { value: 'M19.011', label: 'M19.011 - Primary osteoarthritis, right shoulder' },
-              { value: 'M19.012', label: 'M19.012 - Primary osteoarthritis, left shoulder' },
-              { value: 'S42.201A', label: 'S42.201A - Fracture of upper end of right humerus' },
-              // Elbow
-              { value: 'M77.11', label: 'M77.11 - Lateral epicondylitis, right elbow' },
-              { value: 'M77.12', label: 'M77.12 - Lateral epicondylitis, left elbow' },
-              { value: 'M77.01', label: 'M77.01 - Medial epicondylitis, right elbow' },
-              { value: 'M77.02', label: 'M77.02 - Medial epicondylitis, left elbow' },
-              { value: 'M25.521', label: 'M25.521 - Pain in right elbow' },
-              { value: 'M25.522', label: 'M25.522 - Pain in left elbow' },
-              { value: 'S53.401A', label: 'S53.401A - Unspecified sprain of right elbow' },
-              { value: 'S53.402A', label: 'S53.402A - Unspecified sprain of left elbow' },
-              { value: 'M19.021', label: 'M19.021 - Primary osteoarthritis, right elbow' },
-              { value: 'M19.022', label: 'M19.022 - Primary osteoarthritis, left elbow' },
-              // Wrist/Hand
-              { value: 'M25.531', label: 'M25.531 - Pain in right wrist' },
-              { value: 'M25.532', label: 'M25.532 - Pain in left wrist' },
-              { value: 'M25.541', label: 'M25.541 - Pain in joints of right hand' },
-              { value: 'M25.542', label: 'M25.542 - Pain in joints of left hand' },
-              { value: 'G56.01', label: 'G56.01 - Carpal tunnel syndrome, right upper limb' },
-              { value: 'G56.02', label: 'G56.02 - Carpal tunnel syndrome, left upper limb' },
-              { value: 'M65.311', label: 'M65.311 - Trigger finger, right index finger' },
-              { value: 'M65.30', label: 'M65.30 - Trigger finger, unspecified finger' },
-              {
-                value: 'M65.841',
-                label: 'M65.841 - Other synovitis and tenosynovitis, right hand',
-              },
-              { value: 'M65.842', label: 'M65.842 - Other synovitis and tenosynovitis, left hand' },
-              { value: 'S63.501A', label: 'S63.501A - Unspecified sprain of right wrist' },
-              { value: 'S63.502A', label: 'S63.502A - Unspecified sprain of left wrist' },
-              {
-                value: 'S62.101A',
-                label: 'S62.101A - Fracture of unspecified carpal bone, right wrist',
-              },
-              {
-                value: 'S62.102A',
-                label: 'S62.102A - Fracture of unspecified carpal bone, left wrist',
-              },
-              { value: 'M18.11', label: 'M18.11 - Primary osteoarthritis, right first CMC joint' },
-              { value: 'M18.12', label: 'M18.12 - Primary osteoarthritis, left first CMC joint' },
-              { value: 'M72.0', label: "M72.0 - Palmar fascial fibromatosis (Dupuytren's)" },
-              // Knee
-              { value: 'M25.561', label: 'M25.561 - Pain in right knee' },
-              { value: 'M25.562', label: 'M25.562 - Pain in left knee' },
-              {
-                value: 'M17.10',
-                label: 'M17.10 - Unilateral primary osteoarthritis, unspecified knee',
-              },
-              { value: 'S83.511A', label: 'S83.511A - Sprain of ACL, right knee' },
-              { value: 'S83.512A', label: 'S83.512A - Sprain of ACL, left knee' },
-              { value: 'S83.521A', label: 'S83.521A - Sprain of PCL, right knee' },
-              { value: 'M22.41', label: 'M22.41 - Chondromalacia patellae, right knee' },
-              { value: 'M22.42', label: 'M22.42 - Chondromalacia patellae, left knee' },
-              { value: 'S83.241A', label: 'S83.241A - Medial meniscus tear, right knee' },
-              // Hip
-              { value: 'M25.551', label: 'M25.551 - Pain in right hip' },
-              { value: 'M25.552', label: 'M25.552 - Pain in left hip' },
-              {
-                value: 'M16.10',
-                label: 'M16.10 - Unilateral primary osteoarthritis, unspecified hip',
-              },
-              // Ankle/Foot
-              { value: 'M25.571', label: 'M25.571 - Pain in right ankle and joints of right foot' },
-              { value: 'M25.572', label: 'M25.572 - Pain in left ankle and joints of left foot' },
-              {
-                value: 'S93.401A',
-                label: 'S93.401A - Sprain of unspecified ligament of right ankle',
-              },
-              // General
-              { value: 'M79.3', label: 'M79.3 - Panniculitis, unspecified' },
-              { value: 'M62.81', label: 'M62.81 - Muscle weakness (generalized)' },
-              { value: 'M25.50', label: 'M25.50 - Pain in unspecified joint' },
-              { value: 'M79.1', label: 'M79.1 - Myalgia' },
-              { value: 'M79.7', label: 'M79.7 - Fibromyalgia' },
-              // Balance/Gait
-              { value: 'R26.81', label: 'R26.81 - Unsteadiness on feet' },
-              { value: 'R26.2', label: 'R26.2 - Difficulty in walking' },
-              { value: 'R29.6', label: 'R29.6 - Repeated falls' },
-              // Post-Surgical
-              { value: 'Z96.641', label: 'Z96.641 - Presence of right artificial hip joint' },
-              { value: 'Z96.642', label: 'Z96.642 - Presence of left artificial hip joint' },
-              { value: 'Z96.651', label: 'Z96.651 - Presence of right artificial knee joint' },
-              { value: 'Z96.652', label: 'Z96.652 - Presence of left artificial knee joint' },
-              {
-                value: 'Z87.39',
-                label: 'Z87.39 - Personal history of other musculoskeletal disorders',
-              },
-              {
-                value: 'Z48.89',
-                label: 'Z48.89 - Encounter for other specified surgical aftercare',
-              },
-            ];
+            const icdCodesList = getPTICD10Codes();
             const foundCode = icdCodesList.find((c) => c.value === row.code);
             displayText = foundCode ? foundCode.label : `${row.code}: ${row.description}`;
           }
@@ -2223,48 +2089,7 @@ export function exportToWord(caseData, draft) {
           // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
           let displayText = row.label;
           if (!displayText && row.code) {
-            // Try to find the label from the CPT codes list based on the code
-            const cptCodesList = [
-              { value: '97110', label: '97110 - Therapeutic Exercise' },
-              { value: '97112', label: '97112 - Neuromuscular Re-education' },
-              { value: '97116', label: '97116 - Gait Training' },
-              { value: '97140', label: '97140 - Manual Therapy' },
-              { value: '97530', label: '97530 - Therapeutic Activities' },
-              { value: '97535', label: '97535 - Self-Care Training' },
-              { value: '97012', label: '97012 - Mechanical Traction' },
-              { value: '97014', label: '97014 - Electrical Stimulation' },
-              { value: '97035', label: '97035 - Ultrasound' },
-              { value: '97039', label: '97039 - Unlisted Modality' },
-              { value: '97161', label: '97161 - PT Evaluation Low Complexity' },
-              { value: '97162', label: '97162 - PT Evaluation Moderate Complexity' },
-              { value: '97163', label: '97163 - PT Evaluation High Complexity' },
-              { value: '97164', label: '97164 - PT Re-evaluation' },
-              { value: '97010', label: '97010 - Hot/Cold Packs' },
-              { value: '97018', label: '97018 - Paraffin Bath' },
-              { value: '97022', label: '97022 - Whirlpool' },
-              { value: '97032', label: '97032 - Electrical Stimulation (Manual)' },
-              { value: '97033', label: '97033 - Iontophoresis' },
-              { value: '97034', label: '97034 - Contrast Baths' },
-              { value: '97113', label: '97113 - Aquatic Therapy' },
-              { value: '97124', label: '97124 - Massage' },
-              { value: '97150', label: '97150 - Group Therapy' },
-              { value: '97542', label: '97542 - Wheelchair Management Training' },
-              { value: '97750', label: '97750 - Physical Performance Test' },
-              { value: '97755', label: '97755 - Assistive Technology Assessment' },
-              { value: '97760', label: '97760 - Orthotic Management and Training' },
-              { value: '97761', label: '97761 - Prosthetic Training' },
-              { value: '97016', label: '97016 - Vasopneumatic Device' },
-              { value: '97139', label: '97139 - Unlisted Therapeutic Procedure' },
-              { value: '97597', label: '97597 - Debridement, Open Wound (first 20 sq cm)' },
-              {
-                value: '97598',
-                label: '97598 - Debridement, Open Wound (each additional 20 sq cm)',
-              },
-              { value: '95831', label: '95831 - Muscle Testing, Manual (Extremity/Trunk)' },
-              { value: '95852', label: '95852 - Range of Motion Measurements' },
-              { value: '29125', label: '29125 - Application of Short Arm Splint (static)' },
-              { value: '29126', label: '29126 - Application of Short Arm Splint (dynamic)' },
-            ];
+            const cptCodesList = getPTCPTCodes();
             const foundCode = cptCodesList.find((c) => c.value === row.code);
             displayText = foundCode ? foundCode.label : row.description;
           }

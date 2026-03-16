@@ -3,7 +3,9 @@
 
 import { textAreaField } from '../../../ui/form-components.js';
 import { el } from '../../../ui/utils.js';
+import { MedicationPanel } from './MedicationPanel.js';
 import { PainAssessment } from './PainAssessment.js';
+import { RedFlagScreening } from './RedFlagScreening.js';
 import { createInterviewQAPanel } from './SubjectiveQA.js';
 
 /**
@@ -41,7 +43,8 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     onUpdate(data);
   };
 
-  // History of Present Illness section with anchor (includes Chief Concern + Interview Q/A)
+  // History of Present Illness section with anchor (includes Chief Concern, HPI narrative,
+  // Interview Q/A, and medical history fields formerly in "Additional History")
   const hpiSection = el('div', { id: 'hpi', class: 'section-anchor' }, [
     el('h4', { class: 'subsection-title' }, 'History'),
     textAreaField({
@@ -56,6 +59,14 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       onChange: (v) => updateField('historyOfPresentIllness', v),
       hint: 'Onset & mechanism, duration, prior episodes, progression, prior treatments and response',
     }),
+    MedicationPanel.create(data, updateField),
+    RedFlagScreening.create(data, updateField),
+    textAreaField({
+      label: 'Additional Relevant History',
+      value: data.additionalHistory,
+      onChange: (v) => updateField('additionalHistory', v),
+      hint: 'Prior surgeries, imaging results, previous PT episodes and response, relevant co-morbidities, family history',
+    }),
     // Interview Q/A — structured open-ended questions
     createInterviewQAPanel(data, (updated) => {
       data.qaItems = updated.qaItems;
@@ -63,13 +74,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     }),
   ]);
   section.append(hpiSection);
-
-  // Pain assessment section with anchor - Using improved PainAssessment module
-  const painSection = el('div', { id: 'pain-assessment', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Symptoms'),
-    PainAssessment.create(data, updateField),
-  ]);
-  section.append(painSection);
 
   // Functional status section with anchor
   const functionalSection = el('div', { id: 'functional-status', class: 'section-anchor' }, [
@@ -95,33 +99,12 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
   ]);
   section.append(functionalSection);
 
-  // Additional history section with anchor
-  const additionalHistorySection = el(
-    'div',
-    { id: 'additional-history', class: 'section-anchor' },
-    [
-      el('h4', { class: 'subsection-title' }, 'Additional History'),
-      textAreaField({
-        label: 'Current Medications',
-        value: data.medicationsCurrent,
-        onChange: (v) => updateField('medicationsCurrent', v),
-        hint: 'Include dosage, frequency, and clinical relevance (e.g., NSAIDs, muscle relaxants, anticoagulants, blood thinners)',
-      }),
-      textAreaField({
-        label: 'Red Flags / Screening',
-        value: data.redFlags,
-        onChange: (v) => updateField('redFlags', v),
-        hint: 'Cauda equina signs, unexplained weight loss, night pain, fever, bowel/bladder changes, bilateral neurological symptoms, malignancy history',
-      }),
-      textAreaField({
-        label: 'Additional Relevant History',
-        value: data.additionalHistory,
-        onChange: (v) => updateField('additionalHistory', v),
-        hint: 'Prior surgeries, imaging results, previous PT episodes and response, relevant co-morbidities, family history',
-      }),
-    ],
-  );
-  section.append(additionalHistorySection);
+  // Pain assessment section with anchor - Using improved PainAssessment module
+  const painSection = el('div', { id: 'pain-assessment', class: 'section-anchor' }, [
+    el('h4', { class: 'subsection-title' }, 'Symptoms'),
+    PainAssessment.create(data, updateField),
+  ]);
+  section.append(painSection);
 
   return section;
 }

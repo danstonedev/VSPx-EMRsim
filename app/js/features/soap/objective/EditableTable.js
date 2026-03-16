@@ -220,10 +220,28 @@ function buildTableElement({
   showDeleteButton,
   createCell,
   onDelete,
+  showAddButton,
+  compactAddButton,
+  onAdd,
 }) {
   const rows = Object.keys(data);
   const tableChildren = [];
   if (showHeader) {
+    // Build action-col header content: add button or label
+    const actionColContent =
+      showAddButton && compactAddButton
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'billing-row-add-btn',
+              title: 'Add row',
+              'aria-label': 'Add row',
+              onclick: onAdd,
+            },
+            '+',
+          )
+        : actionsHeaderLabel;
     tableChildren.push(
       el(
         'thead',
@@ -256,7 +274,7 @@ function buildTableElement({
                     scope: 'col',
                     'aria-label': 'Actions',
                   },
-                  actionsHeaderLabel,
+                  actionColContent,
                 ),
               ]
             : []),
@@ -431,13 +449,11 @@ function makeRebuildTable({
       showDeleteButton,
       createCell,
       onDelete,
+      showAddButton,
+      compactAddButton,
+      onAdd,
     });
     container.appendChild(table);
-    const footer = buildCompactFooter(showAddButton, compactAddButton, onAdd);
-    if (footer) {
-      footerEl = footer;
-      container.appendChild(footerEl);
-    }
   };
 }
 

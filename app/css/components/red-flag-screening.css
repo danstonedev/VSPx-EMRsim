@@ -1,0 +1,293 @@
+/* ──────────────────────────────────────────────────────────
+   Red Flag Screening Panel – RedFlagScreening component
+   ────────────────────────────────────────────────────────── */
+
+/* ── Panel wrapper ─────────────────────────────────────── */
+.rf-panel {
+  margin-top: var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-card, #fff);
+  overflow: hidden;
+}
+
+/* ── Header bar ────────────────────────────────────────── */
+.rf-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.075rem);
+  border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0;
+}
+
+.rf-panel__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ── Status badge ──────────────────────────────────────── */
+.rf-panel__badge {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(0, 0, 0, 0.08);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+}
+
+.rf-panel__badge--clear {
+  background: rgba(0, 154, 68, 0.15);
+  color: var(--und-green-dark, #006630);
+}
+
+.rf-panel__badge--alert {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--color-danger, #dc2626);
+  font-weight: 600;
+}
+
+/* ── Body ──────────────────────────────────────────────── */
+.rf-panel__body {
+  padding: var(--space-3, 0.75rem);
+}
+
+/* ── Toolbar (Deny All / Reset) ────────────────────────── */
+.rf-panel__toolbar {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.rf-panel__deny-all-btn,
+.rf-panel__reset-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.rf-panel__deny-all-btn {
+  border: 1px solid var(--und-green, #009a44);
+  background: transparent;
+  color: var(--und-green, #009a44);
+}
+
+.rf-panel__deny-all-btn:hover {
+  background: var(--und-green, #009a44);
+  color: var(--white, #fff);
+}
+
+.rf-panel__reset-btn {
+  border: 1px solid var(--color-border, #d0d5dd);
+  background: transparent;
+  color: var(--text-secondary, #667085);
+}
+
+.rf-panel__reset-btn:hover {
+  background: var(--neutral-100, #f2f4f7);
+}
+
+/* ── Category groups ───────────────────────────────────── */
+.rf-panel__category {
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.rf-panel__category:last-of-type {
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.rf-panel__category-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #667085);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-1, 0.25rem);
+  padding-bottom: var(--space-1, 0.25rem);
+  border-bottom: 1px solid var(--color-border, #d0d5dd);
+}
+
+/* ── Flag items list ───────────────────────────────────── */
+.rf-panel__items {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Individual flag row ───────────────────────────────── */
+.rf-panel__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 0.25rem);
+  padding: var(--space-1, 0.375rem) 0;
+  padding-left: var(--space-4, 1rem);
+  border-bottom: 1px solid var(--color-border-subtle, #e4e7ec);
+}
+
+.rf-panel__row:last-child {
+  border-bottom: none;
+}
+
+.rf-panel__row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* ── Status toggle button ──────────────────────────────── */
+.rf-panel__status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+  border: 1.5px solid var(--color-border, #d0d5dd);
+  background: var(--surface, #fff);
+  color: var(--text-tertiary, #98a2b3);
+}
+
+.rf-panel__status-btn--denied {
+  border-color: var(--und-green, #009a44);
+  background: rgba(0, 154, 68, 0.08);
+  color: var(--und-green, #009a44);
+}
+
+.rf-panel__status-btn--present {
+  border-color: var(--color-danger, #dc2626);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-danger, #dc2626);
+}
+
+.rf-panel__status-btn:hover {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Row label ─────────────────────────────────────────── */
+.rf-panel__row-label {
+  font-size: 0.9rem;
+  color: var(--text-primary, #344054);
+}
+
+.rf-panel__row-label--alert {
+  color: var(--color-danger, #dc2626);
+  font-weight: 600;
+}
+
+/* ── Inline notes for positive findings ────────────────── */
+.rf-panel__row-notes {
+  margin-left: calc(28px + var(--space-2, 0.5rem));
+  font-size: 0.85rem !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 var(--space-2, 0.5rem) !important;
+}
+
+/* ── Additional notes ──────────────────────────────────── */
+.rf-panel__notes-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #667085);
+  margin-bottom: var(--space-1, 0.25rem);
+}
+
+.rf-panel__notes-input {
+  font-size: 0.9rem !important;
+}
+
+/* ── Dark theme overrides ──────────────────────────────── */
+html[data-theme='dark'] .rf-panel {
+  border-color: var(--neutral-600, #475467);
+  background: var(--surface-card, #1d2939);
+}
+
+html[data-theme='dark'] .rf-panel__header {
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+}
+
+html[data-theme='dark'] .rf-panel__badge {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme='dark'] .rf-panel__badge--clear {
+  background: rgba(0, 154, 68, 0.2);
+  color: var(--und-green-light, #00c853);
+}
+
+html[data-theme='dark'] .rf-panel__badge--alert {
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+}
+
+html[data-theme='dark'] .rf-panel__category-label {
+  color: var(--text-secondary, #98a2b3);
+  border-color: var(--neutral-600, #475467);
+}
+
+html[data-theme='dark'] .rf-panel__row {
+  border-color: var(--neutral-700, #344054);
+}
+
+html[data-theme='dark'] .rf-panel__row-label {
+  color: var(--text-primary, #e4e7ec);
+}
+
+html[data-theme='dark'] .rf-panel__status-btn {
+  border-color: var(--neutral-600, #475467);
+  background: var(--neutral-700, #344054);
+  color: var(--text-tertiary, #667085);
+}
+
+html[data-theme='dark'] .rf-panel__status-btn--denied {
+  border-color: var(--und-green, #009a44);
+  background: rgba(0, 154, 68, 0.15);
+  color: var(--und-green-light, #00c853);
+}
+
+html[data-theme='dark'] .rf-panel__status-btn--present {
+  border-color: #f87171;
+  background: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+
+html[data-theme='dark'] .rf-panel__deny-all-btn {
+  border-color: var(--und-green, #009a44);
+  color: var(--und-green-light, #00c853);
+}
+
+html[data-theme='dark'] .rf-panel__reset-btn {
+  border-color: var(--neutral-600, #475467);
+  color: var(--text-secondary, #98a2b3);
+}
+
+html[data-theme='dark'] .rf-panel__reset-btn:hover {
+  background: var(--neutral-700, #344054);
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .rf-panel__row-notes {
+    margin-left: 0;
+    width: 100%;
+  }
+}

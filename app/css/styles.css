@@ -19,6 +19,8 @@
 @import url('./components/combined-rom.css');
 @import url('./components/combined-neuroscreen.css');
 @import url('./components/subjective-qa.css');
+@import url('./components/red-flag-screening.css');
+@import url('./components/medication-panel.css');
 @import url('./components/custom-select.css');
 @import url('./buttons.css');
 @import url('./sidebar.css');
@@ -2332,6 +2334,21 @@ textarea::placeholder,
 .form-input-standard::placeholder {
   color: rgba(26, 26, 26, 0.55); /* fallback aligned to --neutral-950 */
 }
+/* Hide placeholder by default on form textareas/inputs, reveal on hover/focus */
+.form-field .form-textarea::placeholder,
+.form-field .form-input::placeholder,
+.combined-neuroscreen__input::placeholder {
+  color: transparent;
+  transition: color 0.25s ease;
+}
+.form-field:hover .form-textarea::placeholder,
+.form-field:hover .form-input::placeholder,
+.form-field .form-textarea:focus::placeholder,
+.form-field .form-input:focus::placeholder,
+.combined-neuroscreen__input:hover::placeholder,
+.combined-neuroscreen__input:focus::placeholder {
+  color: rgba(26, 26, 26, 0.45);
+}
 /* Dark theme placeholder color */
 html[data-theme='dark'] input::placeholder,
 html[data-theme='dark'] textarea::placeholder,
@@ -2339,6 +2356,14 @@ html[data-theme='dark'] .form-input::placeholder,
 html[data-theme='dark'] .form-textarea::placeholder,
 html[data-theme='dark'] .form-input-standard::placeholder {
   color: rgba(249, 250, 251, 0.55); /* near-white at 55% */
+}
+html[data-theme='dark'] .form-field:hover .form-textarea::placeholder,
+html[data-theme='dark'] .form-field:hover .form-input::placeholder,
+html[data-theme='dark'] .form-field .form-textarea:focus::placeholder,
+html[data-theme='dark'] .form-field .form-input:focus::placeholder,
+html[data-theme='dark'] .combined-neuroscreen__input:hover::placeholder,
+html[data-theme='dark'] .combined-neuroscreen__input:focus::placeholder {
+  color: rgba(249, 250, 251, 0.4);
 }
 
 /* Radio/checkbox accent color in dark theme for native controls */

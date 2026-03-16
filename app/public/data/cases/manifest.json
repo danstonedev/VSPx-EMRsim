@@ -21,6 +21,22 @@
           "title": "Cervical Radiculopathy - Office Worker"
         }
       ]
+    },
+    {
+      "id": "neurologic",
+      "name": "Neurologic Rehabilitation",
+      "cases": [
+        {
+          "id": "case_neuro_stroke_001",
+          "file": "cases/neuro/stroke_001.json",
+          "title": "Stroke - Right Hemiparesis"
+        },
+        {
+          "id": "case_neuro_parkinsons_001",
+          "file": "cases/neuro/parkinsons_001.json",
+          "title": "Parkinson Disease - Gait and Balance"
+        }
+      ]
     }
   ]
 }

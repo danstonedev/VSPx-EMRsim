@@ -143,56 +143,88 @@ function buildVitals(vitals) {
   ];
 }
 
+function appendRegionalAssessmentSummary(kids, regionalAssessments) {
+  if (!regionalAssessments) return;
+  if (regionalAssessments.selectedRegions?.length) {
+    kids.push(row('Regions Assessed', regionalAssessments.selectedRegions.join(', ')));
+  }
+  if (regionalAssessments.specialTests && Object.keys(regionalAssessments.specialTests).length) {
+    const testRows = Object.values(regionalAssessments.specialTests).map((test) => [
+      test.notes || '—',
+      dash(test.left),
+      dash(test.right),
+    ]);
+    kids.push(
+      el('h4', {}, 'Special Tests'),
+      simpleTable(['Test / Notes', 'Left', 'Right'], testRows),
+    );
+  }
+}
+
+function appendGaitSummary(kids, gait, includeDistance = true) {
+  if (!gait || (!gait.pattern && !gait.observations)) return;
+  const gaitRows = [row('Device', gait.device)];
+  if (includeDistance) {
+    gaitRows.push(row('Distance', gait.distance_m ? `${gait.distance_m} m` : ''));
+  }
+  gaitRows.push(row('Pattern', gait.pattern), row('Observations', gait.observations));
+  kids.push(el('h4', {}, 'Gait'), ...gaitRows);
+}
+
+function getGoalEntries(plan) {
+  const goals = plan.goalsTable || plan.goals;
+  if (!goals) return [];
+  return Array.isArray(goals)
+    ? goals.filter((goal) => goal?.goal || goal?.goalText)
+    : Object.values(goals).filter((goal) => goal?.goalText || goal?.goal);
+}
+
+function formatGoalEntry(goal) {
+  if (typeof goal === 'string') return goal;
+  return [goal.goal || goal.goalText || goal.text || '', goal.timeframe, goal.icfDomain]
+    .filter(Boolean)
+    .join(' | ');
+}
+
+function getClinicInterventionEntries(plan) {
+  const clinic = Array.isArray(plan.inClinicInterventions)
+    ? plan.inClinicInterventions
+    : plan.exerciseTable || plan.interventions;
+  if (!clinic) return [];
+  return Array.isArray(clinic)
+    ? clinic.filter((entry) => entry?.intervention || entry?.exerciseText)
+    : Object.values(clinic).filter((entry) => entry?.exerciseText);
+}
+
+function formatInterventionEntry(entry) {
+  if (typeof entry === 'string') return entry;
+  return (
+    entry.exerciseText || [entry.intervention || '', entry.dosage || ''].filter(Boolean).join(' - ')
+  );
+}
+
+function getHepRows(plan) {
+  if (!Array.isArray(plan.hepInterventions)) return [];
+  return plan.hepInterventions
+    .filter((entry) => entry?.intervention || entry?.dosage)
+    .map((entry, index) => [
+      `${index + 1}`,
+      [entry.intervention || '', entry.dosage || ''].filter(Boolean).join(' - '),
+    ]);
+}
+
 function buildObjective(obj) {
   if (!obj) return [];
   const kids = [heading('Objective')];
   if (obj.text) kids.push(el('p', {}, obj.text));
-
-  // Inspection + Palpation
   if (obj.inspection?.visual) kids.push(row('Inspection', obj.inspection.visual));
   if (obj.palpation?.findings) kids.push(row('Palpation', obj.palpation.findings));
-
-  // Vitals (encounter‑level or top‑level)
   kids.push(...buildVitals(obj.vitals));
-
-  // Neuro screening
   if (obj.neuro?.screening) kids.push(row('Neuro Screening', obj.neuro.screening));
-
-  // Functional
   if (obj.functional?.assessment)
     kids.push(row('Functional Assessment', obj.functional.assessment));
-
-  // Regional assessments summary
-  const ra = obj.regionalAssessments;
-  if (ra) {
-    if (ra.selectedRegions?.length) {
-      kids.push(row('Regions Assessed', ra.selectedRegions.join(', ')));
-    }
-    // Special tests
-    if (ra.specialTests && Object.keys(ra.specialTests).length) {
-      const stRows = Object.values(ra.specialTests).map((t) => [
-        t.notes || '—',
-        dash(t.left),
-        dash(t.right),
-      ]);
-      kids.push(
-        el('h4', {}, 'Special Tests'),
-        simpleTable(['Test / Notes', 'Left', 'Right'], stRows),
-      );
-    }
-  }
-
-  // Gait
-  const gait = obj.gait;
-  if (gait && (gait.pattern || gait.observations)) {
-    kids.push(
-      el('h4', {}, 'Gait'),
-      row('Device', gait.device),
-      row('Distance', gait.distance_m ? `${gait.distance_m} m` : ''),
-      row('Pattern', gait.pattern),
-      row('Observations', gait.observations),
-    );
-  }
+  appendRegionalAssessmentSummary(kids, obj.regionalAssessments);
+  appendGaitSummary(kids, obj.gait, true);
   return kids;
 }
 
@@ -200,15 +232,7 @@ function buildTopLevelFindings(findings) {
   if (!findings) return [];
   const kids = [];
   kids.push(...buildVitals(findings.vitals));
-  const gait = findings.gait;
-  if (gait && (gait.pattern || gait.observations)) {
-    kids.push(
-      el('h4', {}, 'Gait'),
-      row('Device', gait.device),
-      row('Pattern', gait.pattern),
-      row('Observations', gait.observations),
-    );
-  }
+  appendGaitSummary(kids, findings.gait, false);
   if (findings.outcome_options?.length) {
     kids.push(row('Outcome Measures', joinList(findings.outcome_options)));
   }
@@ -257,29 +281,25 @@ function buildPlan(plan) {
   if (plan.patientEducation) {
     kids.push(el('h4', {}, 'Patient Education'), el('p', {}, plan.patientEducation));
   }
-  // Goals table
-  const gt = plan.goalsTable || plan.goals;
-  if (gt) {
-    const goalEntries = Array.isArray(gt) ? gt : Object.values(gt).filter((g) => g?.goalText);
-    if (goalEntries.length) {
-      const goalRows = goalEntries.map((g, i) => [
-        `${i + 1}`,
-        typeof g === 'string' ? g : g.goalText || g.text || JSON.stringify(g),
-      ]);
-      kids.push(el('h4', {}, 'Goals'), simpleTable(['#', 'Goal'], goalRows));
-    }
+  const goalEntries = getGoalEntries(plan);
+  if (goalEntries.length) {
+    const goalRows = goalEntries.map((goal, index) => [`${index + 1}`, formatGoalEntry(goal)]);
+    kids.push(el('h4', {}, 'Goals'), simpleTable(['#', 'Goal'], goalRows));
   }
-  // Exercises table
-  const et = plan.exerciseTable || plan.interventions;
-  if (et) {
-    const exEntries = Array.isArray(et) ? et : Object.values(et).filter((e) => e?.exerciseText);
-    if (exEntries.length) {
-      const exRows = exEntries.map((e, i) => [
-        `${i + 1}`,
-        typeof e === 'string' ? e : e.exerciseText || e.text || JSON.stringify(e),
-      ]);
-      kids.push(el('h4', {}, 'Exercises / Interventions'), simpleTable(['#', 'Exercise'], exRows));
-    }
+  const clinicEntries = getClinicInterventionEntries(plan);
+  if (clinicEntries.length) {
+    const clinicRows = clinicEntries.map((entry, index) => [
+      `${index + 1}`,
+      formatInterventionEntry(entry),
+    ]);
+    kids.push(
+      el('h4', {}, 'In-Clinic Interventions'),
+      simpleTable(['#', 'Intervention'], clinicRows),
+    );
+  }
+  const hepRows = getHepRows(plan);
+  if (hepRows.length) {
+    kids.push(el('h4', {}, 'Home Exercise Program'), simpleTable(['#', 'Exercise'], hepRows));
   }
   return kids;
 }

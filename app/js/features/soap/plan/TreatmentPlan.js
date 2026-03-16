@@ -2,8 +2,7 @@
 // Evidence-based intervention selection and scheduling
 
 import { el, textareaAutoResize } from '../../../ui/utils.js';
-import { textAreaField, selectField } from '../../../ui/form-components.js';
-import { createCustomSelect } from '../../../ui/CustomSelect.js';
+import { selectField } from '../../../ui/form-components.js';
 import { createPortalDropdown, destroyPortalsIn } from '../../../ui/portal-dropdown.js';
 
 /**
@@ -175,7 +174,6 @@ export const TreatmentPlan = {
 
     const hepContent = el('div', {
       class: 'billing-section-container',
-      style: 'padding: 0; box-shadow: none; border: none; background: transparent;',
     });
     hepSection.append(hepContent);
 
@@ -205,6 +203,21 @@ export const TreatmentPlan = {
       ]);
       table.appendChild(colgroup);
 
+      const hepAddBtn = el(
+        'button',
+        {
+          type: 'button',
+          class: 'billing-row-add-btn',
+          title: 'Add HEP Exercise',
+          onclick: () => {
+            data.hepInterventions.push({ intervention: '', dosage: '', rationale: '' });
+            updateField('hepInterventions', data.hepInterventions);
+            renderHep();
+          },
+        },
+        '+',
+      );
+
       const thead = el('thead', { class: 'combined-neuroscreen-thead' }, [
         el('tr', {}, [
           el(
@@ -214,7 +227,7 @@ export const TreatmentPlan = {
           ),
           el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Exercise / Activity'),
           el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Dose / Frequency'),
-          el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, ''),
+          el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, [hepAddBtn]),
         ]),
       ]);
       table.appendChild(thead);
@@ -231,22 +244,6 @@ export const TreatmentPlan = {
       });
       table.appendChild(tbody);
       hepContainer.appendChild(table);
-
-      const addButton = el(
-        'div',
-        {
-          class: 'compact-add-btn',
-          title: 'Add HEP Exercise',
-          onclick: () => {
-            data.hepInterventions.push({ intervention: '', dosage: '', rationale: '' });
-            updateField('hepInterventions', data.hepInterventions);
-            renderHep();
-          },
-        },
-        '+',
-      );
-
-      hepContainer.append(addButton);
     }
 
     // Initial render
@@ -504,265 +501,6 @@ function createInterventionRow(entry, index, data, updateField, renderCallback) 
   row.appendChild(actionCell);
 
   return row;
-}
-
-function createInterventionRowLinked_REMOVED() {
-  // dead code stub — kept for rollback reference
-  return null; // replaced by createInterventionRow
-}
-
-function _DEADCODE_createInterventionRowLinked(
-  entry,
-  localIndex,
-  updateField,
-  data,
-  renderCallback,
-  onRemove,
-) {
-  const row = el('tr', {
-    class: 'combined-neuroscreen-row intervention-row',
-    'data-row-index': String(localIndex),
-  });
-
-  // Drag handle
-  row.appendChild(
-    el(
-      'td',
-      {
-        class: 'combined-neuroscreen-td intervention-drag-handle',
-        draggable: 'true',
-        title: 'Drag to reorder',
-      },
-      '⠿',
-    ),
-  );
-
-  // Intervention search
-  const searchCell = el('td', {
-    class: 'combined-neuroscreen-td',
-    style: 'position: relative; overflow: visible;',
-  });
-  const interventions = getPTInterventions().map((opt) => ({
-    ...opt,
-    _norm: normalizeInterventionOption(opt),
-  }));
-  const searchInput = el('input', {
-    type: 'text',
-    value: entry.intervention || '',
-    class: 'combined-neuroscreen__input combined-neuroscreen__input--left',
-    placeholder: 'Search or type intervention...',
-    style: 'width: 100%;',
-    onblur: (e) => {
-      entry.intervention = e.target.value;
-      updateField('inClinicInterventions', data.inClinicInterventions);
-    },
-  });
-  const portal = createPortalDropdown(searchInput);
-  const resultsList = portal.dropdown;
-  let highlightIndex = -1;
-  let currentResults = [];
-  const applySelection = (item) => {
-    if (!item) return;
-    searchInput.value = item.value;
-    entry.intervention = item.value;
-    updateField('inClinicInterventions', data.inClinicInterventions);
-    portal.hide();
-  };
-  const renderResults = () => {
-    resultsList.replaceChildren();
-    if (!currentResults.length) {
-      portal.hide();
-      return;
-    }
-    portal.show();
-    currentResults.forEach((item, idx) => {
-      const { label, category } = item._norm || {};
-      const resultRow = el(
-        'div',
-        {
-          class: 'billing-search-result-row',
-          style:
-            'padding: 0.45rem 0.65rem; display:flex; justify-content:space-between; align-items:flex-start; gap: 0.65rem; cursor:pointer; font-size: 0.95rem; background: ' +
-            (idx === highlightIndex ? 'rgba(0,154,68,0.12);' : 'white;'),
-          onmouseenter: () => {
-            highlightIndex = idx;
-            Array.from(resultsList.children).forEach((c, ci) => {
-              c.style.background = ci === idx ? 'rgba(0,154,68,0.12)' : 'white';
-            });
-          },
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            applySelection(item);
-          },
-        },
-        [
-          el('div', { style: 'flex:1;' }, label || item.value),
-          el(
-            'div',
-            { style: 'color: var(--text-muted); font-size:0.85rem; white-space:nowrap;' },
-            category || '',
-          ),
-        ],
-      );
-      resultsList.appendChild(resultRow);
-    });
-  };
-  searchInput.addEventListener('input', () => {
-    const q = (searchInput.value || '').trim().toLowerCase();
-    if (!q) {
-      currentResults = [];
-      renderResults();
-      return;
-    }
-    currentResults = interventions
-      .map((item) => ({ ...item, _score: scoreInterventionOption(item, q) }))
-      .filter((i) => i._score > 0)
-      .sort((a, b) => b._score - a._score)
-      .slice(0, 15);
-    highlightIndex = currentResults.length ? 0 : -1;
-    renderResults();
-  });
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      portal.hide();
-      searchInput.blur();
-      return;
-    }
-    if (!currentResults.length) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        portal.hide();
-      }
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      highlightIndex = (highlightIndex + 1) % currentResults.length;
-      renderResults();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      highlightIndex = (highlightIndex - 1 + currentResults.length) % currentResults.length;
-      renderResults();
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      applySelection(currentResults[highlightIndex >= 0 ? highlightIndex : 0]);
-    }
-  });
-  searchCell.append(searchInput);
-  row.appendChild(searchCell);
-
-  // Dosage
-  const dosageInput = el(
-    'textarea',
-    {
-      class: 'combined-neuroscreen__input resize-vertical',
-      rows: 1,
-      placeholder: 'e.g., 3x10, 30s hold',
-      onblur: (e) => {
-        entry.dosage = e.target.value;
-        updateField('inClinicInterventions', data.inClinicInterventions);
-      },
-    },
-    entry.dosage || '',
-  );
-  textareaAutoResize(dosageInput);
-  const dosageCell = el('td', { class: 'combined-neuroscreen-td' });
-  dosageCell.appendChild(dosageInput);
-  row.appendChild(dosageCell);
-
-  // Remove
-  const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
-  actionCell.appendChild(
-    el(
-      'button',
-      {
-        type: 'button',
-        class: 'remove-btn',
-        onclick: onRemove,
-      },
-      '×',
-    ),
-  );
-  row.appendChild(actionCell);
-
-  return row;
-}
-
-/**
- * Animated collapse/expand toggle for plan ICD-10 group cards.
- */
-function bindPlanAnimatedToggle(detailsEl, summaryEl, contentEl, code, expandState) {
-  let animating = false;
-  let safetyTimer = null;
-  const cleanup = () => {
-    if (safetyTimer) {
-      clearTimeout(safetyTimer);
-      safetyTimer = null;
-    }
-    contentEl.style.overflow = '';
-    contentEl.style.height = '';
-    contentEl.style.opacity = '';
-    contentEl.style.transition = '';
-    animating = false;
-  };
-  summaryEl.addEventListener('click', (event) => {
-    event.preventDefault();
-    if (animating) return;
-    const isOpen = detailsEl.hasAttribute('open');
-    animating = true;
-    if (isOpen) {
-      const startHeight = contentEl.scrollHeight;
-      contentEl.style.overflow = 'hidden';
-      contentEl.style.height = `${startHeight}px`;
-      contentEl.style.opacity = '1';
-      requestAnimationFrame(() => {
-        contentEl.style.transition = 'height 220ms ease, opacity 180ms ease';
-        contentEl.style.height = '0px';
-        contentEl.style.opacity = '0';
-      });
-      const onEnd = (e) => {
-        if (e && e.target !== contentEl) return;
-        if (e && e.propertyName !== 'height') return;
-        detailsEl.removeAttribute('open');
-        expandState.set(code, false);
-        cleanup();
-        contentEl.removeEventListener('transitionend', onEnd);
-      };
-      contentEl.addEventListener('transitionend', onEnd);
-      safetyTimer = setTimeout(() => {
-        contentEl.removeEventListener('transitionend', onEnd);
-        detailsEl.removeAttribute('open');
-        expandState.set(code, false);
-        cleanup();
-      }, 300);
-      return;
-    }
-    detailsEl.setAttribute('open', 'open');
-    contentEl.style.overflow = 'hidden';
-    contentEl.style.height = '0px';
-    contentEl.style.opacity = '0';
-    requestAnimationFrame(() => {
-      const targetHeight = contentEl.scrollHeight;
-      contentEl.style.transition = 'height 220ms ease, opacity 180ms ease';
-      contentEl.style.height = `${targetHeight}px`;
-      contentEl.style.opacity = '1';
-    });
-    const onEnd = (e) => {
-      if (e && e.target !== contentEl) return;
-      if (e && e.propertyName !== 'height') return;
-      expandState.set(code, true);
-      cleanup();
-      contentEl.removeEventListener('transitionend', onEnd);
-    };
-    contentEl.addEventListener('transitionend', onEnd);
-    safetyTimer = setTimeout(() => {
-      contentEl.removeEventListener('transitionend', onEnd);
-      expandState.set(code, true);
-      cleanup();
-    }, 300);
-  });
 }
 
 function createHepRow(entry, index, data, updateField, renderCallback) {

@@ -1566,9 +1566,9 @@ function createCPTSearchRow(codeEntry, index, data, updateField, renderCallback)
 }
 
 /**
- * Top 25 PT CPT codes used in practice
+ * Common PT CPT codes used in practice
  */
-function getPTCPTCodes() {
+export function getPTCPTCodes() {
   return [
     { value: '', label: 'Select CPT Code...', description: '' },
 
@@ -1739,6 +1739,12 @@ function getPTCPTCodes() {
         'Prosthetic training, upper and/or lower extremity(ies), initial prosthetic(s) encounter, each 15 minutes',
     },
     {
+      value: '97763',
+      label: '97763 - Orthotic/Prosthetic Management and Training (Subsequent)',
+      description:
+        'Follow-up orthotic or prosthetic management and patient training for mobility or functional use',
+    },
+    {
       value: '97016',
       label: '97016 - Vasopneumatic Device',
       description:
@@ -1782,6 +1788,12 @@ function getPTCPTCodes() {
       value: '29126',
       label: '29126 - Application of Short Arm Splint (dynamic)',
       description: 'Application of short arm splint (forearm to hand); dynamic',
+    },
+    {
+      value: '95992',
+      label: '95992 - Canalith Repositioning Procedure',
+      description:
+        'Vestibular treatment for BPPV using repositioning maneuvers such as Epley or Semont',
     },
   ];
 }
@@ -1844,7 +1856,7 @@ export function scoreOption(item, q) {
 }
 
 /**
- * Top 25 ICD-10 diagnosis codes commonly used in Physical Therapy
+ * Common ICD-10 diagnosis codes used in Physical Therapy
  */
 export function getPTICD10Codes() {
   return [
@@ -2258,6 +2270,124 @@ export function getPTICD10Codes() {
       value: 'R29.6',
       label: 'R29.6 - Repeated falls',
       description: 'History of recurrent falls, fall risk',
+    },
+
+    // Neurologic Conditions
+    {
+      value: 'I63.9',
+      label: 'I63.9 - Cerebral infarction, unspecified',
+      description: 'Stroke / cerebral infarction, unspecified',
+    },
+    {
+      value: 'I69.398',
+      label: 'I69.398 - Other sequelae of cerebral infarction',
+      description: 'Late effects of stroke such as weakness, spasticity, or sensory loss',
+    },
+    {
+      value: 'I69.351',
+      label:
+        'I69.351 - Hemiplegia and hemiparesis following cerebral infarction affecting right dominant side',
+      description: 'Post-stroke hemiparesis / hemiplegia, right dominant side',
+    },
+    {
+      value: 'G45.9',
+      label: 'G45.9 - Transient cerebral ischemic attack, unspecified',
+      description: 'Transient ischemic attack (TIA)',
+    },
+    {
+      value: 'G20.A1',
+      label: "G20.A1 - Parkinson's disease without dyskinesia, without mention of fluctuations",
+      description: "Parkinson's disease without dyskinesia",
+    },
+    {
+      value: 'G20.B1',
+      label: "G20.B1 - Parkinson's disease with dyskinesia, without mention of fluctuations",
+      description: "Parkinson's disease with dyskinesia",
+    },
+    {
+      value: 'G82.20',
+      label: 'G82.20 - Paraplegia, unspecified',
+      description: 'Paraplegia / paraparesis, unspecified',
+    },
+    {
+      value: 'G82.22',
+      label: 'G82.22 - Paraplegia, incomplete',
+      description: 'Incomplete paraplegia, often used in spinal cord injury rehab',
+    },
+    {
+      value: 'G82.50',
+      label: 'G82.50 - Quadriplegia, unspecified',
+      description: 'Quadriplegia / tetraplegia, unspecified',
+    },
+    {
+      value: 'G82.52',
+      label: 'G82.52 - Quadriplegia, C1-C4 incomplete',
+      description: 'Incomplete cervical tetraplegia',
+    },
+    {
+      value: 'F07.81',
+      label: 'F07.81 - Postconcussional syndrome',
+      description: 'Persistent symptoms after concussion / mild TBI',
+    },
+    {
+      value: 'S06.0X0S',
+      label: 'S06.0X0S - Concussion without loss of consciousness, sequela',
+      description: 'Concussion sequela without loss of consciousness',
+    },
+    {
+      value: 'H81.10',
+      label: 'H81.10 - Benign paroxysmal vertigo, unspecified ear',
+      description: 'Benign paroxysmal positional vertigo (BPPV)',
+    },
+    {
+      value: 'G80.9',
+      label: 'G80.9 - Cerebral palsy, unspecified',
+      description: 'Cerebral palsy',
+    },
+    {
+      value: 'G62.9',
+      label: 'G62.9 - Polyneuropathy, unspecified',
+      description: 'Peripheral neuropathy / polyneuropathy',
+    },
+    {
+      value: 'G35.A',
+      label: 'G35.A - Relapsing-remitting multiple sclerosis',
+      description: 'Relapsing-remitting multiple sclerosis',
+    },
+    {
+      value: 'G35.B0',
+      label: 'G35.B0 - Primary progressive multiple sclerosis, unspecified',
+      description: 'Primary progressive multiple sclerosis, unspecified activity',
+    },
+    {
+      value: 'G35.B1',
+      label: 'G35.B1 - Active primary progressive multiple sclerosis',
+      description: 'Active primary progressive multiple sclerosis',
+    },
+    {
+      value: 'G35.B2',
+      label: 'G35.B2 - Non-active primary progressive multiple sclerosis',
+      description: 'Non-active primary progressive multiple sclerosis',
+    },
+    {
+      value: 'G35.C0',
+      label: 'G35.C0 - Secondary progressive multiple sclerosis, unspecified',
+      description: 'Secondary progressive multiple sclerosis, unspecified activity',
+    },
+    {
+      value: 'G35.C1',
+      label: 'G35.C1 - Active secondary progressive multiple sclerosis',
+      description: 'Active secondary progressive multiple sclerosis',
+    },
+    {
+      value: 'G35.C2',
+      label: 'G35.C2 - Non-active secondary progressive multiple sclerosis',
+      description: 'Non-active secondary progressive multiple sclerosis',
+    },
+    {
+      value: 'G35.D',
+      label: 'G35.D - Multiple sclerosis, unspecified',
+      description: 'Multiple sclerosis, unspecified subtype',
     },
 
     // Post-Surgical / Aftercare

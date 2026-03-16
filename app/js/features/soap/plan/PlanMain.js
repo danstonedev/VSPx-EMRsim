@@ -60,6 +60,7 @@ export function createPlanSection(planData, onUpdate) {
   // Update helper
   const updateField = (field, value) => {
     data[field] = value;
+    syncPlanLegacyFields(data);
     onUpdate(data);
   };
 
@@ -67,7 +68,40 @@ export function createPlanSection(planData, onUpdate) {
   section.append(GoalSetting.create(data, updateField));
   section.append(TreatmentPlan.create(data, updateField));
 
+  syncPlanLegacyFields(data);
+
   return section;
+}
+
+function syncPlanLegacyFields(data) {
+  if (Array.isArray(data?.goals)) {
+    const nextGoalsTable = {};
+    data.goals.forEach((row, index) => {
+      if (!row || typeof row !== 'object') return;
+      if (!row.goal && !row.timeframe && !row.icfDomain) return;
+      nextGoalsTable[`goal_${index + 1}`] = {
+        goalText: row.goal || '',
+        timeframe: row.timeframe || '',
+        icfDomain: row.icfDomain || '',
+      };
+    });
+    data.goalsTable = nextGoalsTable;
+  }
+
+  if (Array.isArray(data?.inClinicInterventions)) {
+    const nextExerciseTable = {};
+    data.inClinicInterventions.forEach((row, index) => {
+      if (!row || typeof row !== 'object') return;
+      if (!row.intervention && !row.dosage) return;
+      const parts = [String(row.intervention || '').trim(), String(row.dosage || '').trim()].filter(
+        Boolean,
+      );
+      nextExerciseTable[`ex_${index + 1}`] = {
+        exerciseText: parts.join(' - '),
+      };
+    });
+    data.exerciseTable = nextExerciseTable;
+  }
 }
 
 // Export alias for consistency

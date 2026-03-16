@@ -110,7 +110,10 @@
         const planOk = !!(
           draft.plan?.treatmentPlan &&
           draft.plan?.patientEducation &&
-          (draft.plan?.goalsTable || draft.plan?.exerciseTable)
+          (draft.plan?.goals?.length ||
+            draft.plan?.goalsTable ||
+            draft.plan?.inClinicInterventions?.length ||
+            draft.plan?.exerciseTable)
         );
         const billingOk = !!(
           draft.billing?.diagnosisCodes?.length &&
@@ -134,7 +137,9 @@
           planOk,
           JSON.stringify(
             {
+              goals: draft.plan?.goals,
               goalsTable: draft.plan?.goalsTable,
+              inClinicInterventions: draft.plan?.inClinicInterventions,
               exerciseTable: draft.plan?.exerciseTable,
               patientEducation: draft.plan?.patientEducation,
             },
@@ -157,7 +162,7 @@
         const cervOk = !!(
           cervDraft.subjective?.historyOfPresentIllness &&
           cervDraft.assessment?.ptDiagnosis &&
-          cervDraft.plan?.exerciseTable &&
+          (cervDraft.plan?.inClinicInterventions?.length || cervDraft.plan?.exerciseTable) &&
           Array.isArray(cervDraft.billing?.ordersReferrals)
         );
         log(
@@ -167,7 +172,10 @@
             {
               subj: cervDraft.subjective,
               assess: cervDraft.assessment,
-              plan: { exerciseTable: cervDraft.plan?.exerciseTable },
+              plan: {
+                inClinicInterventions: cervDraft.plan?.inClinicInterventions,
+                exerciseTable: cervDraft.plan?.exerciseTable,
+              },
             },
             null,
             2,

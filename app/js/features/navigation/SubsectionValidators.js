@@ -52,6 +52,49 @@ function extractPainData(data, section) {
     : data;
 }
 
+function getPlanInterventionRows(data, section) {
+  return (
+    section?.inClinicInterventions ||
+    data?.inClinicInterventions ||
+    section?.exerciseTable ||
+    data?.exerciseTable
+  );
+}
+
+function getPlanGoalRows(data, section) {
+  return section?.goals || data?.goals || section?.goalsTable || data?.goalsTable;
+}
+
+function hasPlanSchedule(data, section) {
+  return {
+    hasFreq: isFieldComplete(section?.frequency || data?.frequency),
+    hasDur: isFieldComplete(section?.duration || data?.duration),
+  };
+}
+
+/** Check whether the three history fields merged into HPI are all filled */
+function isHpiHistoryComplete(section) {
+  // Medications: accept structured array OR legacy string
+  const medsComplete = Array.isArray(section?.medications)
+    ? section.medications.length > 0
+    : isFieldComplete(section?.medicationsCurrent);
+  // Red flags: accept structured screening array OR legacy string
+  const redFlagsComplete = Array.isArray(section?.redFlagScreening)
+    ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
+    : isFieldComplete(section?.redFlags);
+  return medsComplete && redFlagsComplete && isFieldComplete(section?.additionalHistory);
+}
+
+/** Resolve the chief complaint field from various possible keys */
+function resolveChiefComplaint(section) {
+  return section?.chiefComplaint ?? section?.chief_complaint ?? section?.patientConcern ?? '';
+}
+
+/** Resolve the HPI narrative text from various possible keys */
+function resolveHpiText(section) {
+  return section?.detailedHistoryOfCurrentCondition ?? section?.hpi ?? '';
+}
+
 // Subjective Section Validators
 export const SubjectiveValidators = {
   /**
@@ -61,11 +104,11 @@ export const SubjectiveValidators = {
    * @returns {boolean} True if complete
    */
   'history-present-illness': (data, section) => {
-    const chiefComplaint =
-      section?.chiefComplaint ?? section?.chief_complaint ?? section?.patientConcern ?? '';
-    const hpiText = section?.detailedHistoryOfCurrentCondition ?? section?.hpi ?? '';
-    // Completion requires BOTH chief complaint and detailed narrative
-    return isFieldComplete(chiefComplaint) && isFieldComplete(hpiText);
+    return (
+      isFieldComplete(resolveChiefComplaint(section)) &&
+      isFieldComplete(resolveHpiText(section)) &&
+      isHpiHistoryComplete(section)
+    );
   },
 
   /**
@@ -104,23 +147,6 @@ export const SubjectiveValidators = {
       isFieldComplete(functionalLimitations) &&
       isFieldComplete(priorLevel) &&
       isFieldComplete(patientGoals)
-    );
-  },
-
-  /**
-   * Validate additional history completeness (requires all 3 fields)
-   * @param {Object} data - Subsection data
-   * @param {Object} section - Full section context
-   * @returns {boolean} True if complete
-   */
-  'additional-history': (data, section) => {
-    const medications = section?.medicationsCurrent;
-    const redFlags = section?.redFlags;
-    const additionalHistory = section?.additionalHistory;
-    return (
-      isFieldComplete(medications) &&
-      isFieldComplete(redFlags) &&
-      isFieldComplete(additionalHistory)
     );
   },
 };
@@ -250,9 +276,8 @@ export const PlanValidators = {
    * @returns {boolean} True if complete
    */
   'in-clinic-treatment-plan': (data, section) => {
-    const hasRows = isFieldComplete(section?.exerciseTable || data?.exerciseTable);
-    const hasFreq = isFieldComplete(section?.frequency || data?.frequency);
-    const hasDur = isFieldComplete(section?.duration || data?.duration);
+    const hasRows = isFieldComplete(getPlanInterventionRows(data, section));
+    const { hasFreq, hasDur } = hasPlanSchedule(data, section);
     // consider complete when at least one row plus schedule are provided
     return hasRows && hasFreq && hasDur;
   },
@@ -265,8 +290,7 @@ export const PlanValidators = {
    */
   'goal-setting': (data, section) => {
     // Consider complete when at least one goal entry exists
-    const table = section?.goalsTable || data?.goalsTable;
-    return isFieldComplete(table);
+    return isFieldComplete(getPlanGoalRows(data, section));
   },
 };
 

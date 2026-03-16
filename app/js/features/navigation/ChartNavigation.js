@@ -51,6 +51,26 @@ function saveSectionCollapseState(state) {
 }
 let sectionCollapseState = loadSectionCollapseState();
 
+function getPlanInterventionRows(data, section) {
+  return (
+    section?.inClinicInterventions ||
+    data?.inClinicInterventions ||
+    section?.exerciseTable ||
+    data?.exerciseTable
+  );
+}
+
+function getPlanGoalRows(data, section) {
+  return section?.goals || data?.goals || section?.goalsTable || data?.goalsTable;
+}
+
+function getPlanScheduleCompletion(data, section, isFieldComplete) {
+  return {
+    hasFreq: isFieldComplete(section?.frequency || data?.frequency),
+    hasDur: isFieldComplete(section?.duration || data?.duration),
+  };
+}
+
 // Heuristic normalization for artifact type across legacy/new cases
 function normalizeArtifactType(mod) {
   if (!mod) return 'other';
@@ -162,20 +182,32 @@ function createSubsectionIndicator(status) {
 function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {}) {
   if (!subsectionData) return 'empty';
 
+  /** Check whether the three history fields merged into HPI are all filled */
+  function isHpiHistoryComplete(section) {
+    // Medications: accept structured array OR legacy string
+    const medsComplete = Array.isArray(section?.medications)
+      ? section.medications.length > 0
+      : isFieldComplete(section?.medicationsCurrent);
+    // Red flags: accept structured screening array OR legacy string
+    const redFlagsComplete = Array.isArray(section?.redFlagScreening)
+      ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
+      : isFieldComplete(section?.redFlags);
+    return medsComplete && redFlagsComplete && isFieldComplete(section?.additionalHistory);
+  }
+
   // Define required fields for each subsection type
   const subsectionRequirements = {
     // Subjective subsections
     hpi: (data, section) => {
-      // Chief complaint stored separately; detailed narrative may use one of several keys
       const chiefComplaint = section?.chiefComplaint || section?.chiefConcern;
-      // Only treat explicit narrative fields as HPI text (do NOT fall back to whole subsection object)
       const hpiText =
         section?.historyOfPresentIllness ??
         section?.detailedHistoryOfCurrentCondition ??
         section?.hpi ??
         '';
-      // Completion requires BOTH chief complaint and detailed narrative
-      return isFieldComplete(chiefComplaint) && isFieldComplete(hpiText);
+      return (
+        isFieldComplete(chiefComplaint) && isFieldComplete(hpiText) && isHpiHistoryComplete(section)
+      );
     },
     /* eslint-disable-next-line complexity */
     'pain-assessment': (data, section) => {
@@ -217,17 +249,6 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
         isFieldComplete(functionalLimitations) &&
         isFieldComplete(priorLevel) &&
         isFieldComplete(patientGoals)
-      );
-    },
-    'additional-history': (data, section) => {
-      // Require all three fields in Additional History subsection to be complete
-      const medications = section?.medicationsCurrent;
-      const redFlags = section?.redFlags;
-      const additionalHistory = section?.additionalHistory;
-      return (
-        isFieldComplete(medications) &&
-        isFieldComplete(redFlags) &&
-        isFieldComplete(additionalHistory)
       );
     },
 
@@ -277,16 +298,14 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
       isFieldComplete(section?.treatmentPlan || data?.treatmentPlan) &&
       isFieldComplete(section?.patientEducation || data?.patientEducation),
     'in-clinic-treatment-plan': (data, section) => {
-      const hasRows = isFieldComplete(section?.exerciseTable || data?.exerciseTable);
-      const hasFreq = isFieldComplete(section?.frequency || data?.frequency);
-      const hasDur = isFieldComplete(section?.duration || data?.duration);
+      const hasRows = isFieldComplete(getPlanInterventionRows(data, section));
+      const { hasFreq, hasDur } = getPlanScheduleCompletion(data, section, isFieldComplete);
       // consider complete when at least one row plus schedule are provided
       return hasRows && hasFreq && hasDur;
     },
     'goal-setting': (data, section) => {
       // Consider complete when at least one goal entry exists
-      const table = section?.goalsTable || data?.goalsTable;
-      return isFieldComplete(table);
+      return isFieldComplete(getPlanGoalRows(data, section));
     },
 
     // Billing subsections
@@ -1928,6 +1947,9 @@ export function createChartNavigation(config) {
     hpi: (section) => ({
       chiefComplaint: section?.chiefComplaint,
       historyOfPresentIllness: section?.historyOfPresentIllness,
+      medicationsCurrent: section?.medicationsCurrent,
+      redFlags: section?.redFlags,
+      additionalHistory: section?.additionalHistory,
     }),
     'pain-assessment': (section) => ({
       location: section?.painLocation,
@@ -1941,11 +1963,6 @@ export function createChartNavigation(config) {
       functionalLimitations: section?.functionalLimitations,
       priorLevel: section?.priorLevel,
       patientGoals: section?.patientGoals,
-    }),
-    'additional-history': (section) => ({
-      medicationsCurrent: section?.medicationsCurrent,
-      redFlags: section?.redFlags,
-      additionalHistory: section?.additionalHistory,
     }),
     // Objective
     'general-observations': (section) => section?.text,
@@ -1972,11 +1989,13 @@ export function createChartNavigation(config) {
     // Plan (dynamic from existing anchors in Plan components)
     'treatment-plan': (section) => section, // composite within Plan
     'in-clinic-treatment-plan': (section) => ({
+      inClinicInterventions: section?.inClinicInterventions,
       exerciseTable: section?.exerciseTable,
       frequency: section?.frequency,
       duration: section?.duration,
     }),
     'goal-setting': (section) => ({
+      goals: section?.goals,
       frequency: section?.frequency,
       duration: section?.duration,
       goalsTable: section?.goalsTable,
@@ -2009,7 +2028,7 @@ export function createChartNavigation(config) {
 
   // Fallback subsection map and titles (used when section is not currently rendered)
   const subsectionFallbackMap = {
-    subjective: ['hpi', 'pain-assessment', 'functional-status', 'additional-history'],
+    subjective: ['hpi', 'functional-status', 'pain-assessment'],
     objective: [
       'general-observations',
       'regional-assessment',
@@ -2023,9 +2042,8 @@ export function createChartNavigation(config) {
   };
   const subsectionTitleMap = {
     hpi: 'History',
-    'pain-assessment': 'Symptoms',
     'functional-status': 'Functional Status',
-    'additional-history': 'Additional History',
+    'pain-assessment': 'Symptoms',
     'general-observations': 'General Observations & Vital Signs',
     'regional-assessment': 'Regional Assessment',
     'neurological-screening': 'Neurological Screening',

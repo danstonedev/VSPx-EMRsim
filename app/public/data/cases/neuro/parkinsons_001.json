@@ -1,0 +1,219 @@
+{
+  "id": "case_neuro_parkinsons_001",
+  "title": "Parkinson Disease - Gait and Balance",
+  "latestVersion": 0,
+  "caseObj": {
+    "meta": {
+      "title": "Parkinson Disease - Gait and Balance",
+      "setting": "Outpatient",
+      "regions": [],
+      "acuity": "chronic",
+      "diagnosis": "Neurological"
+    },
+    "snapshot": {
+      "name": "Maria Alvarez",
+      "age": "71",
+      "sex": "female",
+      "dob": "1954-06-09",
+      "teaser": "71-year-old female with idiopathic Parkinson disease and worsening gait speed, freezing episodes, and postural instability"
+    },
+    "history": {
+      "chief_complaint": "Shuffling gait and balance loss with Parkinson disease",
+      "hpi": "71-year-old female with 5-year history of Parkinson disease referred for worsening mobility over the past 4 months. Reports smaller steps, freezing in doorways, difficulty turning, and two near-falls when multitasking. Denies recent true falls but avoids community outings unless accompanied.",
+      "mechanism_of_injury": "Progressive neurologic movement disorder",
+      "pain": {
+        "level": "1/10",
+        "location": "Occasional low back and calf stiffness",
+        "quality": "Stiffness and rigidity",
+        "aggravating_factors": "Initiation of gait, tight spaces, dual-tasking, fatigue, rising from low chair",
+        "easing_factors": "Medication on-time periods, external cueing, deliberate larger movements, rest",
+        "onset": "Progressive over 4 months",
+        "duration": "Daily fluctuations"
+      },
+      "pmh": ["Idiopathic Parkinson disease", "Osteopenia"],
+      "meds": ["Carbidopa/Levodopa", "Vitamin D"],
+      "red_flag_signals": ["None currently reported"],
+      "functional_goals": [
+        "Walk through busy community spaces without freezing",
+        "Turn and back up more safely in the kitchen",
+        "Keep attending granddaughter's school events"
+      ]
+    },
+    "findings": {
+      "vitals": {
+        "bp": "126/72",
+        "hr": "70",
+        "rr": "14",
+        "temp": "98.1",
+        "o2sat": "99%",
+        "pain": "1/10"
+      },
+      "rom": {},
+      "mmt": {},
+      "special_tests": [],
+      "gait": {
+        "device": "none",
+        "distance_m": 150,
+        "pattern": "Hypokinetic gait with decreased step length, reduced arm swing, festination during turns",
+        "observations": "Freezing reproduced with doorway entry and pivot turns; delayed postural reactions; stooped posture"
+      },
+      "outcome_options": ["MiniBESTest", "TUG", "10 Meter Walk Test", "5x Sit to Stand"]
+    },
+    "encounters": {
+      "eval": {
+        "notes_seed": "Outpatient Parkinson disease case focused on amplitude training, turning, freezing, and fall prevention",
+        "subjective": {
+          "chiefComplaint": "Walking is slower and I freeze when I turn or go through doors",
+          "historyOfPresentIllness": "Symptoms have worsened gradually over 4 months despite medication adherence. Patient notices best mobility about 45-60 minutes after medication and greater freezing when rushed or distracted.",
+          "painLocation": "Mild lumbar and calf stiffness",
+          "painScale": "1",
+          "painQuality": "Stiffness, rigidity",
+          "painPattern": "Fluctuates with medication timing and fatigue",
+          "aggravatingFactors": "Turning, backing up, doorways, dual-tasking, crowded places, getting up from soft couch",
+          "easingFactors": "Counting out loud, visual floor targets, large purposeful steps, rest breaks",
+          "functionalLimitations": "Slow community ambulation, freezing with turns, cautious shower transfers, difficulty carrying objects while walking",
+          "priorLevel": "Independent community ambulator without freezing episodes; attended church and family outings regularly",
+          "patientGoals": "Move bigger, walk faster, and stop freezing when turning",
+          "medicationsCurrent": "Carbidopa/Levodopa per neurologist schedule",
+          "redFlags": "No recent syncope, chest pain, or acute neurologic change",
+          "additionalHistory": "Lives with spouse in single-story home; uses phone reminders for medication schedule"
+        },
+        "objective": {
+          "text": "Pleasant, oriented patient evaluated during medication 'on' period. Mild hypomimia and soft voice noted.",
+          "inspection": {
+            "visual": "Stooped posture, reduced trunk rotation, diminished spontaneous arm swing bilaterally left greater than right"
+          },
+          "palpation": {
+            "findings": "Generalized rigidity through trunk and hips; no focal tenderness"
+          },
+          "neuro": {
+            "screening": "Bradykinesia with finger tapping and alternating movements, mild rigidity, impaired anticipatory and reactive postural control, freezing triggered by turning and narrow spaces"
+          },
+          "functional": {
+            "assessment": "MiniBESTest 17/28; TUG 15.8 sec, worsens to 19.6 sec with cognitive dual task; 10MWT self-selected 0.74 m/s. Sit-to-stand requires 2 attempts from low chair without hands."
+          },
+          "regionalAssessments": {
+            "selectedRegions": []
+          }
+        },
+        "assessment": {
+          "primaryImpairments": "Bradykinesia, gait hypokinesia, freezing with turning/doorways, impaired postural control, decreased amplitude of movement, and reduced dual-task mobility associated with Parkinson disease.",
+          "bodyFunctions": "Impaired movement scaling, reduced anticipatory balance strategies, axial rigidity, diminished trunk rotation, and slowed transfer mechanics.",
+          "activityLimitations": "Turning, backing up, narrow-space negotiation, community ambulation, sit-to-stand from low surfaces, and carrying items while walking.",
+          "participationRestrictions": "Avoids busy community events and family outings due to fear of freezing and near-falls.",
+          "ptDiagnosis": "G20.A1 - Parkinson's disease without dyskinesia, without mention of fluctuations; R26.81 - Unsteadiness on feet.",
+          "prognosis": "good",
+          "prognosticFactors": "Strong insight and family support; responds to external cueing; chronic progressive disease limits full restoration but good potential for improved mobility and fall reduction with skilled PT.",
+          "clinicalReasoning": "Presentation is consistent with hypokinetic gait and balance deficits due to Parkinson disease. Skilled PT is indicated for amplitude-based training, cueing strategies, transfer practice, turning/freezing interventions, and progressive balance challenge to maintain safe community participation."
+        },
+        "plan": {
+          "frequency": "2x per week",
+          "duration": "6-8 weeks",
+          "treatmentPlan": "Amplitude-based movement training, gait cueing, turning and doorway practice, reactive and anticipatory balance, sit-to-stand progression, dual-task mobility, and caregiver education for freezing strategies.",
+          "patientEducation": "Medication timing relative to exercise, freezing management with cueing, home fall prevention, big-movement strategy practice, and energy conservation during community activity.",
+          "goalsTable": {
+            "goal_1": {
+              "goalText": "Improve self-selected gait speed from 0.74 m/s to at least 0.9 m/s within 6-8 weeks."
+            },
+            "goal_2": {
+              "goalText": "Reduce TUG from 15.8 sec to 12 sec or less within 8 weeks."
+            },
+            "goal_3": {
+              "goalText": "Demonstrate safe 180-degree turns without freezing in 4 out of 5 trials using internal or external cueing strategies within 6 weeks."
+            },
+            "goal_4": {
+              "goalText": "Improve MiniBESTest from 17/28 to at least 21/28 within 8 weeks."
+            }
+          },
+          "exerciseTable": {
+            "ex_1": {
+              "exerciseText": "Daily amplitude warm-up: exaggerated sit-to-stand, reaches, stepping, and trunk rotation - 10 minutes, daily."
+            },
+            "ex_2": {
+              "exerciseText": "Overground gait with visual and auditory cueing focused on bigger steps and arm swing - 10-15 minutes, daily."
+            },
+            "ex_3": {
+              "exerciseText": "Doorway and turning practice using stop-reset-big step strategy - 10 reps each, daily."
+            },
+            "ex_4": {
+              "exerciseText": "Step and reach balance sequence with multidirectional stepping - 3x8 each direction, 5x/week."
+            }
+          }
+        },
+        "billing": {
+          "diagnosisCodes": [
+            {
+              "code": "G20.A1",
+              "description": "Parkinson's disease without dyskinesia, without mention of fluctuations",
+              "label": "G20.A1 - Parkinson's disease without dyskinesia, without mention of fluctuations",
+              "isPrimary": true
+            },
+            {
+              "code": "R26.81",
+              "description": "Unsteadiness on feet",
+              "label": "R26.81 - Unsteadiness on feet",
+              "isPrimary": false
+            },
+            {
+              "code": "R29.6",
+              "description": "Repeated falls",
+              "label": "R29.6 - Repeated falls",
+              "isPrimary": false
+            }
+          ],
+          "billingCodes": [
+            {
+              "code": "97162",
+              "description": "PT Evaluation - Moderate Complexity",
+              "label": "97162 - PT Evaluation Moderate Complexity",
+              "units": 1,
+              "timeSpent": "45 minutes"
+            },
+            {
+              "code": "97112",
+              "description": "Neuromuscular Re-education",
+              "label": "97112 - Neuromuscular Re-education",
+              "units": 2,
+              "timeSpent": "30 minutes"
+            },
+            {
+              "code": "97116",
+              "description": "Gait Training",
+              "label": "97116 - Gait Training",
+              "units": 1,
+              "timeSpent": "15 minutes"
+            },
+            {
+              "code": "97530",
+              "description": "Therapeutic Activities",
+              "label": "97530 - Therapeutic Activities",
+              "units": 1,
+              "timeSpent": "15 minutes"
+            },
+            {
+              "code": "97750",
+              "description": "Physical Performance Test",
+              "label": "97750 - Physical Performance Test",
+              "units": 1,
+              "timeSpent": "15 minutes"
+            }
+          ],
+          "ordersReferrals": [
+            {
+              "type": "Consult",
+              "details": "Coordinate with speech therapy if voice or cognitive-communication decline becomes more limiting."
+            },
+            {
+              "type": "Referral",
+              "details": "Recommend community exercise program with Parkinson-specific group class after skilled episode of care."
+            }
+          ]
+        }
+      },
+      "daily": [],
+      "progress": null,
+      "discharge": null
+    },
+    "assets": []
+  }
+}

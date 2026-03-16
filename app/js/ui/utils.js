@@ -38,6 +38,7 @@ export function textareaAutoResize(t) {
     const cs = window.getComputedStyle(t);
     const lineHeight = parseFloat(cs.lineHeight) || 18;
     const base = computeBaseHeight();
+    const minHeight = parseFloat(cs.minHeight) || 0;
     // Determine max rows: prefer data attribute, then CSS var, then fallback
     const dataMax = parseInt(t.getAttribute('data-max-rows') || '0', 10);
     const cssVar = parseFloat(cs.getPropertyValue('--textarea-max-rows'));
@@ -46,7 +47,7 @@ export function textareaAutoResize(t) {
     t.style.height = 'auto';
     const contentHeight = t.scrollHeight;
     const maxContent = Math.ceil(lineHeight * maxRows);
-    const desired = Math.max(base, Math.min(contentHeight, maxContent));
+    const desired = Math.max(base, minHeight, Math.min(contentHeight, maxContent));
     t.style.height = desired + 'px';
     // Allow scrolling when capped
     if (contentHeight > maxContent) {
