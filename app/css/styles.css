@@ -2810,6 +2810,21 @@ html[data-theme='dark'] .sticky-top-bar {
   overflow: visible;
 }
 
+/* Simple SOAP Note: clean, minimal free-text layout */
+.simple-soap-section {
+  padding: var(--space-4);
+}
+.simple-soap-section .form-textarea {
+  min-height: 120px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .simple-soap-section .form-textarea {
+    min-height: 100px;
+  }
+}
+
 /* SOAP section header - Fixed responsive underline behavior */
 .soap-section h3,
 .subjective-section h3,

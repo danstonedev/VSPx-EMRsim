@@ -1908,14 +1908,19 @@ export function createChartNavigation(config) {
     onEditorSettingsChange,
   } = config;
 
+  // Detect simple-soap note type from caseData (merged draft)
+  const isSimpleSOAP = caseData?.noteType === 'simple-soap';
+
   // Define top-level sections only; subsections will be derived from DOM anchors to keep sidebar in sync with editor content
-  const sections = [
+  const allSections = [
     { id: 'subjective', label: 'Subjective', icon: '◉' },
     { id: 'objective', label: 'Objective', icon: '⚬' },
     { id: 'assessment', label: 'Assessment', icon: '⬢' },
     { id: 'plan', label: 'Plan', icon: '▪' },
     { id: 'billing', label: 'Billing', icon: '⬟' },
   ];
+  // Simple SOAP notes: only S/O/A/P (no Billing)
+  const sections = isSimpleSOAP ? allSections.filter((s) => s.id !== 'billing') : allSections;
 
   // Map known subsection IDs to data accessors for accurate status
   const subsectionDataResolvers = {
@@ -2053,6 +2058,9 @@ export function createChartNavigation(config) {
   };
 
   function getSubsectionsForSection(sectionId, activeSectionId) {
+    // Simple SOAP notes have no subsections
+    if (isSimpleSOAP) return [];
+
     // If the section is active, prefer DOM-derived anchors
     if (sectionId === activeSectionId) {
       const contentRoot = document.querySelector('.section-content');

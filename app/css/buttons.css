@@ -228,8 +228,8 @@ html[data-theme='dark'] .btn.primary:hover {
   margin: 8px auto var(--space-4); /* center horizontally + add space below */
   border-radius: 9999px;
   border: 1px solid var(--und-green);
-  background: var(--und-green); /* match primary button fill */
-  color: var(--white); /* white plus icon/text */
+  background: var(--white); /* match primary button fill */
+  color: var(--und-green); /* white plus icon/text */
   font-size: 0.875rem; /* 14px, scale + symbol */
   font-weight: 700;
   line-height: 1;
@@ -240,10 +240,22 @@ html[data-theme='dark'] .btn.primary:hover {
     box-shadow 0.2s ease;
 }
 .compact-add-btn:hover {
-  background: var(--und-green-dark);
+  background: var(--und-green-light);
   border-color: var(--und-green-dark);
+  color: var(--und-green-dark);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+:root[data-theme='dark'] .compact-add-btn {
+  border-color: var(--white) !important;
+  background: var(--accent) !important;
+  color: var(--white) !important;
+}
+
+:root[data-theme='dark'] .compact-add-btn:hover {
+  background: var(--primary-dark, #007a33) !important;
+  border-color: var(--white) !important;
 }
 .compact-add-btn:active {
   transform: translateY(0);

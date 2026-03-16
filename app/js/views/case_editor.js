@@ -360,7 +360,14 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
 
   // Render all sections once to form a single scrolling page
   // Use modular section renderer (now loads SOAP sections dynamically)
-  const { sectionRoots, sectionHeaders } = await renderAllSections(contentRoot, draft, save);
+  // Branch: use simple renderer for simple-soap notes
+  let sectionRoots, sectionHeaders;
+  if (draft.noteType === 'simple-soap') {
+    const { renderAllSimpleSections } = await import('./SimpleSectionRenderer.js');
+    ({ sectionRoots, sectionHeaders } = await renderAllSimpleSections(contentRoot, draft, save));
+  } else {
+    ({ sectionRoots, sectionHeaders } = await renderAllSections(contentRoot, draft, save));
+  }
 
   // Create scroll utility function
   const scrollToPercentWithinActive = createScrollToPercentWithinActive(

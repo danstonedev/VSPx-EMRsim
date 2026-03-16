@@ -548,8 +548,12 @@ function createBlankCaseTemplate() {
  */
 function createDefaultDraft() {
   return {
+    // Note type: 'standard' (full SOAP) or 'simple-soap' (free-text only)
+    noteType: 'standard',
     // Student-owned metadata for untethered notes
     noteTitle: '',
+    // Simple SOAP free-text data (used when noteType === 'simple-soap')
+    simpleSOAP: { subjective: '', objective: '', assessment: '', plan: '' },
     subjective: {
       chiefComplaint: '',
       historyOfPresentIllness: '',
@@ -1008,6 +1012,8 @@ function normalizeParsedRegionalAssessments(ra) {
 }
 
 function mergeParsedRest(parsed, draft, isFacultyMode) {
+  if (parsed.noteType) draft.noteType = parsed.noteType;
+  if (parsed.simpleSOAP) draft.simpleSOAP = parsed.simpleSOAP;
   if (parsed.noteTitle) draft.noteTitle = parsed.noteTitle;
   if (parsed.assessment) draft.assessment = parsed.assessment;
   if (parsed.goals) draft.goals = parsed.goals;

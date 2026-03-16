@@ -919,1344 +919,1400 @@ export function exportToWord(caseData, draft) {
       );
     });
 
-    // SUBJECTIVE Section (draft-first mapping)
-    elements.push(createSectionDivider());
-    elements.push(createWebSectionHeader('SUBJECTIVE'));
-    const subj = (draft && draft.subjective) || {};
-    elements.push(createSectionHeader('History', 2));
-    const hpiLines = [];
-    const chiefConcern =
-      subj.chiefComplaint || getSafeValue(caseData, 'history.chief_complaint') || '';
-    const detailedHistory =
-      subj.historyOfPresentIllness || getSafeValue(caseData, 'history.hpi') || '';
-    if (chiefConcern) hpiLines.push(`Chief Concern: ${chiefConcern}`);
-    if (detailedHistory) hpiLines.push(`History of Present Illness: ${detailedHistory}`);
-    if (hpiLines.length) {
-      if (chiefConcern)
-        elements.push(
-          createLabelValueLine('Chief Concern', chiefConcern, { indentLeft: FORMAT.indent.level1 }),
-        );
-      if (detailedHistory)
-        elements.push(
-          createLabelValueLine('History of Present Illness', detailedHistory, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    elements.push(createSectionHeader('Symptoms', 2));
-    const painHasAny = !!(
-      subj.painLocation ||
-      subj.painScale ||
-      subj.painQuality ||
-      subj.painPattern ||
-      subj.aggravatingFactors ||
-      subj.easingFactors
-    );
-    if (painHasAny) {
-      if (subj.painLocation)
-        elements.push(
-          createLabelValueLine('Location', subj.painLocation, { indentLeft: FORMAT.indent.level1 }),
-        );
-      if (subj.painScale)
-        elements.push(
-          createLabelValueLine('Pain Scale', `${subj.painScale}/10`, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.painQuality)
-        elements.push(
-          createLabelValueLine('Quality', subj.painQuality, { indentLeft: FORMAT.indent.level1 }),
-        );
-      if (subj.painPattern)
-        elements.push(
-          createLabelValueLine('Pattern', subj.painPattern, { indentLeft: FORMAT.indent.level1 }),
-        );
-      if (subj.aggravatingFactors)
-        elements.push(
-          createLabelValueLine('Aggravating', subj.aggravatingFactors, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.easingFactors)
-        elements.push(
-          createLabelValueLine('Easing', subj.easingFactors, { indentLeft: FORMAT.indent.level1 }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('Pain assessment not completed', { indentLeft: FORMAT.indent.level1 }),
-      );
-    }
-    elements.push(createSectionHeader('Functional Status', 2));
-    const hasFunctional = !!(subj.functionalLimitations || subj.priorLevel || subj.patientGoals);
-    if (hasFunctional) {
-      if (subj.functionalLimitations)
-        elements.push(
-          createLabelValueLine('Current Limitations', subj.functionalLimitations, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.priorLevel)
-        elements.push(
-          createLabelValueLine('Prior Level of Function', subj.priorLevel, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.patientGoals)
-        elements.push(
-          createLabelValueLine('Patient Goals', subj.patientGoals, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('Functional status not documented', {
-          indentLeft: FORMAT.indent.level1,
-        }),
-      );
-    }
-    elements.push(createSectionHeader('Additional History', 2));
-    const hasAddHist = !!(subj.medicationsCurrent || subj.redFlags || subj.additionalHistory);
-    if (hasAddHist) {
-      if (subj.medicationsCurrent)
-        elements.push(
-          createLabelValueLine('Current Medications', subj.medicationsCurrent, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.redFlags)
-        elements.push(
-          createLabelValueLine('Red Flags / Screening', subj.redFlags, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (subj.additionalHistory)
-        elements.push(
-          createLabelValueLine('Additional Relevant History', subj.additionalHistory, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('No additional history provided', { indentLeft: FORMAT.indent.level1 }),
-      );
-    }
+    if (draft && draft.noteType === 'simple-soap') {
+      const soap = draft.simpleSOAP || {};
 
-    // Interview Q/A Section
-    const qaItems = Array.isArray(subj.qaItems)
-      ? subj.qaItems.filter((q) => q.question || q.response)
-      : [];
-    if (qaItems.length > 0) {
-      elements.push(createSectionHeader('Interview Q/A', 2));
-      elements.push(
-        createBodyParagraph(
-          `${qaItems.length} question${qaItems.length !== 1 ? 's' : ''} documented`,
-          {
+      // S - Subjective
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('SUBJECTIVE'));
+      elements.push(createBodyParagraph(soap.subjective, { indentLeft: FORMAT.indent.level1 }));
+
+      // O - Objective
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('OBJECTIVE'));
+      elements.push(createBodyParagraph(soap.objective, { indentLeft: FORMAT.indent.level1 }));
+
+      // A - Assessment
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('ASSESSMENT'));
+      elements.push(createBodyParagraph(soap.assessment, { indentLeft: FORMAT.indent.level1 }));
+
+      // P - Plan
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('PLAN'));
+      elements.push(createBodyParagraph(soap.plan, { indentLeft: FORMAT.indent.level1 }));
+    } else {
+      // STANDARD SOAP NOTE FORMAT
+      // SUBJECTIVE Section (draft-first mapping)
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('SUBJECTIVE'));
+      const subj = (draft && draft.subjective) || {};
+      elements.push(createSectionHeader('History', 2));
+      const hpiLines = [];
+      const chiefConcern =
+        subj.chiefComplaint || getSafeValue(caseData, 'history.chief_complaint') || '';
+      const detailedHistory =
+        subj.historyOfPresentIllness || getSafeValue(caseData, 'history.hpi') || '';
+      if (chiefConcern) hpiLines.push(`Chief Concern: ${chiefConcern}`);
+      if (detailedHistory) hpiLines.push(`History of Present Illness: ${detailedHistory}`);
+      if (hpiLines.length) {
+        if (chiefConcern)
+          elements.push(
+            createLabelValueLine('Chief Concern', chiefConcern, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (detailedHistory)
+          elements.push(
+            createLabelValueLine('History of Present Illness', detailedHistory, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
+        elements.push(
+          createBodyParagraph('— not documented', {
             indentLeft: FORMAT.indent.level1,
             italics: true,
             color: FORMAT.colors.grayText,
-          },
-        ),
+          }),
+        );
+      }
+      elements.push(createSectionHeader('Symptoms', 2));
+      const painHasAny = !!(
+        subj.painLocation ||
+        subj.painScale ||
+        subj.painQuality ||
+        subj.painPattern ||
+        subj.aggravatingFactors ||
+        subj.easingFactors
       );
-      qaItems.forEach((item, idx) => {
-        const tagStr = (item.tags || []).length ? ` [${item.tags.join(', ')}]` : '';
+      if (painHasAny) {
+        if (subj.painLocation)
+          elements.push(
+            createLabelValueLine('Location', subj.painLocation, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.painScale)
+          elements.push(
+            createLabelValueLine('Pain Scale', `${subj.painScale}/10`, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.painQuality)
+          elements.push(
+            createLabelValueLine('Quality', subj.painQuality, { indentLeft: FORMAT.indent.level1 }),
+          );
+        if (subj.painPattern)
+          elements.push(
+            createLabelValueLine('Pattern', subj.painPattern, { indentLeft: FORMAT.indent.level1 }),
+          );
+        if (subj.aggravatingFactors)
+          elements.push(
+            createLabelValueLine('Aggravating', subj.aggravatingFactors, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.easingFactors)
+          elements.push(
+            createLabelValueLine('Easing', subj.easingFactors, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
         elements.push(
-          createLabelValueLine(`Q${idx + 1}`, (item.question || '(no question)') + tagStr, {
+          createBodyParagraph('Pain assessment not completed', {
             indentLeft: FORMAT.indent.level1,
-            bold: true,
           }),
         );
+      }
+      elements.push(createSectionHeader('Functional Status', 2));
+      const hasFunctional = !!(subj.functionalLimitations || subj.priorLevel || subj.patientGoals);
+      if (hasFunctional) {
+        if (subj.functionalLimitations)
+          elements.push(
+            createLabelValueLine('Current Limitations', subj.functionalLimitations, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.priorLevel)
+          elements.push(
+            createLabelValueLine('Prior Level of Function', subj.priorLevel, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.patientGoals)
+          elements.push(
+            createLabelValueLine('Patient Goals', subj.patientGoals, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
         elements.push(
-          createLabelValueLine('Response', item.response || '(no response)', {
-            indentLeft: FORMAT.indent.level2 || FORMAT.indent.level1 * 2,
+          createBodyParagraph('Functional status not documented', {
+            indentLeft: FORMAT.indent.level1,
           }),
         );
-      });
-    }
-
-    // OBJECTIVE Section (draft-first)
-    elements.push(createSectionDivider());
-    elements.push(createWebSectionHeader('OBJECTIVE'));
-    const obj = (draft && draft.objective) || {};
-    // General observations & vitals
-    const vitals = obj.vitals || {};
-    const obs = obj.observations || {};
-
-    // Vital Signs
-    elements.push(createSectionHeader('Vital Signs', 2));
-    const vitalsParts = [
-      vitals.bpSystolic || vitals.bpDiastolic
-        ? `BP: ${vitals.bpSystolic || '?'}/${vitals.bpDiastolic || '?'} mmHg`
-        : null,
-      vitals.hr ? `HR: ${vitals.hr} bpm` : null,
-      vitals.rr ? `RR: ${vitals.rr} breaths/min` : null,
-      vitals.spo2 ? `SpO2: ${vitals.spo2}%` : null,
-      vitals.temperature ? `Temp: ${vitals.temperature}°F` : null,
-      vitals.heightFt || vitals.heightIn
-        ? `Height: ${vitals.heightFt || 0}'${vitals.heightIn || 0}"`
-        : null,
-      vitals.weight ? `Weight: ${vitals.weight} lbs` : null,
-      vitals.bmi ? `BMI: ${vitals.bmi}` : null,
-    ].filter(Boolean);
-
-    if (vitalsParts.length > 0) {
-      elements.push(
-        createBodyParagraph(vitalsParts.join(' | '), { indentLeft: FORMAT.indent.level1 }),
-      );
-    } else {
-      elements.push(
-        createBodyParagraph('Not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-
-    // General Observations
-    elements.push(createSectionHeader('General Observations', 2));
-    const obsFields = [
-      { label: 'Mental Status & Affect', value: obs.generalAppearance },
-      { label: 'Posture & Alignment', value: obs.posture },
-      { label: 'Gait', value: obs.gait }, // legacy field — printed if populated from older cases
-    ];
-
-    let hasObs = false;
-    obsFields.forEach((f) => {
-      if (f.value) {
-        hasObs = true;
-        elements.push(createLabelValueLine(f.label, f.value, { indentLeft: FORMAT.indent.level1 }));
       }
-    });
-
-    // Fallback for legacy text if new fields are empty but old text exists
-    if (!hasObs && obj.text) {
-      elements.push(createBodyParagraph(obj.text, { indentLeft: FORMAT.indent.level1 }));
-    } else if (!hasObs) {
-      elements.push(
-        createBodyParagraph('Not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    // Inspection/Palpation
-    elements.push(createSectionHeader('Inspection', 2));
-    elements.push(
-      createBodyParagraph(getSafeValue(obj, 'inspection.visual', ''), {
-        indentLeft: FORMAT.indent.level1,
-      }),
-    );
-    elements.push(createSectionHeader('Palpation', 2));
-    elements.push(
-      createBodyParagraph(getSafeValue(obj, 'palpation.findings', ''), {
-        indentLeft: FORMAT.indent.level1,
-      }),
-    );
-    // Regional Assessment - Enhanced table formatting
-    // Indent header slightly to visually align with indented tables (match gutter, not full table width)
-    elements.push(
-      createSectionHeader('Regional Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
-    );
-    const ra = obj.regionalAssessments || {};
-
-    // Helper to slugify a movement name for PROM row keys
-    const slug = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, '-');
-
-    // Build combined reference lists based on selected regions
-    const selected =
-      Array.isArray(ra.selectedRegions) && ra.selectedRegions.length
-        ? ra.selectedRegions.filter((k) => regionalAssessments[k])
-        : []; // if none selected, we won't render any tables
-
-    // Use consistent column widths across Regional Assessment tables so L/R align between tables
-    // Web-like proportions scaled to fit 9360 twips printable width: ~50% / ~14% / ~14% / ~22%
-    // Derived from proposal (5200/1400/1400/2360) but scaled to 9360 total width
-    // Adjusted widths: slightly narrower first content column to free space for Notes
-    const RA_COL_WIDTHS = [2600, 1200, 1200, 4360];
-    const RA_TOTAL_WIDTH = RA_COL_WIDTHS.reduce((a, b) => a + b, 0);
-    const computeWidthsNoNotes = () => {
-      const base = [RA_COL_WIDTHS[0], RA_COL_WIDTHS[1], RA_COL_WIDTHS[2]]; // description, left, right
-      const totalBase = base.reduce((a, b) => a + b, 0);
-      const scale = RA_TOTAL_WIDTH / totalBase; // scale up to occupy full printable width
-      let scaled = base.map((w) => Math.round(w * scale));
-      // Adjust rounding difference if any
-      const diff = RA_TOTAL_WIDTH - scaled.reduce((a, b) => a + b, 0);
-      if (diff !== 0) scaled[0] += diff; // put any leftover into description column
-      return scaled; // returns array of 3 widths summing to RA_TOTAL_WIDTH
-    };
-
-    // Web-like table factory: soft borders, dark slate header, roomy padding, zebra rows
-    /* eslint-disable complexity */
-    function createWebLikeTable(data, headers = [], columnWidths, alignments = [], opts = {}) {
-      let effectiveHeaders = headers;
-      let effectiveData = data;
-      let effectiveWidths = columnWidths;
-      let effectiveAlignments = alignments;
-
-      // Simulated indent via leading empty gutter column (preferred when native indent not rendering)
-      if (opts && opts.indentLeft && opts.simulateIndent && Array.isArray(columnWidths)) {
-        const gutter = opts.simulateIndentWidth || Math.min(opts.indentLeft, 800); // cap gutter size
-        effectiveWidths = [...columnWidths];
-        if (effectiveWidths.length > 0) {
-          effectiveWidths[0] = Math.max(400, effectiveWidths[0] - gutter);
-        }
-        effectiveWidths.unshift(gutter);
-        effectiveHeaders = [''].concat(headers);
-        effectiveData = data.map((row) => [''].concat(row));
-        effectiveAlignments = ['left'].concat(alignments);
-      }
-
-      const rows = [];
-      if (effectiveHeaders.length) {
-        const headerCells = effectiveHeaders.map((h, i) => {
-          const isIndentCol = opts.simulateIndent && effectiveHeaders[0] === '' && i === 0;
-          const isFirstContentCol = opts.simulateIndent && effectiveHeaders[0] === '' && i === 1; // remove left border so gutter has no separating rule
-          // Build borders: skip all for gutter; suppress left rule for first content column; add top rule (except gutter) when simulating indent
-          let headerBorders;
-          if (isIndentCol) {
-            headerBorders = {
-              top: { style: BorderStyle.NONE, size: 0 },
-              left: { style: BorderStyle.NONE, size: 0 },
-              right: { style: BorderStyle.NONE, size: 0 },
-              bottom: { style: BorderStyle.NONE, size: 0 },
-            };
-          } else {
-            const b = {};
-            if (isFirstContentCol) b.left = { style: BorderStyle.NONE, size: 0 };
-            if (opts.simulateIndent)
-              b.top = { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid };
-            headerBorders = Object.keys(b).length ? b : undefined;
-          }
-          return new TableCell({
-            children: [
-              new Paragraph({
-                children: isIndentCol
-                  ? [createTextRun('')] // keep empty
-                  : [
-                      createTextRun(h, {
-                        bold: true,
-                        size: FORMAT.sizes.small,
-                        color: FORMAT.colors.white,
-                      }),
-                    ],
-                spacing: { before: 0, after: 0 },
-              }),
-            ],
-            shading: isIndentCol ? undefined : { fill: FORMAT.colors.neutralHeader },
-            margins: isIndentCol
-              ? { top: 0, bottom: 0, left: 0, right: 0 }
-              : { top: 30, bottom: 30, left: 100, right: 100 },
-            verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
-            borders: headerBorders,
-            width:
-              Array.isArray(effectiveWidths) && effectiveWidths[i]
-                ? { size: effectiveWidths[i], type: WidthType.DXA }
-                : undefined,
-          });
-        });
-        rows.push(new TableRow({ children: headerCells, tableHeader: true }));
-      }
-
-      effectiveData.forEach((rowData, rIdx) => {
-        const cells = rowData.map((cell, cIdx) => {
-          const isIndentCol = opts.simulateIndent && effectiveHeaders[0] === '' && cIdx === 0;
-          const isFirstContentCol = opts.simulateIndent && effectiveHeaders[0] === '' && cIdx === 1;
-          // Determine header label for this column (accounting for indent col if present)
-          const headerLabel = effectiveHeaders[cIdx] || '';
-          let displayVal = (cell ?? '').toString();
-          if (!displayVal && (headerLabel === 'Left' || headerLabel === 'Right')) {
-            displayVal = '—'; // em dash placeholder for clarity when no value
-          }
-          // eslint-disable-next-line no-unused-vars
-          const isLastBodyRow = rIdx === effectiveData.length - 1;
-          return new TableCell({
-            children: [
-              new Paragraph({
-                children: isIndentCol
-                  ? [createTextRun('')]
-                  : [
-                      createTextRun(displayVal, {
-                        size: FORMAT.sizes.small,
-                        color: FORMAT.colors.black,
-                      }),
-                    ],
-                spacing: { before: 0, after: 0 },
-                alignment:
-                  effectiveAlignments[cIdx] === 'right'
-                    ? AlignmentType.RIGHT
-                    : effectiveAlignments[cIdx] === 'center'
-                      ? AlignmentType.CENTER
-                      : AlignmentType.LEFT,
-              }),
-            ],
-            margins: isIndentCol
-              ? { top: 0, bottom: 0, left: 0, right: 0 }
-              : { top: 60, bottom: 60, left: 100, right: 100 },
-            verticalAlign: typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
-            shading: isIndentCol
-              ? undefined
-              : rIdx % 2 === 1
-                ? { fill: FORMAT.colors.zebra }
-                : undefined,
-            borders: (function () {
-              if (isIndentCol) {
-                return {
-                  top: { style: BorderStyle.NONE, size: 0 },
-                  left: { style: BorderStyle.NONE, size: 0 },
-                  right: { style: BorderStyle.NONE, size: 0 },
-                  bottom: { style: BorderStyle.NONE, size: 0 },
-                };
-              }
-              const base = {};
-              if (isFirstContentCol) base.left = { style: BorderStyle.NONE, size: 0 };
-              // Provide bottom rule on every row (acts as row separator & final bottom line)
-              base.bottom = { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid };
-              return base;
-            })(),
-            width:
-              Array.isArray(effectiveWidths) && effectiveWidths[cIdx]
-                ? { size: effectiveWidths[cIdx], type: WidthType.DXA }
-                : undefined,
-          });
-        });
-        rows.push(new TableRow({ children: cells, cantSplit: true }));
-      });
-
-      return new Table({
-        rows,
-        layout: typeof TableLayoutType !== 'undefined' ? TableLayoutType.FIXED : undefined,
-        width:
-          Array.isArray(effectiveWidths) && effectiveWidths.length
-            ? { size: effectiveWidths.reduce((a, b) => a + b, 0), type: WidthType.DXA }
-            : { size: 100, type: WidthType.PERCENTAGE },
-        // If we simulate an indent with a gutter column, skip native indent to avoid doubling
-        indent:
-          opts && typeof opts.indentLeft !== 'undefined' && !opts.simulateIndent
-            ? { size: opts.indentLeft, type: WidthType.DXA }
-            : undefined,
-        borders: {
-          top: opts.simulateIndent
-            ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
-            : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-          bottom: opts.simulateIndent
-            ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
-            : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-          left: opts.simulateIndent
-            ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
-            : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-          right: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-          insideHorizontal: opts.simulateIndent
-            ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
-            : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-          insideVertical: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
-        },
-      });
-    }
-
-    // PROM (Passive ROM) export: rebuild rows from canonical definitions + saved values
-    // Combined ROM export (AROM + PROM + RIMs in a single per-region table)
-    // Uses regionKey-prefixed keys introduced in CombinedRomSection for data isolation.
-    const aromNamespaced = ra.arom || {}; // New AROM storage (namespaced)
-    const promNamespaced = ra.prom || {}; // PROM already used; also namespaced now
-    const rimsNamespaced = ra.rims || {}; // RIMs namespaced keys
-
-    const readCombinedVal = (obj, regionKey, baseKey) => {
-      if (!obj) return '';
-      const pref = `${regionKey}:${baseKey}`;
-      if (Object.prototype.hasOwnProperty.call(obj, pref)) return obj[pref] || '';
-      // Legacy fallback (pre‑namespacing)
-      return obj[baseKey] || '';
-    };
-
-    if (selected.length) {
-      elements.push(
-        createSectionHeader('Combined ROM Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
-      );
-
-      selected.forEach((regionKey) => {
-        const region = regionalAssessments[regionKey];
-        if (!region || !Array.isArray(region.rom) || region.rom.length === 0) return;
-
-        // Region subheading removed per request; region now appears in top-left header cell
-
-        // Helper to drop region prefixes from joint names for cleaner movement labels
-        const motionLabelFromJoint = (rk, jointName) => {
-          const prefixMap = {
-            hip: ['Hip '],
-            knee: ['Knee '],
-            ankle: ['Ankle '],
-            shoulder: ['Shoulder '],
-            elbow: ['Elbow '],
-            'wrist-hand': ['Wrist ', 'Forearm '],
-            'cervical-spine': ['Cervical '],
-            'thoracic-spine': ['Thoracic '],
-            'lumbar-spine': ['Lumbar '],
-          };
-          const prefixes = prefixMap[rk] || [];
-          for (const p of prefixes)
-            if ((jointName || '').startsWith(p)) return jointName.slice(p.length);
-          return jointName;
-        };
-
-        // Group bilateral/midline motions similar to UI logic
-        const grouped = {};
-        region.rom.forEach((item) => {
-          const jointName = item.joint;
-          if (!grouped[jointName]) {
-            grouped[jointName] = {
-              name: jointName,
-              normal: item.normal,
-              left: null,
-              right: null,
-              midline: item.side === '',
-            };
-          }
-          if (item.side === 'L') grouped[jointName].left = item;
-          else if (item.side === 'R') grouped[jointName].right = item;
-          else grouped[jointName].midline = true;
-        });
-
-        // Build rows: Motion | L AROM | L PROM | L RIM | R AROM | R PROM | R RIM
-        const rows = Object.keys(grouped).map((jointName) => {
-          const g = grouped[jointName];
-          const motionName = motionLabelFromJoint(regionKey, jointName);
-          if (g.midline) {
-            const arom = formatRom(readCombinedVal(aromNamespaced, regionKey, jointName));
-            const prom = formatRom(readCombinedVal(promNamespaced, regionKey, jointName));
-            const rimRaw = readCombinedVal(rimsNamespaced, regionKey, jointName);
-            const rim = getRimsLabel(rimRaw);
-            return [motionName, arom, prom, rim, '—', '—', '—'];
-          }
-          const leftSuffix = `${jointName}_L`;
-          const rightSuffix = `${jointName}_R`;
-          const la = formatRom(readCombinedVal(aromNamespaced, regionKey, leftSuffix));
-          const lp = formatRom(readCombinedVal(promNamespaced, regionKey, leftSuffix));
-          const lr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, leftSuffix));
-          const ra = formatRom(readCombinedVal(aromNamespaced, regionKey, rightSuffix));
-          const rp = formatRom(readCombinedVal(promNamespaced, regionKey, rightSuffix));
-          const rr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, rightSuffix));
-          return [motionName, la, lp, lr, ra || '—', rp || '—', rr || '—'];
-        });
-
-        // Define headers; keep single-row header for docx simplicity
-        const alignments = ['left', 'right', 'right', 'left', 'right', 'right', 'left'];
-        // Fixed widths tuned so RIM columns fit one line
-        // [Motion, L AROM, L PROM, L RIM, R AROM, R PROM, R RIM]
-        const widths = [2400, 900, 1000, 1800, 900, 1000, 1800];
+      elements.push(createSectionHeader('Additional History', 2));
+      const hasAddHist = !!(subj.medicationsCurrent || subj.redFlags || subj.additionalHistory);
+      if (hasAddHist) {
+        if (subj.medicationsCurrent)
+          elements.push(
+            createLabelValueLine('Current Medications', subj.medicationsCurrent, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.redFlags)
+          elements.push(
+            createLabelValueLine('Red Flags / Screening', subj.redFlags, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.additionalHistory)
+          elements.push(
+            createLabelValueLine('Additional Relevant History', subj.additionalHistory, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
         elements.push(
-          createCombinedRomDocxTable(
-            (region.name || '').toString().toUpperCase(),
-            rows,
-            widths,
-            alignments,
+          createBodyParagraph('No additional history provided', {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      }
+
+      // Interview Q/A Section
+      const qaItems = Array.isArray(subj.qaItems)
+        ? subj.qaItems.filter((q) => q.question || q.response)
+        : [];
+      if (qaItems.length > 0) {
+        elements.push(createSectionHeader('Interview Q/A', 2));
+        elements.push(
+          createBodyParagraph(
+            `${qaItems.length} question${qaItems.length !== 1 ? 's' : ''} documented`,
+            {
+              indentLeft: FORMAT.indent.level1,
+              italics: true,
+              color: FORMAT.colors.grayText,
+            },
           ),
         );
-        elements.push(createSpacer(0, 160));
-      });
-    }
-
-    // MMT export: supports new object format { slug: {name,left,right} }
-    // and legacy numeric-index format { 0: '4/5', 1: '5/5' }
-    const mmtSaved = ra.mmt || {};
-    if (selected.length) {
-      const mmtRows = [];
-      const isNewFormat = Object.values(mmtSaved).some(
-        (v) => v && typeof v === 'object' && 'left' in v,
-      );
-
-      if (isNewFormat) {
-        Object.keys(mmtSaved).forEach((id) => {
-          const row = mmtSaved[id];
-          if (row && typeof row === 'object') {
-            mmtRows.push([row.name || '', row.left || '', row.right || '']);
-          }
-        });
-      } else {
-        // Legacy format: reconstruct from region definitions + numeric index values
-        const mmtGroups = {};
-        selected.forEach((regionKey) => {
-          const region = regionalAssessments[regionKey];
-          (region?.mmt || []).forEach((item, idx) => {
-            const baseName = item.name || item.joint || item.muscle;
-            if (!mmtGroups[baseName])
-              mmtGroups[baseName] = { left: null, right: null, bilateral: null };
-            if (item.side === 'L') mmtGroups[baseName].left = idx;
-            else if (item.side === 'R') mmtGroups[baseName].right = idx;
-            else mmtGroups[baseName].bilateral = idx;
-          });
-        });
-        Object.keys(mmtGroups).forEach((name) => {
-          const g = mmtGroups[name];
-          const leftVal = g.left != null ? mmtSaved[g.left] || '' : '';
-          const rightVal = g.right != null ? mmtSaved[g.right] || '' : '';
-          mmtRows.push([name, leftVal, rightVal]);
+        qaItems.forEach((item, idx) => {
+          const tagStr = (item.tags || []).length ? ` [${item.tags.join(', ')}]` : '';
+          elements.push(
+            createLabelValueLine(`Q${idx + 1}`, (item.question || '(no question)') + tagStr, {
+              indentLeft: FORMAT.indent.level1,
+              bold: true,
+            }),
+          );
+          elements.push(
+            createLabelValueLine('Response', item.response || '(no response)', {
+              indentLeft: FORMAT.indent.level2 || FORMAT.indent.level1 * 2,
+            }),
+          );
         });
       }
 
-      if (mmtRows.length) {
-        let headers = ['Manual Muscle Testing', 'Left', 'Right'];
-        let alignments = ['left', 'right', 'right'];
-        let rowsData = mmtRows.map((r) => [r[0], formatMmt(r[1]), formatMmt(r[2])]);
-        let widths = computeWidthsNoNotes();
+      // OBJECTIVE Section (draft-first)
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('OBJECTIVE'));
+      const obj = (draft && draft.objective) || {};
+      // General observations & vitals
+      const vitals = obj.vitals || {};
+      const obs = obj.observations || {};
+
+      // Vital Signs
+      elements.push(createSectionHeader('Vital Signs', 2));
+      const vitalsParts = [
+        vitals.bpSystolic || vitals.bpDiastolic
+          ? `BP: ${vitals.bpSystolic || '?'}/${vitals.bpDiastolic || '?'} mmHg`
+          : null,
+        vitals.hr ? `HR: ${vitals.hr} bpm` : null,
+        vitals.rr ? `RR: ${vitals.rr} breaths/min` : null,
+        vitals.spo2 ? `SpO2: ${vitals.spo2}%` : null,
+        vitals.temperature ? `Temp: ${vitals.temperature}°F` : null,
+        vitals.heightFt || vitals.heightIn
+          ? `Height: ${vitals.heightFt || 0}'${vitals.heightIn || 0}"`
+          : null,
+        vitals.weight ? `Weight: ${vitals.weight} lbs` : null,
+        vitals.bmi ? `BMI: ${vitals.bmi}` : null,
+      ].filter(Boolean);
+
+      if (vitalsParts.length > 0) {
         elements.push(
-          createWebLikeTable(rowsData, headers, widths, alignments, {
-            indentLeft: FORMAT.indent.level2,
-            simulateIndent: true,
-            simulateIndentWidth: 360,
+          createBodyParagraph(vitalsParts.join(' | '), { indentLeft: FORMAT.indent.level1 }),
+        );
+      } else {
+        elements.push(
+          createBodyParagraph('Not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
           }),
         );
-        elements.push(createSpacer(0, 160));
       }
-    }
 
-    // Special Tests export: align by combined list order to recover test name/purpose
-    const testsSaved = ra.specialTests || {};
-    if (selected.length) {
-      const combinedTests = [];
-      selected.forEach((regionKey) => {
-        const region = regionalAssessments[regionKey];
-        (region?.specialTests || []).forEach((test) => combinedTests.push(test));
+      // General Observations
+      elements.push(createSectionHeader('General Observations', 2));
+      const obsFields = [
+        { label: 'Mental Status & Affect', value: obs.generalAppearance },
+        { label: 'Posture & Alignment', value: obs.posture },
+        { label: 'Gait', value: obs.gait }, // legacy field — printed if populated from older cases
+      ];
+
+      let hasObs = false;
+      obsFields.forEach((f) => {
+        if (f.value) {
+          hasObs = true;
+          elements.push(
+            createLabelValueLine(f.label, f.value, { indentLeft: FORMAT.indent.level1 }),
+          );
+        }
       });
 
-      // Map saved values to UI display labels to mirror the page
-      const labelizeTest = (val) => {
-        if (!val) return 'Not performed';
-        const map = {
-          positive: 'Positive',
-          negative: 'Negative',
-          inconclusive: 'Inconclusive',
-          unable: 'Unable to perform',
-        };
-        return map[val] || val;
+      // Fallback for legacy text if new fields are empty but old text exists
+      if (!hasObs && obj.text) {
+        elements.push(createBodyParagraph(obj.text, { indentLeft: FORMAT.indent.level1 }));
+      } else if (!hasObs) {
+        elements.push(
+          createBodyParagraph('Not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
+          }),
+        );
+      }
+      // Inspection/Palpation
+      elements.push(createSectionHeader('Inspection', 2));
+      elements.push(
+        createBodyParagraph(getSafeValue(obj, 'inspection.visual', ''), {
+          indentLeft: FORMAT.indent.level1,
+        }),
+      );
+      elements.push(createSectionHeader('Palpation', 2));
+      elements.push(
+        createBodyParagraph(getSafeValue(obj, 'palpation.findings', ''), {
+          indentLeft: FORMAT.indent.level1,
+        }),
+      );
+      // Regional Assessment - Enhanced table formatting
+      // Indent header slightly to visually align with indented tables (match gutter, not full table width)
+      elements.push(
+        createSectionHeader('Regional Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
+      );
+      const ra = obj.regionalAssessments || {};
+
+      // Helper to slugify a movement name for PROM row keys
+      const slug = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, '-');
+
+      // Build combined reference lists based on selected regions
+      const selected =
+        Array.isArray(ra.selectedRegions) && ra.selectedRegions.length
+          ? ra.selectedRegions.filter((k) => regionalAssessments[k])
+          : []; // if none selected, we won't render any tables
+
+      // Use consistent column widths across Regional Assessment tables so L/R align between tables
+      // Web-like proportions scaled to fit 9360 twips printable width: ~50% / ~14% / ~14% / ~22%
+      // Derived from proposal (5200/1400/1400/2360) but scaled to 9360 total width
+      // Adjusted widths: slightly narrower first content column to free space for Notes
+      const RA_COL_WIDTHS = [2600, 1200, 1200, 4360];
+      const RA_TOTAL_WIDTH = RA_COL_WIDTHS.reduce((a, b) => a + b, 0);
+      const computeWidthsNoNotes = () => {
+        const base = [RA_COL_WIDTHS[0], RA_COL_WIDTHS[1], RA_COL_WIDTHS[2]]; // description, left, right
+        const totalBase = base.reduce((a, b) => a + b, 0);
+        const scale = RA_TOTAL_WIDTH / totalBase; // scale up to occupy full printable width
+        let scaled = base.map((w) => Math.round(w * scale));
+        // Adjust rounding difference if any
+        const diff = RA_TOTAL_WIDTH - scaled.reduce((a, b) => a + b, 0);
+        if (diff !== 0) scaled[0] += diff; // put any leftover into description column
+        return scaled; // returns array of 3 widths summing to RA_TOTAL_WIDTH
       };
 
-      const testsRows = combinedTests.map((test, idx) => {
-        const id = `test-${idx}`;
-        const saved = testsSaved[id] || {};
-        return [saved.name || test.name || '', labelizeTest(saved.left), labelizeTest(saved.right)];
-      });
+      // Web-like table factory: soft borders, dark slate header, roomy padding, zebra rows
+      /* eslint-disable complexity */
+      function createWebLikeTable(data, headers = [], columnWidths, alignments = [], opts = {}) {
+        let effectiveHeaders = headers;
+        let effectiveData = data;
+        let effectiveWidths = columnWidths;
+        let effectiveAlignments = alignments;
 
-      // Include user-added tests (IDs that don't match the test-N pattern)
-      Object.keys(testsSaved).forEach((id) => {
-        if (/^test-\d+$/.test(id)) return; // already handled above
-        const saved = testsSaved[id];
-        if (saved && saved.name) {
-          testsRows.push([saved.name, labelizeTest(saved.left), labelizeTest(saved.right)]);
+        // Simulated indent via leading empty gutter column (preferred when native indent not rendering)
+        if (opts && opts.indentLeft && opts.simulateIndent && Array.isArray(columnWidths)) {
+          const gutter = opts.simulateIndentWidth || Math.min(opts.indentLeft, 800); // cap gutter size
+          effectiveWidths = [...columnWidths];
+          if (effectiveWidths.length > 0) {
+            effectiveWidths[0] = Math.max(400, effectiveWidths[0] - gutter);
+          }
+          effectiveWidths.unshift(gutter);
+          effectiveHeaders = [''].concat(headers);
+          effectiveData = data.map((row) => [''].concat(row));
+          effectiveAlignments = ['left'].concat(alignments);
         }
-      });
 
-      if (testsRows.length) {
-        let headers = ['Special Tests', 'Left', 'Right'];
-        let alignments = ['left', 'right', 'right'];
-        let rowsData = testsRows.map((r) => r.slice(0, 3));
-        let widths = computeWidthsNoNotes();
-        elements.push(
-          createWebLikeTable(rowsData, headers, widths, alignments, {
-            indentLeft: FORMAT.indent.level2,
-            simulateIndent: true,
-            simulateIndentWidth: 360,
-          }),
-        );
-        elements.push(createSpacer(0, 160));
+        const rows = [];
+        if (effectiveHeaders.length) {
+          const headerCells = effectiveHeaders.map((h, i) => {
+            const isIndentCol = opts.simulateIndent && effectiveHeaders[0] === '' && i === 0;
+            const isFirstContentCol = opts.simulateIndent && effectiveHeaders[0] === '' && i === 1; // remove left border so gutter has no separating rule
+            // Build borders: skip all for gutter; suppress left rule for first content column; add top rule (except gutter) when simulating indent
+            let headerBorders;
+            if (isIndentCol) {
+              headerBorders = {
+                top: { style: BorderStyle.NONE, size: 0 },
+                left: { style: BorderStyle.NONE, size: 0 },
+                right: { style: BorderStyle.NONE, size: 0 },
+                bottom: { style: BorderStyle.NONE, size: 0 },
+              };
+            } else {
+              const b = {};
+              if (isFirstContentCol) b.left = { style: BorderStyle.NONE, size: 0 };
+              if (opts.simulateIndent)
+                b.top = { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid };
+              headerBorders = Object.keys(b).length ? b : undefined;
+            }
+            return new TableCell({
+              children: [
+                new Paragraph({
+                  children: isIndentCol
+                    ? [createTextRun('')] // keep empty
+                    : [
+                        createTextRun(h, {
+                          bold: true,
+                          size: FORMAT.sizes.small,
+                          color: FORMAT.colors.white,
+                        }),
+                      ],
+                  spacing: { before: 0, after: 0 },
+                }),
+              ],
+              shading: isIndentCol ? undefined : { fill: FORMAT.colors.neutralHeader },
+              margins: isIndentCol
+                ? { top: 0, bottom: 0, left: 0, right: 0 }
+                : { top: 30, bottom: 30, left: 100, right: 100 },
+              verticalAlign:
+                typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+              borders: headerBorders,
+              width:
+                Array.isArray(effectiveWidths) && effectiveWidths[i]
+                  ? { size: effectiveWidths[i], type: WidthType.DXA }
+                  : undefined,
+            });
+          });
+          rows.push(new TableRow({ children: headerCells, tableHeader: true }));
+        }
+
+        effectiveData.forEach((rowData, rIdx) => {
+          const cells = rowData.map((cell, cIdx) => {
+            const isIndentCol = opts.simulateIndent && effectiveHeaders[0] === '' && cIdx === 0;
+            const isFirstContentCol =
+              opts.simulateIndent && effectiveHeaders[0] === '' && cIdx === 1;
+            // Determine header label for this column (accounting for indent col if present)
+            const headerLabel = effectiveHeaders[cIdx] || '';
+            let displayVal = (cell ?? '').toString();
+            if (!displayVal && (headerLabel === 'Left' || headerLabel === 'Right')) {
+              displayVal = '—'; // em dash placeholder for clarity when no value
+            }
+            // eslint-disable-next-line no-unused-vars
+            const isLastBodyRow = rIdx === effectiveData.length - 1;
+            return new TableCell({
+              children: [
+                new Paragraph({
+                  children: isIndentCol
+                    ? [createTextRun('')]
+                    : [
+                        createTextRun(displayVal, {
+                          size: FORMAT.sizes.small,
+                          color: FORMAT.colors.black,
+                        }),
+                      ],
+                  spacing: { before: 0, after: 0 },
+                  alignment:
+                    effectiveAlignments[cIdx] === 'right'
+                      ? AlignmentType.RIGHT
+                      : effectiveAlignments[cIdx] === 'center'
+                        ? AlignmentType.CENTER
+                        : AlignmentType.LEFT,
+                }),
+              ],
+              margins: isIndentCol
+                ? { top: 0, bottom: 0, left: 0, right: 0 }
+                : { top: 60, bottom: 60, left: 100, right: 100 },
+              verticalAlign:
+                typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+              shading: isIndentCol
+                ? undefined
+                : rIdx % 2 === 1
+                  ? { fill: FORMAT.colors.zebra }
+                  : undefined,
+              borders: (function () {
+                if (isIndentCol) {
+                  return {
+                    top: { style: BorderStyle.NONE, size: 0 },
+                    left: { style: BorderStyle.NONE, size: 0 },
+                    right: { style: BorderStyle.NONE, size: 0 },
+                    bottom: { style: BorderStyle.NONE, size: 0 },
+                  };
+                }
+                const base = {};
+                if (isFirstContentCol) base.left = { style: BorderStyle.NONE, size: 0 };
+                // Provide bottom rule on every row (acts as row separator & final bottom line)
+                base.bottom = { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid };
+                return base;
+              })(),
+              width:
+                Array.isArray(effectiveWidths) && effectiveWidths[cIdx]
+                  ? { size: effectiveWidths[cIdx], type: WidthType.DXA }
+                  : undefined,
+            });
+          });
+          rows.push(new TableRow({ children: cells, cantSplit: true }));
+        });
+
+        return new Table({
+          rows,
+          layout: typeof TableLayoutType !== 'undefined' ? TableLayoutType.FIXED : undefined,
+          width:
+            Array.isArray(effectiveWidths) && effectiveWidths.length
+              ? { size: effectiveWidths.reduce((a, b) => a + b, 0), type: WidthType.DXA }
+              : { size: 100, type: WidthType.PERCENTAGE },
+          // If we simulate an indent with a gutter column, skip native indent to avoid doubling
+          indent:
+            opts && typeof opts.indentLeft !== 'undefined' && !opts.simulateIndent
+              ? { size: opts.indentLeft, type: WidthType.DXA }
+              : undefined,
+          borders: {
+            top: opts.simulateIndent
+              ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
+              : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+            bottom: opts.simulateIndent
+              ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
+              : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+            left: opts.simulateIndent
+              ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
+              : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+            right: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+            insideHorizontal: opts.simulateIndent
+              ? { style: BorderStyle.NONE, size: 0, color: FORMAT.colors.grid }
+              : { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+            insideVertical: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
+          },
+        });
       }
-    }
 
-    // Add fallback message if no regional assessment data
-    const noRegionalData = !selected.length;
-    if (noRegionalData) {
-      elements.push(
-        createBodyParagraph('No regional assessment data recorded', {
-          indentLeft: FORMAT.indent.level1,
-        }),
-      );
-    }
+      // PROM (Passive ROM) export: rebuild rows from canonical definitions + saved values
+      // Combined ROM export (AROM + PROM + RIMs in a single per-region table)
+      // Uses regionKey-prefixed keys introduced in CombinedRomSection for data isolation.
+      const aromNamespaced = ra.arom || {}; // New AROM storage (namespaced)
+      const promNamespaced = ra.prom || {}; // PROM already used; also namespaced now
+      const rimsNamespaced = ra.rims || {}; // RIMs namespaced keys
 
-    // (Removed 'Regions Assessed' section per request)
+      const readCombinedVal = (obj, regionKey, baseKey) => {
+        if (!obj) return '';
+        const pref = `${regionKey}:${baseKey}`;
+        if (Object.prototype.hasOwnProperty.call(obj, pref)) return obj[pref] || '';
+        // Legacy fallback (pre‑namespacing)
+        return obj[baseKey] || '';
+      };
 
-    // Neuro/Functional
-    elements.push(createSectionHeader('Neurological Screening', 2));
-    elements.push(
-      createBodyParagraph(getSafeValue(obj, 'neuro.screening', ''), {
-        indentLeft: FORMAT.indent.level1,
-      }),
-    );
+      if (selected.length) {
+        elements.push(
+          createSectionHeader('Combined ROM Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
+        );
 
-    // Neuroscreen tables (dermatome, myotome, reflex)
-    const selectedNeuroRegions = obj.neuro?.selectedRegions || [];
-    const dermatomeData = obj.neuro?.dermatome || {};
-    const myotomeData = obj.neuro?.myotome || {};
-    const reflexData = obj.neuro?.reflex || {};
+        selected.forEach((regionKey) => {
+          const region = regionalAssessments[regionKey];
+          if (!region || !Array.isArray(region.rom) || region.rom.length === 0) return;
 
-    console.warn('NEURO EXPORT DEBUG:', {
-      selectedNeuroRegions,
-      hasNeuroscreenRegions: !!NEUROSCREEN_REGIONS,
-      neuroscreenRegionKeys: Object.keys(NEUROSCREEN_REGIONS || {}),
-      sampleDermatomeData: Object.keys(dermatomeData).slice(0, 3),
-    });
+          // Region subheading removed per request; region now appears in top-left header cell
 
-    const readNeuroVal = (dataObj, regionKey, baseKey) => {
-      if (!dataObj) return '';
-      const pref = `${regionKey}:${baseKey}`;
-      if (Object.prototype.hasOwnProperty.call(dataObj, pref)) return dataObj[pref] || '';
-      return dataObj[baseKey] || '';
-    };
+          // Helper to drop region prefixes from joint names for cleaner movement labels
+          const motionLabelFromJoint = (rk, jointName) => {
+            const prefixMap = {
+              hip: ['Hip '],
+              knee: ['Knee '],
+              ankle: ['Ankle '],
+              shoulder: ['Shoulder '],
+              elbow: ['Elbow '],
+              'wrist-hand': ['Wrist ', 'Forearm '],
+              'cervical-spine': ['Cervical '],
+              'thoracic-spine': ['Thoracic '],
+              'lumbar-spine': ['Lumbar '],
+            };
+            const prefixes = prefixMap[rk] || [];
+            for (const p of prefixes)
+              if ((jointName || '').startsWith(p)) return jointName.slice(p.length);
+            return jointName;
+          };
 
-    const getOptionLabel = (value, optionsList) => {
-      if (!value) return '—';
-      const opt = optionsList.find((o) => o.value === value);
-      return opt ? opt.label : value;
-    };
+          // Group bilateral/midline motions similar to UI logic
+          const grouped = {};
+          region.rom.forEach((item) => {
+            const jointName = item.joint;
+            if (!grouped[jointName]) {
+              grouped[jointName] = {
+                name: jointName,
+                normal: item.normal,
+                left: null,
+                right: null,
+                midline: item.side === '',
+              };
+            }
+            if (item.side === 'L') grouped[jointName].left = item;
+            else if (item.side === 'R') grouped[jointName].right = item;
+            else grouped[jointName].midline = true;
+          });
 
-    const dermatomeOptions = [
-      { value: '', label: '—' },
-      { value: 'intact', label: 'Intact' },
-      { value: 'impaired', label: 'Impaired' },
-      { value: 'absent', label: 'Absent' },
-    ];
+          // Build rows: Motion | L AROM | L PROM | L RIM | R AROM | R PROM | R RIM
+          const rows = Object.keys(grouped).map((jointName) => {
+            const g = grouped[jointName];
+            const motionName = motionLabelFromJoint(regionKey, jointName);
+            if (g.midline) {
+              const arom = formatRom(readCombinedVal(aromNamespaced, regionKey, jointName));
+              const prom = formatRom(readCombinedVal(promNamespaced, regionKey, jointName));
+              const rimRaw = readCombinedVal(rimsNamespaced, regionKey, jointName);
+              const rim = getRimsLabel(rimRaw);
+              return [motionName, arom, prom, rim, '—', '—', '—'];
+            }
+            const leftSuffix = `${jointName}_L`;
+            const rightSuffix = `${jointName}_R`;
+            const la = formatRom(readCombinedVal(aromNamespaced, regionKey, leftSuffix));
+            const lp = formatRom(readCombinedVal(promNamespaced, regionKey, leftSuffix));
+            const lr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, leftSuffix));
+            const ra = formatRom(readCombinedVal(aromNamespaced, regionKey, rightSuffix));
+            const rp = formatRom(readCombinedVal(promNamespaced, regionKey, rightSuffix));
+            const rr = getRimsLabel(readCombinedVal(rimsNamespaced, regionKey, rightSuffix));
+            return [motionName, la, lp, lr, ra || '—', rp || '—', rr || '—'];
+          });
 
-    const myotomeOptions = [
-      { value: '', label: '—' },
-      { value: '5/5', label: '5/5 - Normal' },
-      { value: '4/5', label: '4/5 - Good' },
-      { value: '3/5', label: '3/5 - Fair' },
-      { value: '2/5', label: '2/5 - Poor' },
-      { value: '1/5', label: '1/5 - Trace' },
-      { value: '0/5', label: '0/5 - Zero' },
-    ];
-
-    const reflexOptions = [
-      { value: '', label: '—' },
-      { value: '4+', label: '4+ - Hyperactive' },
-      { value: '3+', label: '3+ - Increased' },
-      { value: '2+', label: '2+ - Normal' },
-      { value: '1+', label: '1+ - Diminished' },
-      { value: '0', label: '0 - Absent' },
-    ];
-
-    if (selectedNeuroRegions.length > 0) {
-      elements.push(
-        createSectionHeader('Neuroscreen Assessment', 3, { indentLeft: FORMAT.indent.level1 }),
-      );
-
-      selectedNeuroRegions.forEach((regionKey) => {
-        const region = NEUROSCREEN_REGIONS[regionKey];
-        if (!region || !Array.isArray(region.items) || region.items.length === 0) return;
-
-        // Build rows: Level | L Dermatome | L Myotome | L Reflex | R Dermatome | R Myotome | R Reflex
-        const rows = region.items.map((item) => {
-          const level = item.level;
-          const reflex = item.reflex;
-
-          const leftDermatome = getOptionLabel(
-            readNeuroVal(dermatomeData, regionKey, `${level}-L-dermatome`),
-            dermatomeOptions,
+          // Define headers; keep single-row header for docx simplicity
+          const alignments = ['left', 'right', 'right', 'left', 'right', 'right', 'left'];
+          // Fixed widths tuned so RIM columns fit one line
+          // [Motion, L AROM, L PROM, L RIM, R AROM, R PROM, R RIM]
+          const widths = [2400, 900, 1000, 1800, 900, 1000, 1800];
+          elements.push(
+            createCombinedRomDocxTable(
+              (region.name || '').toString().toUpperCase(),
+              rows,
+              widths,
+              alignments,
+            ),
           );
-          const leftMyotome = getOptionLabel(
-            readNeuroVal(myotomeData, regionKey, `${level}-L-myotome`),
-            myotomeOptions,
-          );
-          const leftReflex = reflex
-            ? getOptionLabel(
-                readNeuroVal(reflexData, regionKey, `${level}-L-reflex`),
-                reflexOptions,
-              )
-            : '';
+          elements.push(createSpacer(0, 160));
+        });
+      }
 
-          const rightDermatome = getOptionLabel(
-            readNeuroVal(dermatomeData, regionKey, `${level}-R-dermatome`),
-            dermatomeOptions,
-          );
-          const rightMyotome = getOptionLabel(
-            readNeuroVal(myotomeData, regionKey, `${level}-R-myotome`),
-            myotomeOptions,
-          );
-          const rightReflex = reflex
-            ? getOptionLabel(
-                readNeuroVal(reflexData, regionKey, `${level}-R-reflex`),
-                reflexOptions,
-              )
-            : '';
+      // MMT export: supports new object format { slug: {name,left,right} }
+      // and legacy numeric-index format { 0: '4/5', 1: '5/5' }
+      const mmtSaved = ra.mmt || {};
+      if (selected.length) {
+        const mmtRows = [];
+        const isNewFormat = Object.values(mmtSaved).some(
+          (v) => v && typeof v === 'object' && 'left' in v,
+        );
 
+        if (isNewFormat) {
+          Object.keys(mmtSaved).forEach((id) => {
+            const row = mmtSaved[id];
+            if (row && typeof row === 'object') {
+              mmtRows.push([row.name || '', row.left || '', row.right || '']);
+            }
+          });
+        } else {
+          // Legacy format: reconstruct from region definitions + numeric index values
+          const mmtGroups = {};
+          selected.forEach((regionKey) => {
+            const region = regionalAssessments[regionKey];
+            (region?.mmt || []).forEach((item, idx) => {
+              const baseName = item.name || item.joint || item.muscle;
+              if (!mmtGroups[baseName])
+                mmtGroups[baseName] = { left: null, right: null, bilateral: null };
+              if (item.side === 'L') mmtGroups[baseName].left = idx;
+              else if (item.side === 'R') mmtGroups[baseName].right = idx;
+              else mmtGroups[baseName].bilateral = idx;
+            });
+          });
+          Object.keys(mmtGroups).forEach((name) => {
+            const g = mmtGroups[name];
+            const leftVal = g.left != null ? mmtSaved[g.left] || '' : '';
+            const rightVal = g.right != null ? mmtSaved[g.right] || '' : '';
+            mmtRows.push([name, leftVal, rightVal]);
+          });
+        }
+
+        if (mmtRows.length) {
+          let headers = ['Manual Muscle Testing', 'Left', 'Right'];
+          let alignments = ['left', 'right', 'right'];
+          let rowsData = mmtRows.map((r) => [r[0], formatMmt(r[1]), formatMmt(r[2])]);
+          let widths = computeWidthsNoNotes();
+          elements.push(
+            createWebLikeTable(rowsData, headers, widths, alignments, {
+              indentLeft: FORMAT.indent.level2,
+              simulateIndent: true,
+              simulateIndentWidth: 360,
+            }),
+          );
+          elements.push(createSpacer(0, 160));
+        }
+      }
+
+      // Special Tests export: align by combined list order to recover test name/purpose
+      const testsSaved = ra.specialTests || {};
+      if (selected.length) {
+        const combinedTests = [];
+        selected.forEach((regionKey) => {
+          const region = regionalAssessments[regionKey];
+          (region?.specialTests || []).forEach((test) => combinedTests.push(test));
+        });
+
+        // Map saved values to UI display labels to mirror the page
+        const labelizeTest = (val) => {
+          if (!val) return 'Not performed';
+          const map = {
+            positive: 'Positive',
+            negative: 'Negative',
+            inconclusive: 'Inconclusive',
+            unable: 'Unable to perform',
+          };
+          return map[val] || val;
+        };
+
+        const testsRows = combinedTests.map((test, idx) => {
+          const id = `test-${idx}`;
+          const saved = testsSaved[id] || {};
           return [
-            level,
-            leftDermatome,
-            leftMyotome,
-            leftReflex,
-            rightDermatome,
-            rightMyotome,
-            rightReflex,
+            saved.name || test.name || '',
+            labelizeTest(saved.left),
+            labelizeTest(saved.right),
           ];
         });
 
-        // Alignments and widths
-        const alignments = ['center', 'left', 'left', 'left', 'left', 'left', 'left'];
-        const widths = [800, 1200, 1200, 1200, 1200, 1200, 1200];
-
-        elements.push(
-          createCombinedNeuroscreenDocxTable(
-            (region.name || '').toString().toUpperCase(),
-            rows,
-            widths,
-            alignments,
-          ),
-        );
-        elements.push(createSpacer(0, 160));
-      });
-    }
-    elements.push(createSectionHeader('Functional Movement Assessment', 2));
-    elements.push(
-      createBodyParagraph(getSafeValue(obj, 'functional.assessment', ''), {
-        indentLeft: FORMAT.indent.level1,
-      }),
-    );
-    // Treatment Performed
-    elements.push(createSectionHeader('Treatment Performed', 2));
-    const tp = obj.treatmentPerformed || {};
-    const tpLines = [];
-    if (tp.patientEducation) tpLines.push(`Patient Education: ${tp.patientEducation}`);
-    if (tp.modalities) tpLines.push(`Modalities: ${tp.modalities}`);
-    if (tp.therapeuticExercise) tpLines.push(`Therapeutic Exercise: ${tp.therapeuticExercise}`);
-    if (tp.manualTherapy) tpLines.push(`Manual Therapy: ${tp.manualTherapy}`);
-    if (tpLines.length) {
-      elements.push(...createBulletedList(tpLines, FORMAT.indent.level1));
-    }
-
-    // ASSESSMENT Section (draft-first)
-    elements.push(createSectionDivider());
-    elements.push(createWebSectionHeader('ASSESSMENT'));
-    let assess = (draft && draft.assessment) || {};
-    // Assessment data should always be an object
-    assess = {
-      primaryImpairments: '',
-      bodyFunctions: '',
-      activityLimitations: '',
-      participationRestrictions: '',
-      ptDiagnosis: '',
-      prognosis: '',
-      prognosticFactors: '',
-      clinicalReasoning: '',
-      ...assess,
-    };
-
-    // PT Diagnosis & Prognosis (first)
-    elements.push(createSectionHeader('Physical Therapy Diagnosis', 2));
-    const dxProg = [];
-    const prognosisMap = {
-      excellent: 'Excellent - Full recovery expected',
-      good: 'Good - Significant improvement expected',
-      fair: 'Fair - Moderate improvement expected',
-      poor: 'Poor - Minimal improvement expected',
-      guarded: 'Guarded - Uncertain outcome',
-    };
-    if (assess.ptDiagnosis) dxProg.push(`PT Diagnosis: ${assess.ptDiagnosis}`);
-    if (assess.prognosis) {
-      const progLabel = prognosisMap[assess.prognosis] || assess.prognosis;
-      dxProg.push(`Prognosis: ${progLabel}`);
-    }
-    if (dxProg.length) {
-      dxProg.forEach((line) => {
-        const [label, ...rest] = line.split(': ');
-        const value = rest.join(': ');
-        elements.push(
-          createLabelValueLine(label, value, { indentLeft: FORMAT.indent.level1, bullet: false }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    if (assess.clinicalReasoning) {
-      elements.push(
-        createLabelValueLine('Clinical Impression', assess.clinicalReasoning, {
-          indentLeft: FORMAT.indent.level1,
-          bullet: false,
-        }),
-      );
-    }
-
-    // ICF Summary (second)
-    elements.push(createSectionHeader('ICF Summary', 2));
-    const hasIcf = !!(
-      assess.bodyFunctions ||
-      assess.activityLimitations ||
-      assess.participationRestrictions
-    );
-    if (hasIcf) {
-      if (assess.bodyFunctions)
-        elements.push(
-          createLabelValueLine('Body Functions, Structures & Impairments', assess.bodyFunctions, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (assess.activityLimitations)
-        elements.push(
-          createLabelValueLine('Activity Limitations', assess.activityLimitations, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      if (assess.participationRestrictions)
-        elements.push(
-          createLabelValueLine('Participation Restrictions', assess.participationRestrictions, {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-
-    // PLAN Section (draft-first)
-    elements.push(createSectionDivider());
-    elements.push(createWebSectionHeader('PLAN'));
-    let plan = (draft && draft.plan) || {};
-    // Normalize plan object with defaults
-    plan = {
-      frequency: '',
-      duration: '',
-      treatmentPlan: '',
-      patientEducation: '',
-      exerciseTable: {},
-      goalsTable: {},
-      shortTermGoals: '',
-      longTermGoals: '',
-      ...plan,
-    };
-    // SMART Goals first
-    elements.push(createSectionHeader('Goals', 2));
-
-    const icfDomainLabels = {
-      body: 'Body Functions & Impairments',
-      activity: 'Activity Limitations',
-      participation: 'Participation Restrictions',
-    };
-    const timeframeLabels = {
-      '1-week': '1 week',
-      '2-weeks': '2 weeks',
-      '4-weeks': '4 weeks',
-      '6-weeks': '6 weeks',
-      '8-weeks': '8 weeks',
-      '12-weeks': '12 weeks',
-      discharge: 'By D/C',
-    };
-
-    // Support new goals array and legacy goalsTable object
-    let goalRows = [];
-    if (Array.isArray(plan.goals) && plan.goals.length) {
-      goalRows = plan.goals;
-    } else if (plan.goalsTable && typeof plan.goalsTable === 'object') {
-      goalRows = Object.values(plan.goalsTable)
-        .filter((r) => r.goalText || r.goal)
-        .map((r) => ({ goal: r.goalText || r.goal || '', timeframe: '', icfDomain: '' }));
-    }
-
-    if (goalRows.length) {
-      goalRows.forEach((row) => {
-        const text = (row.goal || row.goalText || '').toString().trim();
-        if (!text) return;
-        const meta = [];
-        if (row.timeframe && timeframeLabels[row.timeframe])
-          meta.push(timeframeLabels[row.timeframe]);
-        if (row.icfDomain && icfDomainLabels[row.icfDomain])
-          meta.push(icfDomainLabels[row.icfDomain]);
-        const fullText = meta.length ? `${text}  [${meta.join(' · ')}]` : text;
-        elements.push(
-          createLabelValueLine('', fullText, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: true,
-          }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('No goals documented', { indentLeft: FORMAT.indent.level1 }),
-      );
-    }
-    // In-Clinic Treatment Plan (Frequency/Duration + Interventions)
-    elements.push(createSectionHeader('In-Clinic Treatment Plan', 2));
-    const frequencyLabels = {
-      '1x-week': '1x/week',
-      '2x-week': '2x/week',
-      '3x-week': '3x/week',
-      '4x-week': '4x/week',
-      '5x-week': '5x/week',
-      '2x-day': '2x/day',
-      prn: 'PRN',
-    };
-    const durationLabels = {
-      '2-weeks': '2 weeks',
-      '4-weeks': '4 weeks',
-      '6-weeks': '6 weeks',
-      '8-weeks': '8 weeks',
-      '12-weeks': '12 weeks',
-      '16-weeks': '16 weeks',
-      '6-months': '6 months',
-      ongoing: 'Ongoing',
-    };
-    if (plan.frequency || plan.duration) {
-      if (plan.frequency)
-        elements.push(
-          createLabelValueLine('Frequency', frequencyLabels[plan.frequency] || plan.frequency, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: false,
-          }),
-        );
-      if (plan.duration)
-        elements.push(
-          createLabelValueLine('Duration', durationLabels[plan.duration] || plan.duration, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: false,
-          }),
-        );
-    } else {
-      elements.push(
-        createBodyParagraph('— not documented', {
-          indentLeft: FORMAT.indent.level1,
-          italics: true,
-          color: FORMAT.colors.grayText,
-        }),
-      );
-    }
-    // In-clinic interventions (new array format, with fallback to legacy exerciseTable)
-    const clinicInterventions = Array.isArray(plan.inClinicInterventions)
-      ? plan.inClinicInterventions
-      : [];
-    const legacyExerciseRows =
-      plan.exerciseTable && typeof plan.exerciseTable === 'object'
-        ? Object.values(plan.exerciseTable)
-        : [];
-    if (clinicInterventions.length) {
-      clinicInterventions.forEach((row) => {
-        const name = (row.intervention || '').toString().trim();
-        if (!name) return;
-        const dosage = (row.dosage || '').toString().trim();
-        const text = dosage ? `${name} — ${dosage}` : name;
-        elements.push(
-          createLabelValueLine('', text, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: true,
-          }),
-        );
-      });
-    } else if (legacyExerciseRows.length) {
-      legacyExerciseRows.forEach((row) => {
-        const text = (row.exerciseText || row.exercise || '').toString();
-        if (!text) return;
-        elements.push(
-          createLabelValueLine('', text, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: true,
-          }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('No in-clinic interventions documented', {
-          indentLeft: FORMAT.indent.level1,
-        }),
-      );
-    }
-
-    // Home Exercise Program (HEP)
-    elements.push(createSectionHeader('Home Exercise Program (HEP)', 2));
-    const hepInterventions = Array.isArray(plan.hepInterventions) ? plan.hepInterventions : [];
-    if (hepInterventions.length) {
-      hepInterventions.forEach((row) => {
-        const name = (row.intervention || '').toString().trim();
-        if (!name) return;
-        const dosage = (row.dosage || '').toString().trim();
-        const text = dosage ? `${name} — ${dosage}` : name;
-        elements.push(
-          createLabelValueLine('', text, {
-            indentLeft: FORMAT.indent.level1,
-            bullet: true,
-          }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('No HEP exercises documented', {
-          indentLeft: FORMAT.indent.level1,
-        }),
-      );
-    }
-
-    // BILLING Section
-    elements.push(createSectionDivider());
-    elements.push(createWebSectionHeader('BILLING'));
-    const billing = (draft && draft.billing) || {};
-    // ICD-10 Codes
-    elements.push(createSectionHeader('ICD-10 Codes', 2));
-    const icdRows = Array.isArray(billing.diagnosisCodes)
-      ? billing.diagnosisCodes
-      : Array.isArray(billing.icdCodes)
-        ? billing.icdCodes
-        : [];
-    if (icdRows.length) {
-      icdRows.forEach((row) => {
-        const primaryIndicator = row.isPrimary ? ' (Primary)' : '';
-        // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
-        let displayText = row.label;
-        if (!displayText && row.code) {
-          // Try to find the label from the ICD-10 codes list based on the code
-          const icdCodesList = [
-            // Lumbar
-            { value: 'M54.5', label: 'M54.5 - Low back pain' },
-            {
-              value: 'M51.36',
-              label: 'M51.36 - Other intervertebral disc degeneration, lumbar region',
-            },
-            { value: 'M54.16', label: 'M54.16 - Radiculopathy, lumbar region' },
-            // Cervical
-            { value: 'M54.2', label: 'M54.2 - Cervicalgia' },
-            {
-              value: 'M50.30',
-              label: 'M50.30 - Other cervical disc degeneration, unspecified cervical region',
-            },
-            { value: 'M54.12', label: 'M54.12 - Radiculopathy, cervical region' },
-            // Thoracic
-            { value: 'M54.6', label: 'M54.6 - Pain in thoracic spine' },
-            { value: 'M54.14', label: 'M54.14 - Radiculopathy, thoracic region' },
-            // Shoulder
-            { value: 'M75.41', label: 'M75.41 - Impingement syndrome of right shoulder' },
-            { value: 'M75.42', label: 'M75.42 - Impingement syndrome of left shoulder' },
-            { value: 'M75.21', label: 'M75.21 - Bicipital tendinitis, right shoulder' },
-            { value: 'M75.22', label: 'M75.22 - Bicipital tendinitis, left shoulder' },
-            { value: 'M25.511', label: 'M25.511 - Pain in right shoulder' },
-            { value: 'M25.512', label: 'M25.512 - Pain in left shoulder' },
-            { value: 'M75.30', label: 'M75.30 - Calcific tendinitis of unspecified shoulder' },
-            {
-              value: 'M75.100',
-              label: 'M75.100 - Unspecified rotator cuff tear or rupture of unspecified shoulder',
-            },
-            { value: 'M75.101', label: 'M75.101 - Unspecified rotator cuff tear, right shoulder' },
-            { value: 'M75.102', label: 'M75.102 - Unspecified rotator cuff tear, left shoulder' },
-            { value: 'M75.111', label: 'M75.111 - Incomplete rotator cuff tear, right shoulder' },
-            { value: 'M75.112', label: 'M75.112 - Incomplete rotator cuff tear, left shoulder' },
-            { value: 'M75.121', label: 'M75.121 - Complete rotator cuff tear, right shoulder' },
-            { value: 'M75.122', label: 'M75.122 - Complete rotator cuff tear, left shoulder' },
-            { value: 'M75.01', label: 'M75.01 - Adhesive capsulitis of right shoulder' },
-            { value: 'M75.02', label: 'M75.02 - Adhesive capsulitis of left shoulder' },
-            { value: 'S43.401A', label: 'S43.401A - Unspecified sprain of right shoulder joint' },
-            { value: 'S43.402A', label: 'S43.402A - Unspecified sprain of left shoulder joint' },
-            { value: 'M19.011', label: 'M19.011 - Primary osteoarthritis, right shoulder' },
-            { value: 'M19.012', label: 'M19.012 - Primary osteoarthritis, left shoulder' },
-            { value: 'S42.201A', label: 'S42.201A - Fracture of upper end of right humerus' },
-            // Elbow
-            { value: 'M77.11', label: 'M77.11 - Lateral epicondylitis, right elbow' },
-            { value: 'M77.12', label: 'M77.12 - Lateral epicondylitis, left elbow' },
-            { value: 'M77.01', label: 'M77.01 - Medial epicondylitis, right elbow' },
-            { value: 'M77.02', label: 'M77.02 - Medial epicondylitis, left elbow' },
-            { value: 'M25.521', label: 'M25.521 - Pain in right elbow' },
-            { value: 'M25.522', label: 'M25.522 - Pain in left elbow' },
-            { value: 'S53.401A', label: 'S53.401A - Unspecified sprain of right elbow' },
-            { value: 'S53.402A', label: 'S53.402A - Unspecified sprain of left elbow' },
-            { value: 'M19.021', label: 'M19.021 - Primary osteoarthritis, right elbow' },
-            { value: 'M19.022', label: 'M19.022 - Primary osteoarthritis, left elbow' },
-            // Wrist/Hand
-            { value: 'M25.531', label: 'M25.531 - Pain in right wrist' },
-            { value: 'M25.532', label: 'M25.532 - Pain in left wrist' },
-            { value: 'M25.541', label: 'M25.541 - Pain in joints of right hand' },
-            { value: 'M25.542', label: 'M25.542 - Pain in joints of left hand' },
-            { value: 'G56.01', label: 'G56.01 - Carpal tunnel syndrome, right upper limb' },
-            { value: 'G56.02', label: 'G56.02 - Carpal tunnel syndrome, left upper limb' },
-            { value: 'M65.311', label: 'M65.311 - Trigger finger, right index finger' },
-            { value: 'M65.30', label: 'M65.30 - Trigger finger, unspecified finger' },
-            { value: 'M65.841', label: 'M65.841 - Other synovitis and tenosynovitis, right hand' },
-            { value: 'M65.842', label: 'M65.842 - Other synovitis and tenosynovitis, left hand' },
-            { value: 'S63.501A', label: 'S63.501A - Unspecified sprain of right wrist' },
-            { value: 'S63.502A', label: 'S63.502A - Unspecified sprain of left wrist' },
-            {
-              value: 'S62.101A',
-              label: 'S62.101A - Fracture of unspecified carpal bone, right wrist',
-            },
-            {
-              value: 'S62.102A',
-              label: 'S62.102A - Fracture of unspecified carpal bone, left wrist',
-            },
-            { value: 'M18.11', label: 'M18.11 - Primary osteoarthritis, right first CMC joint' },
-            { value: 'M18.12', label: 'M18.12 - Primary osteoarthritis, left first CMC joint' },
-            { value: 'M72.0', label: "M72.0 - Palmar fascial fibromatosis (Dupuytren's)" },
-            // Knee
-            { value: 'M25.561', label: 'M25.561 - Pain in right knee' },
-            { value: 'M25.562', label: 'M25.562 - Pain in left knee' },
-            {
-              value: 'M17.10',
-              label: 'M17.10 - Unilateral primary osteoarthritis, unspecified knee',
-            },
-            { value: 'S83.511A', label: 'S83.511A - Sprain of ACL, right knee' },
-            { value: 'S83.512A', label: 'S83.512A - Sprain of ACL, left knee' },
-            { value: 'S83.521A', label: 'S83.521A - Sprain of PCL, right knee' },
-            { value: 'M22.41', label: 'M22.41 - Chondromalacia patellae, right knee' },
-            { value: 'M22.42', label: 'M22.42 - Chondromalacia patellae, left knee' },
-            { value: 'S83.241A', label: 'S83.241A - Medial meniscus tear, right knee' },
-            // Hip
-            { value: 'M25.551', label: 'M25.551 - Pain in right hip' },
-            { value: 'M25.552', label: 'M25.552 - Pain in left hip' },
-            {
-              value: 'M16.10',
-              label: 'M16.10 - Unilateral primary osteoarthritis, unspecified hip',
-            },
-            // Ankle/Foot
-            { value: 'M25.571', label: 'M25.571 - Pain in right ankle and joints of right foot' },
-            { value: 'M25.572', label: 'M25.572 - Pain in left ankle and joints of left foot' },
-            {
-              value: 'S93.401A',
-              label: 'S93.401A - Sprain of unspecified ligament of right ankle',
-            },
-            // General
-            { value: 'M79.3', label: 'M79.3 - Panniculitis, unspecified' },
-            { value: 'M62.81', label: 'M62.81 - Muscle weakness (generalized)' },
-            { value: 'M25.50', label: 'M25.50 - Pain in unspecified joint' },
-            { value: 'M79.1', label: 'M79.1 - Myalgia' },
-            { value: 'M79.7', label: 'M79.7 - Fibromyalgia' },
-            // Balance/Gait
-            { value: 'R26.81', label: 'R26.81 - Unsteadiness on feet' },
-            { value: 'R26.2', label: 'R26.2 - Difficulty in walking' },
-            { value: 'R29.6', label: 'R29.6 - Repeated falls' },
-            // Post-Surgical
-            { value: 'Z96.641', label: 'Z96.641 - Presence of right artificial hip joint' },
-            { value: 'Z96.642', label: 'Z96.642 - Presence of left artificial hip joint' },
-            { value: 'Z96.651', label: 'Z96.651 - Presence of right artificial knee joint' },
-            { value: 'Z96.652', label: 'Z96.652 - Presence of left artificial knee joint' },
-            {
-              value: 'Z87.39',
-              label: 'Z87.39 - Personal history of other musculoskeletal disorders',
-            },
-            { value: 'Z48.89', label: 'Z48.89 - Encounter for other specified surgical aftercare' },
-          ];
-          const foundCode = icdCodesList.find((c) => c.value === row.code);
-          displayText = foundCode ? foundCode.label : `${row.code}: ${row.description}`;
-        }
-        if (!displayText) {
-          displayText = `${row.code || 'No code'}: ${row.description || 'No description'}`;
-        }
-        const codeText = `${displayText}${primaryIndicator}`;
-        elements.push(
-          createLabelValueLine('', codeText, { indentLeft: FORMAT.indent.level1, bullet: true }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('No ICD-10 codes documented', { indentLeft: FORMAT.indent.level1 }),
-      );
-    }
-    // CPT Codes
-    elements.push(createSectionHeader('CPT Codes', 2));
-    const cptRows = Array.isArray(billing.billingCodes)
-      ? billing.billingCodes
-      : Array.isArray(billing.cptCodes)
-        ? billing.cptCodes
-        : [];
-    if (cptRows.length) {
-      cptRows.forEach((row) => {
-        // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
-        let displayText = row.label;
-        if (!displayText && row.code) {
-          // Try to find the label from the CPT codes list based on the code
-          const cptCodesList = [
-            { value: '97110', label: '97110 - Therapeutic Exercise' },
-            { value: '97112', label: '97112 - Neuromuscular Re-education' },
-            { value: '97116', label: '97116 - Gait Training' },
-            { value: '97140', label: '97140 - Manual Therapy' },
-            { value: '97530', label: '97530 - Therapeutic Activities' },
-            { value: '97535', label: '97535 - Self-Care Training' },
-            { value: '97012', label: '97012 - Mechanical Traction' },
-            { value: '97014', label: '97014 - Electrical Stimulation' },
-            { value: '97035', label: '97035 - Ultrasound' },
-            { value: '97039', label: '97039 - Unlisted Modality' },
-            { value: '97161', label: '97161 - PT Evaluation Low Complexity' },
-            { value: '97162', label: '97162 - PT Evaluation Moderate Complexity' },
-            { value: '97163', label: '97163 - PT Evaluation High Complexity' },
-            { value: '97164', label: '97164 - PT Re-evaluation' },
-            { value: '97010', label: '97010 - Hot/Cold Packs' },
-            { value: '97018', label: '97018 - Paraffin Bath' },
-            { value: '97022', label: '97022 - Whirlpool' },
-            { value: '97032', label: '97032 - Electrical Stimulation (Manual)' },
-            { value: '97033', label: '97033 - Iontophoresis' },
-            { value: '97034', label: '97034 - Contrast Baths' },
-            { value: '97113', label: '97113 - Aquatic Therapy' },
-            { value: '97124', label: '97124 - Massage' },
-            { value: '97150', label: '97150 - Group Therapy' },
-            { value: '97542', label: '97542 - Wheelchair Management Training' },
-            { value: '97750', label: '97750 - Physical Performance Test' },
-            { value: '97755', label: '97755 - Assistive Technology Assessment' },
-            { value: '97760', label: '97760 - Orthotic Management and Training' },
-            { value: '97761', label: '97761 - Prosthetic Training' },
-            { value: '97016', label: '97016 - Vasopneumatic Device' },
-            { value: '97139', label: '97139 - Unlisted Therapeutic Procedure' },
-            { value: '97597', label: '97597 - Debridement, Open Wound (first 20 sq cm)' },
-            { value: '97598', label: '97598 - Debridement, Open Wound (each additional 20 sq cm)' },
-            { value: '95831', label: '95831 - Muscle Testing, Manual (Extremity/Trunk)' },
-            { value: '95852', label: '95852 - Range of Motion Measurements' },
-            { value: '29125', label: '29125 - Application of Short Arm Splint (static)' },
-            { value: '29126', label: '29126 - Application of Short Arm Splint (dynamic)' },
-          ];
-          const foundCode = cptCodesList.find((c) => c.value === row.code);
-          displayText = foundCode ? foundCode.label : row.description;
-        }
-        if (!displayText) {
-          displayText = row.description || `${row.code || 'No code'}`;
-        }
-        let codeText = displayText;
-        if (row.linkedDiagnosisCode) {
-          codeText += ` [Linked ICD-10: ${row.linkedDiagnosisCode}]`;
-        }
-        if (row.units != null || row.timeSpent) {
-          const unitsText = row.units != null ? `${row.units} units` : '';
-          const timeText = row.timeSpent ? `${row.timeSpent}` : '';
-          const additionalInfo = [unitsText, timeText].filter(Boolean).join(', ');
-          if (additionalInfo) {
-            codeText += ` (${additionalInfo})`;
+        // Include user-added tests (IDs that don't match the test-N pattern)
+        Object.keys(testsSaved).forEach((id) => {
+          if (/^test-\d+$/.test(id)) return; // already handled above
+          const saved = testsSaved[id];
+          if (saved && saved.name) {
+            testsRows.push([saved.name, labelizeTest(saved.left), labelizeTest(saved.right)]);
           }
+        });
+
+        if (testsRows.length) {
+          let headers = ['Special Tests', 'Left', 'Right'];
+          let alignments = ['left', 'right', 'right'];
+          let rowsData = testsRows.map((r) => r.slice(0, 3));
+          let widths = computeWidthsNoNotes();
+          elements.push(
+            createWebLikeTable(rowsData, headers, widths, alignments, {
+              indentLeft: FORMAT.indent.level2,
+              simulateIndent: true,
+              simulateIndentWidth: 360,
+            }),
+          );
+          elements.push(createSpacer(0, 160));
         }
+      }
+
+      // Add fallback message if no regional assessment data
+      const noRegionalData = !selected.length;
+      if (noRegionalData) {
         elements.push(
-          createLabelValueLine('', codeText, { indentLeft: FORMAT.indent.level1, bullet: true }),
+          createBodyParagraph('No regional assessment data recorded', {
+            indentLeft: FORMAT.indent.level1,
+          }),
         );
-      });
-    } else {
+      }
+
+      // (Removed 'Regions Assessed' section per request)
+
+      // Neuro/Functional
+      elements.push(createSectionHeader('Neurological Screening', 2));
       elements.push(
-        createBodyParagraph('No CPT codes documented', { indentLeft: FORMAT.indent.level1 }),
-      );
-    }
-    // Orders & Referrals
-    elements.push(createSectionHeader('Orders & Referrals', 2));
-    const ordRows = Array.isArray(billing.ordersReferrals) ? billing.ordersReferrals : [];
-    if (ordRows.length) {
-      ordRows.forEach((row) => {
-        const linkedDx = row.linkedDiagnosisCode
-          ? ` [Linked ICD-10: ${row.linkedDiagnosisCode}]`
-          : '';
-        const orderText = `${row.type || 'No type'}${linkedDx}: ${row.details || 'No details'}`;
-        elements.push(
-          createLabelValueLine('', orderText, { indentLeft: FORMAT.indent.level1, bullet: true }),
-        );
-      });
-    } else {
-      elements.push(
-        createBodyParagraph('No orders or referrals documented', {
+        createBodyParagraph(getSafeValue(obj, 'neuro.screening', ''), {
           indentLeft: FORMAT.indent.level1,
         }),
       );
-    }
+
+      // Neuroscreen tables (dermatome, myotome, reflex)
+      const selectedNeuroRegions = obj.neuro?.selectedRegions || [];
+      const dermatomeData = obj.neuro?.dermatome || {};
+      const myotomeData = obj.neuro?.myotome || {};
+      const reflexData = obj.neuro?.reflex || {};
+
+      console.warn('NEURO EXPORT DEBUG:', {
+        selectedNeuroRegions,
+        hasNeuroscreenRegions: !!NEUROSCREEN_REGIONS,
+        neuroscreenRegionKeys: Object.keys(NEUROSCREEN_REGIONS || {}),
+        sampleDermatomeData: Object.keys(dermatomeData).slice(0, 3),
+      });
+
+      const readNeuroVal = (dataObj, regionKey, baseKey) => {
+        if (!dataObj) return '';
+        const pref = `${regionKey}:${baseKey}`;
+        if (Object.prototype.hasOwnProperty.call(dataObj, pref)) return dataObj[pref] || '';
+        return dataObj[baseKey] || '';
+      };
+
+      const getOptionLabel = (value, optionsList) => {
+        if (!value) return '—';
+        const opt = optionsList.find((o) => o.value === value);
+        return opt ? opt.label : value;
+      };
+
+      const dermatomeOptions = [
+        { value: '', label: '—' },
+        { value: 'intact', label: 'Intact' },
+        { value: 'impaired', label: 'Impaired' },
+        { value: 'absent', label: 'Absent' },
+      ];
+
+      const myotomeOptions = [
+        { value: '', label: '—' },
+        { value: '5/5', label: '5/5 - Normal' },
+        { value: '4/5', label: '4/5 - Good' },
+        { value: '3/5', label: '3/5 - Fair' },
+        { value: '2/5', label: '2/5 - Poor' },
+        { value: '1/5', label: '1/5 - Trace' },
+        { value: '0/5', label: '0/5 - Zero' },
+      ];
+
+      const reflexOptions = [
+        { value: '', label: '—' },
+        { value: '4+', label: '4+ - Hyperactive' },
+        { value: '3+', label: '3+ - Increased' },
+        { value: '2+', label: '2+ - Normal' },
+        { value: '1+', label: '1+ - Diminished' },
+        { value: '0', label: '0 - Absent' },
+      ];
+
+      if (selectedNeuroRegions.length > 0) {
+        elements.push(
+          createSectionHeader('Neuroscreen Assessment', 3, { indentLeft: FORMAT.indent.level1 }),
+        );
+
+        selectedNeuroRegions.forEach((regionKey) => {
+          const region = NEUROSCREEN_REGIONS[regionKey];
+          if (!region || !Array.isArray(region.items) || region.items.length === 0) return;
+
+          // Build rows: Level | L Dermatome | L Myotome | L Reflex | R Dermatome | R Myotome | R Reflex
+          const rows = region.items.map((item) => {
+            const level = item.level;
+            const reflex = item.reflex;
+
+            const leftDermatome = getOptionLabel(
+              readNeuroVal(dermatomeData, regionKey, `${level}-L-dermatome`),
+              dermatomeOptions,
+            );
+            const leftMyotome = getOptionLabel(
+              readNeuroVal(myotomeData, regionKey, `${level}-L-myotome`),
+              myotomeOptions,
+            );
+            const leftReflex = reflex
+              ? getOptionLabel(
+                  readNeuroVal(reflexData, regionKey, `${level}-L-reflex`),
+                  reflexOptions,
+                )
+              : '';
+
+            const rightDermatome = getOptionLabel(
+              readNeuroVal(dermatomeData, regionKey, `${level}-R-dermatome`),
+              dermatomeOptions,
+            );
+            const rightMyotome = getOptionLabel(
+              readNeuroVal(myotomeData, regionKey, `${level}-R-myotome`),
+              myotomeOptions,
+            );
+            const rightReflex = reflex
+              ? getOptionLabel(
+                  readNeuroVal(reflexData, regionKey, `${level}-R-reflex`),
+                  reflexOptions,
+                )
+              : '';
+
+            return [
+              level,
+              leftDermatome,
+              leftMyotome,
+              leftReflex,
+              rightDermatome,
+              rightMyotome,
+              rightReflex,
+            ];
+          });
+
+          // Alignments and widths
+          const alignments = ['center', 'left', 'left', 'left', 'left', 'left', 'left'];
+          const widths = [800, 1200, 1200, 1200, 1200, 1200, 1200];
+
+          elements.push(
+            createCombinedNeuroscreenDocxTable(
+              (region.name || '').toString().toUpperCase(),
+              rows,
+              widths,
+              alignments,
+            ),
+          );
+          elements.push(createSpacer(0, 160));
+        });
+      }
+      elements.push(createSectionHeader('Functional Movement Assessment', 2));
+      elements.push(
+        createBodyParagraph(getSafeValue(obj, 'functional.assessment', ''), {
+          indentLeft: FORMAT.indent.level1,
+        }),
+      );
+      // Treatment Performed
+      elements.push(createSectionHeader('Treatment Performed', 2));
+      const tp = obj.treatmentPerformed || {};
+      const tpLines = [];
+      if (tp.patientEducation) tpLines.push(`Patient Education: ${tp.patientEducation}`);
+      if (tp.modalities) tpLines.push(`Modalities: ${tp.modalities}`);
+      if (tp.therapeuticExercise) tpLines.push(`Therapeutic Exercise: ${tp.therapeuticExercise}`);
+      if (tp.manualTherapy) tpLines.push(`Manual Therapy: ${tp.manualTherapy}`);
+      if (tpLines.length) {
+        elements.push(...createBulletedList(tpLines, FORMAT.indent.level1));
+      }
+
+      // ASSESSMENT Section (draft-first)
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('ASSESSMENT'));
+      let assess = (draft && draft.assessment) || {};
+      // Assessment data should always be an object
+      assess = {
+        primaryImpairments: '',
+        bodyFunctions: '',
+        activityLimitations: '',
+        participationRestrictions: '',
+        ptDiagnosis: '',
+        prognosis: '',
+        prognosticFactors: '',
+        clinicalReasoning: '',
+        ...assess,
+      };
+
+      // PT Diagnosis & Prognosis (first)
+      elements.push(createSectionHeader('Physical Therapy Diagnosis', 2));
+      const dxProg = [];
+      const prognosisMap = {
+        excellent: 'Excellent - Full recovery expected',
+        good: 'Good - Significant improvement expected',
+        fair: 'Fair - Moderate improvement expected',
+        poor: 'Poor - Minimal improvement expected',
+        guarded: 'Guarded - Uncertain outcome',
+      };
+      if (assess.ptDiagnosis) dxProg.push(`PT Diagnosis: ${assess.ptDiagnosis}`);
+      if (assess.prognosis) {
+        const progLabel = prognosisMap[assess.prognosis] || assess.prognosis;
+        dxProg.push(`Prognosis: ${progLabel}`);
+      }
+      if (dxProg.length) {
+        dxProg.forEach((line) => {
+          const [label, ...rest] = line.split(': ');
+          const value = rest.join(': ');
+          elements.push(
+            createLabelValueLine(label, value, { indentLeft: FORMAT.indent.level1, bullet: false }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('— not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
+          }),
+        );
+      }
+      if (assess.clinicalReasoning) {
+        elements.push(
+          createLabelValueLine('Clinical Impression', assess.clinicalReasoning, {
+            indentLeft: FORMAT.indent.level1,
+            bullet: false,
+          }),
+        );
+      }
+
+      // ICF Summary (second)
+      elements.push(createSectionHeader('ICF Summary', 2));
+      const hasIcf = !!(
+        assess.bodyFunctions ||
+        assess.activityLimitations ||
+        assess.participationRestrictions
+      );
+      if (hasIcf) {
+        if (assess.bodyFunctions)
+          elements.push(
+            createLabelValueLine('Body Functions, Structures & Impairments', assess.bodyFunctions, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (assess.activityLimitations)
+          elements.push(
+            createLabelValueLine('Activity Limitations', assess.activityLimitations, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (assess.participationRestrictions)
+          elements.push(
+            createLabelValueLine('Participation Restrictions', assess.participationRestrictions, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
+        elements.push(
+          createBodyParagraph('— not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
+          }),
+        );
+      }
+
+      // PLAN Section (draft-first)
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('PLAN'));
+      let plan = (draft && draft.plan) || {};
+      // Normalize plan object with defaults
+      plan = {
+        frequency: '',
+        duration: '',
+        treatmentPlan: '',
+        patientEducation: '',
+        exerciseTable: {},
+        goalsTable: {},
+        shortTermGoals: '',
+        longTermGoals: '',
+        ...plan,
+      };
+      // SMART Goals first
+      elements.push(createSectionHeader('Goals', 2));
+
+      const icfDomainLabels = {
+        body: 'Body Functions & Impairments',
+        activity: 'Activity Limitations',
+        participation: 'Participation Restrictions',
+      };
+      const timeframeLabels = {
+        '1-week': '1 week',
+        '2-weeks': '2 weeks',
+        '4-weeks': '4 weeks',
+        '6-weeks': '6 weeks',
+        '8-weeks': '8 weeks',
+        '12-weeks': '12 weeks',
+        discharge: 'By D/C',
+      };
+
+      // Support new goals array and legacy goalsTable object
+      let goalRows = [];
+      if (Array.isArray(plan.goals) && plan.goals.length) {
+        goalRows = plan.goals;
+      } else if (plan.goalsTable && typeof plan.goalsTable === 'object') {
+        goalRows = Object.values(plan.goalsTable)
+          .filter((r) => r.goalText || r.goal)
+          .map((r) => ({ goal: r.goalText || r.goal || '', timeframe: '', icfDomain: '' }));
+      }
+
+      if (goalRows.length) {
+        goalRows.forEach((row) => {
+          const text = (row.goal || row.goalText || '').toString().trim();
+          if (!text) return;
+          const meta = [];
+          if (row.timeframe && timeframeLabels[row.timeframe])
+            meta.push(timeframeLabels[row.timeframe]);
+          if (row.icfDomain && icfDomainLabels[row.icfDomain])
+            meta.push(icfDomainLabels[row.icfDomain]);
+          const fullText = meta.length ? `${text}  [${meta.join(' · ')}]` : text;
+          elements.push(
+            createLabelValueLine('', fullText, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: true,
+            }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No goals documented', { indentLeft: FORMAT.indent.level1 }),
+        );
+      }
+      // In-Clinic Treatment Plan (Frequency/Duration + Interventions)
+      elements.push(createSectionHeader('In-Clinic Treatment Plan', 2));
+      const frequencyLabels = {
+        '1x-week': '1x/week',
+        '2x-week': '2x/week',
+        '3x-week': '3x/week',
+        '4x-week': '4x/week',
+        '5x-week': '5x/week',
+        '2x-day': '2x/day',
+        prn: 'PRN',
+      };
+      const durationLabels = {
+        '2-weeks': '2 weeks',
+        '4-weeks': '4 weeks',
+        '6-weeks': '6 weeks',
+        '8-weeks': '8 weeks',
+        '12-weeks': '12 weeks',
+        '16-weeks': '16 weeks',
+        '6-months': '6 months',
+        ongoing: 'Ongoing',
+      };
+      if (plan.frequency || plan.duration) {
+        if (plan.frequency)
+          elements.push(
+            createLabelValueLine('Frequency', frequencyLabels[plan.frequency] || plan.frequency, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: false,
+            }),
+          );
+        if (plan.duration)
+          elements.push(
+            createLabelValueLine('Duration', durationLabels[plan.duration] || plan.duration, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: false,
+            }),
+          );
+      } else {
+        elements.push(
+          createBodyParagraph('— not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
+          }),
+        );
+      }
+      // In-clinic interventions (new array format, with fallback to legacy exerciseTable)
+      const clinicInterventions = Array.isArray(plan.inClinicInterventions)
+        ? plan.inClinicInterventions
+        : [];
+      const legacyExerciseRows =
+        plan.exerciseTable && typeof plan.exerciseTable === 'object'
+          ? Object.values(plan.exerciseTable)
+          : [];
+      if (clinicInterventions.length) {
+        clinicInterventions.forEach((row) => {
+          const name = (row.intervention || '').toString().trim();
+          if (!name) return;
+          const dosage = (row.dosage || '').toString().trim();
+          const text = dosage ? `${name} — ${dosage}` : name;
+          elements.push(
+            createLabelValueLine('', text, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: true,
+            }),
+          );
+        });
+      } else if (legacyExerciseRows.length) {
+        legacyExerciseRows.forEach((row) => {
+          const text = (row.exerciseText || row.exercise || '').toString();
+          if (!text) return;
+          elements.push(
+            createLabelValueLine('', text, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: true,
+            }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No in-clinic interventions documented', {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      }
+
+      // Home Exercise Program (HEP)
+      elements.push(createSectionHeader('Home Exercise Program (HEP)', 2));
+      const hepInterventions = Array.isArray(plan.hepInterventions) ? plan.hepInterventions : [];
+      if (hepInterventions.length) {
+        hepInterventions.forEach((row) => {
+          const name = (row.intervention || '').toString().trim();
+          if (!name) return;
+          const dosage = (row.dosage || '').toString().trim();
+          const text = dosage ? `${name} — ${dosage}` : name;
+          elements.push(
+            createLabelValueLine('', text, {
+              indentLeft: FORMAT.indent.level1,
+              bullet: true,
+            }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No HEP exercises documented', {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      }
+
+      // BILLING Section
+      elements.push(createSectionDivider());
+      elements.push(createWebSectionHeader('BILLING'));
+      const billing = (draft && draft.billing) || {};
+      // ICD-10 Codes
+      elements.push(createSectionHeader('ICD-10 Codes', 2));
+      const icdRows = Array.isArray(billing.diagnosisCodes)
+        ? billing.diagnosisCodes
+        : Array.isArray(billing.icdCodes)
+          ? billing.icdCodes
+          : [];
+      if (icdRows.length) {
+        icdRows.forEach((row) => {
+          const primaryIndicator = row.isPrimary ? ' (Primary)' : '';
+          // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
+          let displayText = row.label;
+          if (!displayText && row.code) {
+            // Try to find the label from the ICD-10 codes list based on the code
+            const icdCodesList = [
+              // Lumbar
+              { value: 'M54.5', label: 'M54.5 - Low back pain' },
+              {
+                value: 'M51.36',
+                label: 'M51.36 - Other intervertebral disc degeneration, lumbar region',
+              },
+              { value: 'M54.16', label: 'M54.16 - Radiculopathy, lumbar region' },
+              // Cervical
+              { value: 'M54.2', label: 'M54.2 - Cervicalgia' },
+              {
+                value: 'M50.30',
+                label: 'M50.30 - Other cervical disc degeneration, unspecified cervical region',
+              },
+              { value: 'M54.12', label: 'M54.12 - Radiculopathy, cervical region' },
+              // Thoracic
+              { value: 'M54.6', label: 'M54.6 - Pain in thoracic spine' },
+              { value: 'M54.14', label: 'M54.14 - Radiculopathy, thoracic region' },
+              // Shoulder
+              { value: 'M75.41', label: 'M75.41 - Impingement syndrome of right shoulder' },
+              { value: 'M75.42', label: 'M75.42 - Impingement syndrome of left shoulder' },
+              { value: 'M75.21', label: 'M75.21 - Bicipital tendinitis, right shoulder' },
+              { value: 'M75.22', label: 'M75.22 - Bicipital tendinitis, left shoulder' },
+              { value: 'M25.511', label: 'M25.511 - Pain in right shoulder' },
+              { value: 'M25.512', label: 'M25.512 - Pain in left shoulder' },
+              { value: 'M75.30', label: 'M75.30 - Calcific tendinitis of unspecified shoulder' },
+              {
+                value: 'M75.100',
+                label: 'M75.100 - Unspecified rotator cuff tear or rupture of unspecified shoulder',
+              },
+              {
+                value: 'M75.101',
+                label: 'M75.101 - Unspecified rotator cuff tear, right shoulder',
+              },
+              { value: 'M75.102', label: 'M75.102 - Unspecified rotator cuff tear, left shoulder' },
+              { value: 'M75.111', label: 'M75.111 - Incomplete rotator cuff tear, right shoulder' },
+              { value: 'M75.112', label: 'M75.112 - Incomplete rotator cuff tear, left shoulder' },
+              { value: 'M75.121', label: 'M75.121 - Complete rotator cuff tear, right shoulder' },
+              { value: 'M75.122', label: 'M75.122 - Complete rotator cuff tear, left shoulder' },
+              { value: 'M75.01', label: 'M75.01 - Adhesive capsulitis of right shoulder' },
+              { value: 'M75.02', label: 'M75.02 - Adhesive capsulitis of left shoulder' },
+              { value: 'S43.401A', label: 'S43.401A - Unspecified sprain of right shoulder joint' },
+              { value: 'S43.402A', label: 'S43.402A - Unspecified sprain of left shoulder joint' },
+              { value: 'M19.011', label: 'M19.011 - Primary osteoarthritis, right shoulder' },
+              { value: 'M19.012', label: 'M19.012 - Primary osteoarthritis, left shoulder' },
+              { value: 'S42.201A', label: 'S42.201A - Fracture of upper end of right humerus' },
+              // Elbow
+              { value: 'M77.11', label: 'M77.11 - Lateral epicondylitis, right elbow' },
+              { value: 'M77.12', label: 'M77.12 - Lateral epicondylitis, left elbow' },
+              { value: 'M77.01', label: 'M77.01 - Medial epicondylitis, right elbow' },
+              { value: 'M77.02', label: 'M77.02 - Medial epicondylitis, left elbow' },
+              { value: 'M25.521', label: 'M25.521 - Pain in right elbow' },
+              { value: 'M25.522', label: 'M25.522 - Pain in left elbow' },
+              { value: 'S53.401A', label: 'S53.401A - Unspecified sprain of right elbow' },
+              { value: 'S53.402A', label: 'S53.402A - Unspecified sprain of left elbow' },
+              { value: 'M19.021', label: 'M19.021 - Primary osteoarthritis, right elbow' },
+              { value: 'M19.022', label: 'M19.022 - Primary osteoarthritis, left elbow' },
+              // Wrist/Hand
+              { value: 'M25.531', label: 'M25.531 - Pain in right wrist' },
+              { value: 'M25.532', label: 'M25.532 - Pain in left wrist' },
+              { value: 'M25.541', label: 'M25.541 - Pain in joints of right hand' },
+              { value: 'M25.542', label: 'M25.542 - Pain in joints of left hand' },
+              { value: 'G56.01', label: 'G56.01 - Carpal tunnel syndrome, right upper limb' },
+              { value: 'G56.02', label: 'G56.02 - Carpal tunnel syndrome, left upper limb' },
+              { value: 'M65.311', label: 'M65.311 - Trigger finger, right index finger' },
+              { value: 'M65.30', label: 'M65.30 - Trigger finger, unspecified finger' },
+              {
+                value: 'M65.841',
+                label: 'M65.841 - Other synovitis and tenosynovitis, right hand',
+              },
+              { value: 'M65.842', label: 'M65.842 - Other synovitis and tenosynovitis, left hand' },
+              { value: 'S63.501A', label: 'S63.501A - Unspecified sprain of right wrist' },
+              { value: 'S63.502A', label: 'S63.502A - Unspecified sprain of left wrist' },
+              {
+                value: 'S62.101A',
+                label: 'S62.101A - Fracture of unspecified carpal bone, right wrist',
+              },
+              {
+                value: 'S62.102A',
+                label: 'S62.102A - Fracture of unspecified carpal bone, left wrist',
+              },
+              { value: 'M18.11', label: 'M18.11 - Primary osteoarthritis, right first CMC joint' },
+              { value: 'M18.12', label: 'M18.12 - Primary osteoarthritis, left first CMC joint' },
+              { value: 'M72.0', label: "M72.0 - Palmar fascial fibromatosis (Dupuytren's)" },
+              // Knee
+              { value: 'M25.561', label: 'M25.561 - Pain in right knee' },
+              { value: 'M25.562', label: 'M25.562 - Pain in left knee' },
+              {
+                value: 'M17.10',
+                label: 'M17.10 - Unilateral primary osteoarthritis, unspecified knee',
+              },
+              { value: 'S83.511A', label: 'S83.511A - Sprain of ACL, right knee' },
+              { value: 'S83.512A', label: 'S83.512A - Sprain of ACL, left knee' },
+              { value: 'S83.521A', label: 'S83.521A - Sprain of PCL, right knee' },
+              { value: 'M22.41', label: 'M22.41 - Chondromalacia patellae, right knee' },
+              { value: 'M22.42', label: 'M22.42 - Chondromalacia patellae, left knee' },
+              { value: 'S83.241A', label: 'S83.241A - Medial meniscus tear, right knee' },
+              // Hip
+              { value: 'M25.551', label: 'M25.551 - Pain in right hip' },
+              { value: 'M25.552', label: 'M25.552 - Pain in left hip' },
+              {
+                value: 'M16.10',
+                label: 'M16.10 - Unilateral primary osteoarthritis, unspecified hip',
+              },
+              // Ankle/Foot
+              { value: 'M25.571', label: 'M25.571 - Pain in right ankle and joints of right foot' },
+              { value: 'M25.572', label: 'M25.572 - Pain in left ankle and joints of left foot' },
+              {
+                value: 'S93.401A',
+                label: 'S93.401A - Sprain of unspecified ligament of right ankle',
+              },
+              // General
+              { value: 'M79.3', label: 'M79.3 - Panniculitis, unspecified' },
+              { value: 'M62.81', label: 'M62.81 - Muscle weakness (generalized)' },
+              { value: 'M25.50', label: 'M25.50 - Pain in unspecified joint' },
+              { value: 'M79.1', label: 'M79.1 - Myalgia' },
+              { value: 'M79.7', label: 'M79.7 - Fibromyalgia' },
+              // Balance/Gait
+              { value: 'R26.81', label: 'R26.81 - Unsteadiness on feet' },
+              { value: 'R26.2', label: 'R26.2 - Difficulty in walking' },
+              { value: 'R29.6', label: 'R29.6 - Repeated falls' },
+              // Post-Surgical
+              { value: 'Z96.641', label: 'Z96.641 - Presence of right artificial hip joint' },
+              { value: 'Z96.642', label: 'Z96.642 - Presence of left artificial hip joint' },
+              { value: 'Z96.651', label: 'Z96.651 - Presence of right artificial knee joint' },
+              { value: 'Z96.652', label: 'Z96.652 - Presence of left artificial knee joint' },
+              {
+                value: 'Z87.39',
+                label: 'Z87.39 - Personal history of other musculoskeletal disorders',
+              },
+              {
+                value: 'Z48.89',
+                label: 'Z48.89 - Encounter for other specified surgical aftercare',
+              },
+            ];
+            const foundCode = icdCodesList.find((c) => c.value === row.code);
+            displayText = foundCode ? foundCode.label : `${row.code}: ${row.description}`;
+          }
+          if (!displayText) {
+            displayText = `${row.code || 'No code'}: ${row.description || 'No description'}`;
+          }
+          const codeText = `${displayText}${primaryIndicator}`;
+          elements.push(
+            createLabelValueLine('', codeText, { indentLeft: FORMAT.indent.level1, bullet: true }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No ICD-10 codes documented', { indentLeft: FORMAT.indent.level1 }),
+        );
+      }
+      // CPT Codes
+      elements.push(createSectionHeader('CPT Codes', 2));
+      const cptRows = Array.isArray(billing.billingCodes)
+        ? billing.billingCodes
+        : Array.isArray(billing.cptCodes)
+          ? billing.cptCodes
+          : [];
+      if (cptRows.length) {
+        cptRows.forEach((row) => {
+          // Use label if available, otherwise try to reconstruct it from code, finally fall back to description
+          let displayText = row.label;
+          if (!displayText && row.code) {
+            // Try to find the label from the CPT codes list based on the code
+            const cptCodesList = [
+              { value: '97110', label: '97110 - Therapeutic Exercise' },
+              { value: '97112', label: '97112 - Neuromuscular Re-education' },
+              { value: '97116', label: '97116 - Gait Training' },
+              { value: '97140', label: '97140 - Manual Therapy' },
+              { value: '97530', label: '97530 - Therapeutic Activities' },
+              { value: '97535', label: '97535 - Self-Care Training' },
+              { value: '97012', label: '97012 - Mechanical Traction' },
+              { value: '97014', label: '97014 - Electrical Stimulation' },
+              { value: '97035', label: '97035 - Ultrasound' },
+              { value: '97039', label: '97039 - Unlisted Modality' },
+              { value: '97161', label: '97161 - PT Evaluation Low Complexity' },
+              { value: '97162', label: '97162 - PT Evaluation Moderate Complexity' },
+              { value: '97163', label: '97163 - PT Evaluation High Complexity' },
+              { value: '97164', label: '97164 - PT Re-evaluation' },
+              { value: '97010', label: '97010 - Hot/Cold Packs' },
+              { value: '97018', label: '97018 - Paraffin Bath' },
+              { value: '97022', label: '97022 - Whirlpool' },
+              { value: '97032', label: '97032 - Electrical Stimulation (Manual)' },
+              { value: '97033', label: '97033 - Iontophoresis' },
+              { value: '97034', label: '97034 - Contrast Baths' },
+              { value: '97113', label: '97113 - Aquatic Therapy' },
+              { value: '97124', label: '97124 - Massage' },
+              { value: '97150', label: '97150 - Group Therapy' },
+              { value: '97542', label: '97542 - Wheelchair Management Training' },
+              { value: '97750', label: '97750 - Physical Performance Test' },
+              { value: '97755', label: '97755 - Assistive Technology Assessment' },
+              { value: '97760', label: '97760 - Orthotic Management and Training' },
+              { value: '97761', label: '97761 - Prosthetic Training' },
+              { value: '97016', label: '97016 - Vasopneumatic Device' },
+              { value: '97139', label: '97139 - Unlisted Therapeutic Procedure' },
+              { value: '97597', label: '97597 - Debridement, Open Wound (first 20 sq cm)' },
+              {
+                value: '97598',
+                label: '97598 - Debridement, Open Wound (each additional 20 sq cm)',
+              },
+              { value: '95831', label: '95831 - Muscle Testing, Manual (Extremity/Trunk)' },
+              { value: '95852', label: '95852 - Range of Motion Measurements' },
+              { value: '29125', label: '29125 - Application of Short Arm Splint (static)' },
+              { value: '29126', label: '29126 - Application of Short Arm Splint (dynamic)' },
+            ];
+            const foundCode = cptCodesList.find((c) => c.value === row.code);
+            displayText = foundCode ? foundCode.label : row.description;
+          }
+          if (!displayText) {
+            displayText = row.description || `${row.code || 'No code'}`;
+          }
+          let codeText = displayText;
+          if (row.linkedDiagnosisCode) {
+            codeText += ` [Linked ICD-10: ${row.linkedDiagnosisCode}]`;
+          }
+          if (row.units != null || row.timeSpent) {
+            const unitsText = row.units != null ? `${row.units} units` : '';
+            const timeText = row.timeSpent ? `${row.timeSpent}` : '';
+            const additionalInfo = [unitsText, timeText].filter(Boolean).join(', ');
+            if (additionalInfo) {
+              codeText += ` (${additionalInfo})`;
+            }
+          }
+          elements.push(
+            createLabelValueLine('', codeText, { indentLeft: FORMAT.indent.level1, bullet: true }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No CPT codes documented', { indentLeft: FORMAT.indent.level1 }),
+        );
+      }
+      // Orders & Referrals
+      elements.push(createSectionHeader('Orders & Referrals', 2));
+      const ordRows = Array.isArray(billing.ordersReferrals) ? billing.ordersReferrals : [];
+      if (ordRows.length) {
+        ordRows.forEach((row) => {
+          const linkedDx = row.linkedDiagnosisCode
+            ? ` [Linked ICD-10: ${row.linkedDiagnosisCode}]`
+            : '';
+          const orderText = `${row.type || 'No type'}${linkedDx}: ${row.details || 'No details'}`;
+          elements.push(
+            createLabelValueLine('', orderText, { indentLeft: FORMAT.indent.level1, bullet: true }),
+          );
+        });
+      } else {
+        elements.push(
+          createBodyParagraph('No orders or referrals documented', {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      }
+    } // End of conditional Standard SOAP generation
 
     // Create the document
     // Footer with patient identifiers and page numbers

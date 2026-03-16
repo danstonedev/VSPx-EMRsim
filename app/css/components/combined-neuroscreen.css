@@ -447,6 +447,10 @@ table.combined-neuroscreen-table:has(.action-col) {
   border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
+:root[data-theme='dark'] .treatment-plan-select-header .form-field__label {
+  color: var(--white) !important;
+}
+
 .billing-linked-groups {
   display: grid;
   gap: var(--space-3, 0.75rem);
@@ -642,6 +646,16 @@ table.combined-neuroscreen-table:has(.action-col) {
 
 .billing-row-add-btn:hover {
   background: var(--primary-light);
+}
+
+:root[data-theme='dark'] .billing-row-add-btn {
+  border-color: var(--white) !important;
+  background: var(--accent) !important;
+  color: var(--white) !important;
+}
+
+:root[data-theme='dark'] .billing-row-add-btn:hover {
+  background: var(--primary-dark, #007a33) !important;
 }
 
 .billing-linked-subtable

@@ -96,7 +96,7 @@ export const TreatmentPlan = {
               'th',
               {
                 colspan: '2',
-                class: 'combined-neuroscreen-th billing-header',
+                class: 'combined-neuroscreen-th billing-header treatment-plan-select-header',
                 style: 'font-weight: normal; padding: 6px 10px;',
               },
               [
@@ -112,7 +112,7 @@ export const TreatmentPlan = {
               'th',
               {
                 colspan: '2',
-                class: 'combined-neuroscreen-th billing-header',
+                class: 'combined-neuroscreen-th billing-header treatment-plan-select-header',
                 style: 'font-weight: normal; padding: 6px 10px;',
               },
               [

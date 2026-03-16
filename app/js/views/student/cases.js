@@ -167,6 +167,137 @@ function openCreateNoteModal() {
   });
 }
 
+// Modal to create a Simple SOAP note (free-text only, not tied to a case)
+function openCreateSimpleNoteModal() {
+  const overlay = el('div', {
+    class:
+      'modal-overlay popup-overlay-base fixed inset-0 overlay-50 d-flex ai-center jc-center z-modal',
+    onclick: (e) => {
+      if (e.target === overlay) close();
+    },
+  });
+  const defaultTitle = `Simple SOAP Note — ${new Date().toLocaleDateString()}`;
+  const content = el(
+    'div',
+    {
+      class: 'modal-content case-details-modal popup-card-base',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': 'Create Simple SOAP Note',
+      onclick: (e) => e.stopPropagation(),
+    },
+    [
+      el('div', { class: 'modal-header' }, [
+        el('h3', {}, 'Create Simple SOAP Note'),
+        el('button', { class: 'close-btn', 'aria-label': 'Close', onclick: () => close() }, '✕'),
+      ]),
+      el('div', { class: 'modal-body case-details-body' }, [
+        el(
+          'form',
+          {
+            onsubmit: (e) => {
+              e.preventDefault();
+              const input = content.querySelector('#simple-note-title-input');
+              const title = (input && input.value ? input.value : '').trim() || 'Simple SOAP Note';
+              const id = `blank-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+              try {
+                const draftKey = `draft_${id}_eval`;
+                const initialDraft = {
+                  noteType: 'simple-soap',
+                  noteTitle: title,
+                  simpleSOAP: { subjective: '', objective: '', assessment: '', plan: '' },
+                  __savedAt: Date.now(),
+                };
+                storage.setItem(draftKey, JSON.stringify(initialDraft));
+              } catch (e2) {
+                console.warn('Could not pre-save simple note draft:', e2);
+              }
+              close();
+              urlNavigate('/student/editor', { case: id, v: 0, encounter: 'eval' });
+            },
+          },
+          [
+            el('div', { class: 'instructor-form-field' }, [
+              el(
+                'label',
+                { class: 'instructor-form-label', for: 'simple-note-title-input' },
+                'Note Title',
+              ),
+              el('input', {
+                id: 'simple-note-title-input',
+                name: 'simple-note-title-input',
+                type: 'text',
+                class: 'instructor-form-input',
+                value: defaultTitle,
+                placeholder: 'e.g., Quick Eval Note - Mar 2026',
+              }),
+            ]),
+            el('div', { class: 'modal-actions' }, [
+              el(
+                'button',
+                { type: 'button', class: 'btn secondary', onclick: () => close() },
+                'Cancel',
+              ),
+              el('button', { type: 'submit', class: 'btn primary' }, 'Create'),
+            ]),
+          ],
+        ),
+      ]),
+    ],
+  );
+  function close() {
+    overlay.classList.remove('is-open');
+    content.classList.remove('is-open');
+    const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const removeNow = () => {
+      try {
+        ac.abort();
+        overlay.style.opacity = '';
+        const card = overlay.querySelector('.popup-card-base');
+        if (card) {
+          card.style.opacity = '';
+          card.style.transform = '';
+        }
+        overlay.remove();
+      } catch {
+        /* overlay or card may already be removed */
+      }
+    };
+    if (prefersReduce) return removeNow();
+    overlay.addEventListener('transitionend', removeNow, { once: true });
+    setTimeout(removeNow, 480);
+  }
+  overlay.append(content);
+  document.body.append(overlay);
+  const ac = new AbortController();
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key === 'Escape') close();
+    },
+    { signal: ac.signal },
+  );
+  requestAnimationFrame(() => {
+    overlay.classList.add('is-open');
+    content.classList.add('is-open');
+    setTimeout(() => {
+      try {
+        const card = overlay.querySelector('.popup-card-base');
+        const overlayStyle = getComputedStyle(overlay);
+        const cardStyle = card ? getComputedStyle(card) : null;
+        if (overlayStyle && overlayStyle.opacity === '0') overlay.style.opacity = '1';
+        if (card && cardStyle && cardStyle.opacity === '0') {
+          card.style.opacity = '1';
+          card.style.transform = 'scale(1)';
+        }
+      } catch {
+        /* element may not exist */
+      }
+      content.querySelector('#simple-note-title-input')?.focus();
+    }, 90);
+  });
+}
+
 // Helper: scan localStorage-backed drafts and compute completion summary per case/encounter
 function sectionCompletionCount(draftData) {
   const sections = ['subjective', 'assessment', 'goals', 'plan', 'billing'];
@@ -212,10 +343,23 @@ function scanDrafts(storage) {
 
       const caseId = keyWithoutPrefix.substring(0, lastUnderscoreIndex);
       const encounter = keyWithoutPrefix.substring(lastUnderscoreIndex + 1);
-      let completedSections = sectionCompletionCount(draftData);
-      if (hasObjectiveContent(draftData)) completedSections++;
-      const totalSections = 6; // 5 sections + 1 objective
-      const completionPercent = Math.round((completedSections / totalSections) * 100);
+      let completedSections = 0;
+      let totalSections = 1;
+      let completionPercent = 0;
+
+      if (draftData.noteType === 'simple-soap') {
+        const soap = draftData.simpleSOAP || {};
+        const hasContent = ['subjective', 'objective', 'assessment', 'plan'].some(
+          (k) => typeof soap[k] === 'string' && soap[k].trim().length > 0,
+        );
+        completedSections = hasContent ? 1 : 0;
+        completionPercent = hasContent ? 100 : 0;
+      } else {
+        completedSections = sectionCompletionCount(draftData);
+        if (hasObjectiveContent(draftData)) completedSections++;
+        totalSections = 6; // 5 sections + 1 objective
+        completionPercent = Math.round((completedSections / totalSections) * 100);
+      }
 
       if (!drafts[caseId]) drafts[caseId] = {};
       drafts[caseId][encounter] = {
@@ -272,8 +416,59 @@ function buildComparator(sortColumn, sortDirection, drafts) {
   }
 }
 
+// Build simple SOAP Word export — only 4 free-text sections
+function createSimpleSOAPExportDocHTML(c, draft) {
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const exportStyles =
+    "body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;margin:0;padding:0;color:#000;text-align:left}h1{font-size:14pt;font-weight:bold;text-align:center;margin:0 0 18pt 0;text-decoration:underline}h2{font-size:13pt;font-weight:bold;margin:18pt 0 8pt 0;color:#2c5aa0;border-bottom:1px solid #ccc;padding-bottom:3pt}p{margin:0 0 8pt 0}.section{margin-bottom:20pt;page-break-inside:avoid}.signature-line{border-bottom:1px solid #000;width:300pt;margin:24pt 0 6pt 0}.footer{margin-top:36pt;font-size:9pt;color:#666;text-align:center;border-top:1px solid #ccc;padding-top:12pt}";
+  const soap = draft.simpleSOAP || {};
+  const nl = (s) => (s || '').replace(/\n/g, '<br>');
+  const noteTitle = draft.noteTitle || c.title || 'Simple SOAP Note';
+
+  return `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <meta name="ProgId" content="Word.Document">
+      <meta name="Generator" content="Microsoft Word">
+      <meta name="Originator" content="Microsoft Word">
+      <style>${exportStyles}</style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="clinic-name">Physical Therapy Clinic</div>
+        <div class="clinic-info">Student Clinical Documentation | Academic Exercise</div>
+      </div>
+      <div class="patient-info">
+        <div class="info-row"><span class="info-label">Note:</span><span>${noteTitle}</span></div>
+        <div class="info-row"><span class="info-label">Date of Service:</span><span>${currentDate}</span></div>
+        <div class="info-row"><span class="info-label">Student:</span><span>_________________________________</span></div>
+      </div>
+      <h1>SIMPLE SOAP NOTE</h1>
+      <div class="section"><h2>SUBJECTIVE</h2><p>${nl(soap.subjective) || 'Not documented.'}</p></div>
+      <div class="section"><h2>OBJECTIVE</h2><p>${nl(soap.objective) || 'Not documented.'}</p></div>
+      <div class="section"><h2>ASSESSMENT</h2><p>${nl(soap.assessment) || 'Not documented.'}</p></div>
+      <div class="section"><h2>PLAN</h2><p>${nl(soap.plan) || 'Not documented.'}</p></div>
+      <div class="signature-section">
+        <div class="info-row"><span class="info-label">Student Signature:</span><span class="signature-line"></span><span class="ml-12pt">Date: ___________</span></div>
+        <br>
+        <div class="info-row"><span class="info-label">Instructor Signature:</span><span class="signature-line"></span><span class="ml-12pt">Date: ___________</span></div>
+      </div>
+      <div class="footer">Generated by PT EMR Simulator</div>
+    </body></html>`;
+}
+
 // Build the exportable Word HTML content from a draft
 function createExportDocHTML(c, draft) {
+  // Simple SOAP Note: export only 4 free-text sections
+  if (draft.noteType === 'simple-soap') {
+    return createSimpleSOAPExportDocHTML(c, draft);
+  }
+
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -581,7 +776,16 @@ function makeCasesPanel(app, initialCases, drafts) {
             title: 'Create a blank SOAP note not attached to a case',
             onClick: () => openCreateNoteModal(),
           },
-          [spriteIcon('plus'), 'Create SOAP Note'],
+          [spriteIcon('plus'), 'SOAP Note'],
+        ),
+        el(
+          'button',
+          {
+            class: 'btn secondary d-flex ai-center gap-8',
+            title: 'Create a simple free-text SOAP note',
+            onClick: () => openCreateSimpleNoteModal(),
+          },
+          [spriteIcon('plus'), 'Simple SOAP Note'],
         ),
       ]),
     ]),
