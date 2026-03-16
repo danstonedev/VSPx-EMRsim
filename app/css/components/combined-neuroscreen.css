@@ -447,7 +447,8 @@ table.combined-neuroscreen-table:has(.action-col) {
   border-top-right-radius: calc(var(--table-radius-inner) - 1px);
 }
 
-:root[data-theme='dark'] .treatment-plan-select-header .form-field__label {
+.treatment-plan-select-header .form-field__label,
+.treatment-plan-select-header .form-label {
   color: var(--white) !important;
 }
 
