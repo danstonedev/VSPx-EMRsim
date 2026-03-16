@@ -227,9 +227,9 @@ html[data-theme='dark'] .btn.primary:hover {
   height: 24px; /* ~50% smaller */
   margin: 8px auto var(--space-4); /* center horizontally + add space below */
   border-radius: 9999px;
-  border: 1px solid var(--und-green);
-  background: var(--white); /* match primary button fill */
-  color: var(--und-green); /* white plus icon/text */
+  border: 1px solid var(--und-green-dark);
+  background: var(--und-green); /* green fill for visibility in both themes */
+  color: var(--white); /* white plus icon/text */
   font-size: 0.875rem; /* 14px, scale + symbol */
   font-weight: 700;
   line-height: 1;
@@ -240,9 +240,9 @@ html[data-theme='dark'] .btn.primary:hover {
     box-shadow 0.2s ease;
 }
 .compact-add-btn:hover {
-  background: var(--und-green-light);
+  background: var(--und-green-dark);
   border-color: var(--und-green-dark);
-  color: var(--und-green-dark);
+  color: var(--white);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -287,7 +287,7 @@ html[data-theme='dark'] .btn.primary:hover {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  border: var(--bw-1, 1px) solid var(--danger-50);
+  border: var(--bw-1, 1px) solid var(--danger-200);
   background: var(--color-bg, var(--white));
   color: var(--danger-600);
   font-size: 0.875rem; /* 14px */
@@ -299,7 +299,7 @@ html[data-theme='dark'] .btn.primary:hover {
 }
 .remove-btn:hover {
   background: var(--danger-100);
-  border-color: var(--danger-200);
+  border-color: var(--danger-600);
   color: var(--danger-700);
 }
 

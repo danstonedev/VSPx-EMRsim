@@ -648,6 +648,18 @@ table.combined-neuroscreen-table:has(.action-col) {
   background: var(--primary-light);
 }
 
+/* Light mode: filled green for visibility */
+html:not([data-theme='dark']) .billing-row-add-btn {
+  border-color: var(--und-green-dark);
+  background: var(--und-green);
+  color: var(--white);
+}
+
+html:not([data-theme='dark']) .billing-row-add-btn:hover {
+  background: var(--und-green-dark);
+  border-color: var(--und-green-dark);
+}
+
 :root[data-theme='dark'] .billing-row-add-btn {
   border-color: var(--white) !important;
   background: var(--accent) !important;
