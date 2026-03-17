@@ -948,24 +948,112 @@ export function exportToWord(caseData, draft) {
       elements.push(createSectionDivider());
       elements.push(createWebSectionHeader('SUBJECTIVE'));
       const subj = (draft && draft.subjective) || {};
-      elements.push(createSectionHeader('History', 2));
-      const hpiLines = [];
+      elements.push(createSectionHeader('Patient Profile', 2));
       const chiefConcern =
         subj.chiefComplaint || getSafeValue(caseData, 'history.chief_complaint') || '';
       const detailedHistory =
         subj.historyOfPresentIllness || getSafeValue(caseData, 'history.hpi') || '';
-      if (chiefConcern) hpiLines.push(`Chief Concern: ${chiefConcern}`);
-      if (detailedHistory) hpiLines.push(`History of Present Illness: ${detailedHistory}`);
-      if (hpiLines.length) {
-        if (chiefConcern)
+      const profileName = subj.patientName || getSafeValue(caseData, 'snapshot.name') || '';
+      const profileBirthday = subj.patientBirthday || getSafeValue(caseData, 'snapshot.dob') || '';
+      const profileAge = subj.patientAge || getSafeValue(caseData, 'snapshot.age') || '';
+      const profileGender = subj.patientGender || getSafeValue(caseData, 'snapshot.sex') || '';
+      const profilePronouns = subj.patientGenderIdentityPronouns || '';
+      const profileLanguage = subj.patientPreferredLanguage || '';
+      const profileInterpreterNeeded = subj.patientInterpreterNeeded || '';
+      const profileWorkStatusOccupation = subj.patientWorkStatusOccupation || '';
+      const profileLivingSituationHomeEnvironment =
+        subj.patientLivingSituationHomeEnvironment || '';
+      const profileSocialSupport = subj.patientSocialSupport || '';
+      const profileNotes = subj.patientDemographics || '';
+      const hasProfile = !!(
+        profileName ||
+        profileBirthday ||
+        profileAge ||
+        profileGender ||
+        profilePronouns ||
+        profileLanguage ||
+        profileInterpreterNeeded ||
+        profileWorkStatusOccupation ||
+        profileLivingSituationHomeEnvironment ||
+        profileSocialSupport ||
+        profileNotes
+      );
+      if (hasProfile) {
+        if (profileName)
           elements.push(
-            createLabelValueLine('Chief Concern', chiefConcern, {
+            createLabelValueLine('Full Name', profileName, {
               indentLeft: FORMAT.indent.level1,
             }),
           );
-        if (detailedHistory)
+        if (profileBirthday)
           elements.push(
-            createLabelValueLine('History of Present Illness', detailedHistory, {
+            createLabelValueLine('Date of Birth', profileBirthday, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileAge)
+          elements.push(
+            createLabelValueLine('Age', profileAge, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileGender)
+          elements.push(
+            createLabelValueLine('Sex', profileGender, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profilePronouns)
+          elements.push(
+            createLabelValueLine('Gender Identity / Pronouns', profilePronouns, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileLanguage)
+          elements.push(
+            createLabelValueLine('Preferred Language', profileLanguage, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileInterpreterNeeded)
+          elements.push(
+            createLabelValueLine(
+              'Interpreter Needed',
+              profileInterpreterNeeded === 'yes'
+                ? 'Yes'
+                : profileInterpreterNeeded === 'no'
+                  ? 'No'
+                  : profileInterpreterNeeded,
+              {
+                indentLeft: FORMAT.indent.level1,
+              },
+            ),
+          );
+        if (profileWorkStatusOccupation)
+          elements.push(
+            createLabelValueLine('Work Status & Occupation', profileWorkStatusOccupation, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileLivingSituationHomeEnvironment)
+          elements.push(
+            createLabelValueLine(
+              'Living Situation / Home Environment',
+              profileLivingSituationHomeEnvironment,
+              {
+                indentLeft: FORMAT.indent.level1,
+              },
+            ),
+          );
+        if (profileSocialSupport)
+          elements.push(
+            createLabelValueLine('Social Support', profileSocialSupport, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (profileNotes)
+          elements.push(
+            createLabelValueLine('Demographics Notes', profileNotes, {
               indentLeft: FORMAT.indent.level1,
             }),
           );
@@ -978,6 +1066,64 @@ export function exportToWord(caseData, draft) {
           }),
         );
       }
+
+      // History section
+      elements.push(createSectionHeader('History', 2));
+      const hasHistory = !!(
+        chiefConcern ||
+        detailedHistory ||
+        subj.functionalLimitations ||
+        subj.additionalHistory ||
+        subj.priorLevel ||
+        subj.patientGoals
+      );
+      if (hasHistory) {
+        if (chiefConcern)
+          elements.push(
+            createLabelValueLine('Chief Concern', chiefConcern, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (detailedHistory)
+          elements.push(
+            createLabelValueLine('History of Present Illness', detailedHistory, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.functionalLimitations)
+          elements.push(
+            createLabelValueLine('Current Functional Limitations', subj.functionalLimitations, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.additionalHistory)
+          elements.push(
+            createLabelValueLine('Additional Relevant History', subj.additionalHistory, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.priorLevel)
+          elements.push(
+            createLabelValueLine('Prior Level of Function', subj.priorLevel, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        if (subj.patientGoals)
+          elements.push(
+            createLabelValueLine('Patient Goals', subj.patientGoals, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
+        elements.push(
+          createBodyParagraph('— not documented', {
+            indentLeft: FORMAT.indent.level1,
+            italics: true,
+            color: FORMAT.colors.grayText,
+          }),
+        );
+      }
+
       elements.push(createSectionHeader('Symptoms', 2));
       const painHasAny = !!(
         subj.painLocation ||
@@ -1020,76 +1166,31 @@ export function exportToWord(caseData, draft) {
               indentLeft: FORMAT.indent.level1,
             }),
           );
-      } else {
-        elements.push(
-          createBodyParagraph('Pain assessment not completed', {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      }
-      elements.push(createSectionHeader('Functional Status', 2));
-      const hasFunctional = !!(subj.functionalLimitations || subj.priorLevel || subj.patientGoals);
-      if (hasFunctional) {
-        if (subj.functionalLimitations)
-          elements.push(
-            createLabelValueLine('Current Limitations', subj.functionalLimitations, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
-        if (subj.priorLevel)
-          elements.push(
-            createLabelValueLine('Prior Level of Function', subj.priorLevel, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
-        if (subj.patientGoals)
-          elements.push(
-            createLabelValueLine('Patient Goals', subj.patientGoals, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
-      } else {
-        elements.push(
-          createBodyParagraph('Functional status not documented', {
-            indentLeft: FORMAT.indent.level1,
-          }),
-        );
-      }
-      elements.push(createSectionHeader('Additional History', 2));
-      const hasAddHist = !!(subj.medicationsCurrent || subj.redFlags || subj.additionalHistory);
-      if (hasAddHist) {
-        if (subj.medicationsCurrent)
-          elements.push(
-            createLabelValueLine('Current Medications', subj.medicationsCurrent, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
         if (subj.redFlags)
           elements.push(
             createLabelValueLine('Red Flags / Screening', subj.redFlags, {
               indentLeft: FORMAT.indent.level1,
             }),
           );
-        if (subj.additionalHistory)
-          elements.push(
-            createLabelValueLine('Additional Relevant History', subj.additionalHistory, {
-              indentLeft: FORMAT.indent.level1,
-            }),
-          );
       } else {
         elements.push(
-          createBodyParagraph('No additional history provided', {
+          createBodyParagraph('Pain assessment not completed', {
             indentLeft: FORMAT.indent.level1,
           }),
         );
+        if (subj.redFlags)
+          elements.push(
+            createLabelValueLine('Red Flags / Screening', subj.redFlags, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
       }
 
-      // Interview Q/A Section
       const qaItems = Array.isArray(subj.qaItems)
         ? subj.qaItems.filter((q) => q.question || q.response)
         : [];
       if (qaItems.length > 0) {
-        elements.push(createSectionHeader('Interview Q/A', 2));
+        elements.push(createSectionHeader('Interview Q&A', 2));
         elements.push(
           createBodyParagraph(
             `${qaItems.length} question${qaItems.length !== 1 ? 's' : ''} documented`,
@@ -1116,13 +1217,29 @@ export function exportToWord(caseData, draft) {
         });
       }
 
+      elements.push(createSectionHeader('Current Medications', 2));
+      const hasMedicationData = !!subj.medicationsCurrent;
+      if (hasMedicationData) {
+        if (subj.medicationsCurrent)
+          elements.push(
+            createLabelValueLine('Current Medications', subj.medicationsCurrent, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+      } else {
+        elements.push(
+          createBodyParagraph('No current medications documented', {
+            indentLeft: FORMAT.indent.level1,
+          }),
+        );
+      }
+
       // OBJECTIVE Section (draft-first)
       elements.push(createSectionDivider());
       elements.push(createWebSectionHeader('OBJECTIVE'));
       const obj = (draft && draft.objective) || {};
-      // General observations & vitals
+
       const vitals = obj.vitals || {};
-      const obs = obj.observations || {};
 
       // Vital Signs
       elements.push(createSectionHeader('Vital Signs', 2));
@@ -1155,44 +1272,259 @@ export function exportToWord(caseData, draft) {
         );
       }
 
-      // General Observations
-      elements.push(createSectionHeader('General Observations', 2));
-      const obsFields = [
-        { label: 'Mental Status & Affect', value: obs.generalAppearance },
-        { label: 'Posture & Alignment', value: obs.posture },
-        { label: 'Gait', value: obs.gait }, // legacy field — printed if populated from older cases
-      ];
-
-      let hasObs = false;
-      obsFields.forEach((f) => {
-        if (f.value) {
-          hasObs = true;
-          elements.push(
-            createLabelValueLine(f.label, f.value, { indentLeft: FORMAT.indent.level1 }),
-          );
+      // Systems Review
+      elements.push(createSectionHeader('Systems Review', 2));
+      const sr = obj.systemsReview?.systems || {};
+      const srLabels = {
+        communication: 'Communication / Cognition',
+        cardiovascular: 'Cardiovascular / Pulmonary',
+        integumentary: 'Integumentary',
+        musculoskeletal: 'Musculoskeletal',
+        neuromuscular: 'Neuromuscular',
+      };
+      const deferReasonLabels = {
+        'not-indicated': 'Not clinically indicated',
+        'follow-up': 'Deferred to follow-up',
+        'unable-to-tolerate': 'Patient unable to tolerate',
+        'medical-precaution': 'Medical precaution',
+        'patient-declined': 'Patient declined',
+        'other-provider': 'Assessed by other provider',
+      };
+      const srLines = Object.entries(srLabels).map(([key, label]) => {
+        const entry = sr[key] || {};
+        if (entry.status === 'impaired') {
+          // Added — list added sub-categories
+          const subcats = entry.subcategories || {};
+          const added = Object.entries(subcats)
+            .filter(([, v]) => v === 'impaired')
+            .map(([k]) => k);
+          const detail = added.length > 0 ? ` (${added.join(', ')})` : '';
+          return `${label}: Added${detail}`;
         }
+        if (entry.status === 'wnl') {
+          // Deferred — include reason if provided
+          const reason = deferReasonLabels[entry.deferReason] || '';
+          return `${label}: Deferred${reason ? ` — ${reason}` : ''}`;
+        }
+        return `${label}: Not assessed`;
       });
+      elements.push(...createBulletedList(srLines, FORMAT.indent.level1));
 
-      // Fallback for legacy text if new fields are empty but old text exists
-      if (!hasObs && obj.text) {
-        elements.push(createBodyParagraph(obj.text, { indentLeft: FORMAT.indent.level1 }));
-      } else if (!hasObs) {
-        elements.push(
-          createBodyParagraph('Not documented', {
-            indentLeft: FORMAT.indent.level1,
-            italics: true,
-            color: FORMAT.colors.grayText,
-          }),
+      // ── Communication / Cognition ────────────────────────
+      elements.push(createSectionHeader('Communication / Cognition', 2));
+
+      // Orientation & Alertness
+      const orientData =
+        typeof obj.orientation === 'object' && obj.orientation ? obj.orientation : {};
+      const orientLines = [];
+      const orientDims = ['person', 'place', 'time', 'situation'];
+      const orientCount = orientDims.filter((d) => orientData[d] !== false).length;
+      if (orientCount < 4 || orientData.gcs || orientData.alertnessLevel) {
+        const oriented = orientDims.filter((d) => orientData[d] !== false);
+        orientLines.push(
+          `Oriented ×${orientCount}${oriented.length < 4 ? ` (${oriented.join(', ')})` : ''}`,
         );
+      } else {
+        orientLines.push('Oriented ×4');
       }
+      if (orientData.gcs) orientLines.push(`GCS: ${orientData.gcs}/15`);
+      if (orientData.alertnessLevel) orientLines.push(`Alertness: ${orientData.alertnessLevel}`);
+      if (orientLines.length > 1 || orientData.notes || orientCount < 4) {
+        elements.push(createSectionHeader('Orientation & Alertness', 3));
+        elements.push(...createBulletedList(orientLines, FORMAT.indent.level1));
+        if (orientData.notes)
+          elements.push(
+            createBodyParagraph(orientData.notes, { indentLeft: FORMAT.indent.level1 }),
+          );
+      }
+
+      // Memory & Attention
+      const memData =
+        typeof obj.memoryAttention === 'object' && obj.memoryAttention ? obj.memoryAttention : {};
+      const memLines = [];
+      if (memData.shortTerm) memLines.push(`Short-Term Recall: ${memData.shortTerm}`);
+      if (memData.longTerm) memLines.push(`Long-Term Memory: ${memData.longTerm}`);
+      if (memData.attention) memLines.push(`Attention: ${memData.attention}`);
+      if (memData.followCommands) memLines.push(`Multi-Step Commands: ${memData.followCommands}`);
+      if (memLines.length || memData.notes) {
+        elements.push(createSectionHeader('Memory & Attention', 3));
+        if (memLines.length) elements.push(...createBulletedList(memLines, FORMAT.indent.level1));
+        if (memData.notes)
+          elements.push(createBodyParagraph(memData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Safety Awareness
+      const safetyData =
+        typeof obj.safetyAwareness === 'object' && obj.safetyAwareness ? obj.safetyAwareness : {};
+      const safetyLines = [];
+      if (safetyData.supervisionLevel)
+        safetyLines.push(`Supervision: ${safetyData.supervisionLevel}`);
+      if (safetyData.judgment) safetyLines.push(`Judgment: ${safetyData.judgment}`);
+      if (safetyData.impulsivity) safetyLines.push(`Impulsivity: ${safetyData.impulsivity}`);
+      if (safetyData.awarenessOfLimitations)
+        safetyLines.push(`Awareness of Limitations: ${safetyData.awarenessOfLimitations}`);
+      if (safetyData.fallRisk) safetyLines.push(`Fall Risk: ${safetyData.fallRisk}`);
+      if (safetyLines.length || safetyData.notes) {
+        elements.push(createSectionHeader('Safety Awareness', 3));
+        if (safetyLines.length)
+          elements.push(...createBulletedList(safetyLines, FORMAT.indent.level1));
+        if (safetyData.notes)
+          elements.push(
+            createBodyParagraph(safetyData.notes, { indentLeft: FORMAT.indent.level1 }),
+          );
+      }
+
+      // Vision & Perception
+      const visData =
+        typeof obj.visionPerception === 'object' && obj.visionPerception
+          ? obj.visionPerception
+          : {};
+      const visLines = [];
+      if (visData.visualFields) visLines.push(`Visual Fields: ${visData.visualFields}`);
+      if (visData.neglectSide) visLines.push(`Visual Neglect: ${visData.neglectSide}`);
+      if (visData.depthPerception) visLines.push(`Depth Perception: ${visData.depthPerception}`);
+      if (visData.spatialAwareness) visLines.push(`Spatial Awareness: ${visData.spatialAwareness}`);
+      if (visLines.length || visData.notes) {
+        elements.push(createSectionHeader('Vision & Perception', 3));
+        if (visLines.length) elements.push(...createBulletedList(visLines, FORMAT.indent.level1));
+        if (visData.notes)
+          elements.push(createBodyParagraph(visData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // ── Cardiovascular / Pulmonary ──────────────────────
+      elements.push(createSectionHeader('Cardiovascular / Pulmonary', 2));
+
+      // Auscultation
+      const auscData =
+        typeof obj.auscultation === 'object' && obj.auscultation ? obj.auscultation : {};
+      const heartLabel = {
+        normalS1S2: 'Normal S1/S2',
+        murmur: 'Murmur Present',
+        gallop: 'Gallop (S3/S4)',
+        irregular: 'Irregular Rhythm',
+        rub: 'Pericardial Rub',
+        distant: 'Distant / Muffled',
+        tachycardic: 'Tachycardic',
+        bradycardic: 'Bradycardic',
+      };
+      const lungLabel = {
+        clear: 'Clear',
+        crackles: 'Crackles',
+        wheezes: 'Wheezes',
+        rhonchi: 'Rhonchi',
+        stridor: 'Stridor',
+        diminished: 'Diminished',
+        absent: 'Absent',
+      };
+      const auscLines = [];
+      if (auscData.heartSounds)
+        auscLines.push(`Heart Sounds: ${heartLabel[auscData.heartSounds] || auscData.heartSounds}`);
+      if (auscData.lungLeft)
+        auscLines.push(`Lung Sounds (L): ${lungLabel[auscData.lungLeft] || auscData.lungLeft}`);
+      if (auscData.lungRight)
+        auscLines.push(`Lung Sounds (R): ${lungLabel[auscData.lungRight] || auscData.lungRight}`);
+      if (auscLines.length || auscData.notes) {
+        elements.push(createSectionHeader('Auscultation', 3));
+        if (auscLines.length) elements.push(...createBulletedList(auscLines, FORMAT.indent.level1));
+        if (auscData.notes)
+          elements.push(createBodyParagraph(auscData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Edema Assessment
+      const edemaData = typeof obj.edema === 'object' && obj.edema ? obj.edema : {};
+      if ((edemaData.entries && edemaData.entries.length) || edemaData.notes) {
+        elements.push(createSectionHeader('Edema Assessment', 3));
+        if (edemaData.entries && edemaData.entries.length) {
+          const edemaLines = edemaData.entries
+            .filter((e) => e.location || e.pitting)
+            .map((e) => {
+              const parts = [];
+              if (e.location) parts.push(e.location);
+              if (e.side) parts.push(`(${e.side})`);
+              if (e.pitting) parts.push(`Pitting: ${e.pitting}`);
+              if (e.circumference) parts.push(`Circ: ${e.circumference} cm`);
+              return parts.join(' — ');
+            });
+          if (edemaLines.length)
+            elements.push(...createBulletedList(edemaLines, FORMAT.indent.level1));
+        }
+        if (edemaData.notes)
+          elements.push(createBodyParagraph(edemaData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Endurance / Exercise Tolerance
+      const endData = typeof obj.endurance === 'object' && obj.endurance ? obj.endurance : {};
+      const endLabels = {
+        testUsed: 'Test Used',
+        distance: 'Distance (m)',
+        rpe: 'RPE (Borg)',
+        hrRest: 'HR Rest (bpm)',
+        hrPeak: 'HR Peak (bpm)',
+        recoveryMin: 'Recovery (min)',
+        spo2Rest: 'SpO₂ Rest (%)',
+        spo2Low: 'SpO₂ Lowest (%)',
+      };
+      const endLines = [];
+      for (const [key, label] of Object.entries(endLabels)) {
+        if (endData[key]) endLines.push(`${label}: ${endData[key]}`);
+      }
+      if (endLines.length || endData.notes) {
+        elements.push(createSectionHeader('Endurance / Exercise Tolerance', 3));
+        if (endLines.length) elements.push(...createBulletedList(endLines, FORMAT.indent.level1));
+        if (endData.notes)
+          elements.push(createBodyParagraph(endData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // ── Integumentary ──────────────────────────────────
+      elements.push(createSectionHeader('Integumentary', 2));
+
+      // Skin Integrity
+      const skinData =
+        typeof obj.skinIntegrity === 'object' && obj.skinIntegrity ? obj.skinIntegrity : {};
+      if ((skinData.wounds && skinData.wounds.length) || skinData.notes) {
+        elements.push(createSectionHeader('Skin Integrity', 3));
+        if (skinData.wounds && skinData.wounds.length) {
+          skinData.wounds.forEach((w, idx) => {
+            const parts = [`Wound #${idx + 1}`];
+            if (w.location) parts.push(`Location: ${w.location}`);
+            if (w.length || w.width || w.depth)
+              parts.push(`Size: ${w.length || '—'}×${w.width || '—'}×${w.depth || '—'} cm`);
+            if (w.stage) parts.push(`Stage: ${w.stage}`);
+            if (w.drainage) parts.push(`Drainage: ${w.drainage}`);
+            elements.push(
+              createBodyParagraph(parts.join(' | '), { indentLeft: FORMAT.indent.level1 }),
+            );
+          });
+        }
+        if (skinData.notes)
+          elements.push(createBodyParagraph(skinData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Color & Temperature
+      const ctData = typeof obj.colorTemp === 'object' && obj.colorTemp ? obj.colorTemp : {};
+      const ctLines = [];
+      if (ctData.findings && ctData.findings.length)
+        ctLines.push(`Findings: ${ctData.findings.join(', ')}`);
+      if (ctData.location) ctLines.push(`Location: ${ctData.location}`);
+      if (ctData.temperature) ctLines.push(`Temperature: ${ctData.temperature}`);
+      if (ctLines.length || ctData.notes) {
+        elements.push(createSectionHeader('Color & Temperature', 3));
+        if (ctLines.length) elements.push(...createBulletedList(ctLines, FORMAT.indent.level1));
+        if (ctData.notes)
+          elements.push(createBodyParagraph(ctData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // ── Musculoskeletal ─────────────────────────────────
+      elements.push(createSectionHeader('Musculoskeletal', 2));
+
       // Inspection/Palpation
-      elements.push(createSectionHeader('Inspection', 2));
+      elements.push(createSectionHeader('Inspection', 3));
       elements.push(
         createBodyParagraph(getSafeValue(obj, 'inspection.visual', ''), {
           indentLeft: FORMAT.indent.level1,
         }),
       );
-      elements.push(createSectionHeader('Palpation', 2));
+      elements.push(createSectionHeader('Palpation', 3));
       elements.push(
         createBodyParagraph(getSafeValue(obj, 'palpation.findings', ''), {
           indentLeft: FORMAT.indent.level1,
@@ -1201,7 +1533,7 @@ export function exportToWord(caseData, draft) {
       // Regional Assessment - Enhanced table formatting
       // Indent header slightly to visually align with indented tables (match gutter, not full table width)
       elements.push(
-        createSectionHeader('Regional Assessment', 2, { indentLeft: FORMAT.indent.quarter }),
+        createSectionHeader('Regional Assessment', 3, { indentLeft: FORMAT.indent.quarter }),
       );
       const ra = obj.regionalAssessments || {};
 
@@ -1626,8 +1958,11 @@ export function exportToWord(caseData, draft) {
 
       // (Removed 'Regions Assessed' section per request)
 
+      // ── Neuromuscular ──────────────────────────────────
+      elements.push(createSectionHeader('Neuromuscular', 2));
+
       // Neuro/Functional
-      elements.push(createSectionHeader('Neurological Screening', 2));
+      elements.push(createSectionHeader('Neurological Screening', 3));
       elements.push(
         createBodyParagraph(getSafeValue(obj, 'neuro.screening', ''), {
           indentLeft: FORMAT.indent.level1,
@@ -1756,22 +2091,138 @@ export function exportToWord(caseData, draft) {
           elements.push(createSpacer(0, 160));
         });
       }
-      elements.push(createSectionHeader('Functional Movement Assessment', 2));
+
+      // Tone Assessment (Modified Ashworth Scale)
+      const toneData = typeof obj.tone === 'object' && obj.tone ? obj.tone : {};
+      if ((toneData.entries && toneData.entries.length) || toneData.notes) {
+        elements.push(createSectionHeader('Tone Assessment', 3));
+        if (toneData.entries && toneData.entries.length) {
+          const toneLines = toneData.entries
+            .filter((e) => e.muscle)
+            .map((e) => {
+              const parts = [e.muscle];
+              if (e.side) parts.push(`(${e.side})`);
+              if (e.grade) parts.push(`MAS ${e.grade}`);
+              return parts.join(' ');
+            });
+          if (toneLines.length)
+            elements.push(...createBulletedList(toneLines, FORMAT.indent.level1));
+        }
+        if (toneData.notes)
+          elements.push(createBodyParagraph(toneData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Cranial Nerve Screening
+      const cnData =
+        typeof obj.cranialNerves === 'object' && obj.cranialNerves ? obj.cranialNerves : {};
+      const cnNerves = cnData.nerves || {};
+      const cnNameMap = {
+        I: 'Olfactory',
+        II: 'Optic',
+        III: 'Oculomotor',
+        IV: 'Trochlear',
+        V: 'Trigeminal',
+        VI: 'Abducens',
+        VII: 'Facial',
+        VIII: 'Vestibulocochlear',
+        IX: 'Glossopharyngeal',
+        X: 'Vagus',
+        XI: 'Accessory',
+        XII: 'Hypoglossal',
+      };
+      const cnLines = [];
+      for (const [id, name] of Object.entries(cnNameMap)) {
+        const val = cnNerves[id];
+        if (val && val !== '') {
+          const result = val === 'intact' ? 'Intact' : val === 'impaired' ? 'Impaired' : val;
+          cnLines.push(`CN ${id} (${name}): ${result}`);
+        }
+      }
+      if (cnLines.length || cnData.notes) {
+        elements.push(createSectionHeader('Cranial Nerve Screening', 3));
+        if (cnLines.length) elements.push(...createBulletedList(cnLines, FORMAT.indent.level1));
+        if (cnData.notes)
+          elements.push(createBodyParagraph(cnData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      // Coordination & Motor Control
+      const coordData =
+        typeof obj.coordination === 'object' && obj.coordination ? obj.coordination : {};
+      if (coordData.tests || coordData.notes) {
+        const coordTests = coordData.tests || {};
+        const coordLabels = {
+          fingerToNose: 'Finger-to-Nose',
+          heelToShin: 'Heel-to-Shin',
+          ram: 'Rapid Alternating Movements',
+          fingerTapping: 'Finger Tapping',
+          rebound: 'Rebound Test',
+        };
+        const coordLines = [];
+        for (const [key, label] of Object.entries(coordLabels)) {
+          const t = coordTests[key];
+          if (t && (t.L || t.R)) {
+            const lStr = t.L === 'N' ? 'Normal' : t.L === 'A' ? 'Abnormal' : '—';
+            const rStr = t.R === 'N' ? 'Normal' : t.R === 'A' ? 'Abnormal' : '—';
+            coordLines.push(`${label}: L ${lStr} / R ${rStr}`);
+          }
+        }
+        if (coordLines.length || coordData.notes) {
+          elements.push(createSectionHeader('Coordination & Motor Control', 3));
+          if (coordLines.length)
+            elements.push(...createBulletedList(coordLines, FORMAT.indent.level1));
+          if (coordData.notes)
+            elements.push(
+              createBodyParagraph(coordData.notes, { indentLeft: FORMAT.indent.level1 }),
+            );
+        }
+      }
+
+      // Balance Assessment
+      const balData = typeof obj.balance === 'object' && obj.balance ? obj.balance : {};
+      const balLabels = {
+        berg: 'Berg Balance Scale',
+        tug: 'Timed Up & Go',
+        singleLegL: 'Single Leg Stance (L)',
+        singleLegR: 'Single Leg Stance (R)',
+        romberg: 'Romberg',
+        functionalReach: 'Functional Reach',
+        dgi: 'Dynamic Gait Index',
+        abcScale: 'ABC Scale',
+      };
+      const balLines = [];
+      for (const [key, label] of Object.entries(balLabels)) {
+        if (balData[key]) balLines.push(`${label}: ${balData[key]}`);
+      }
+      if (balLines.length || balData.notes) {
+        elements.push(createSectionHeader('Balance Assessment', 3));
+        if (balLines.length) elements.push(...createBulletedList(balLines, FORMAT.indent.level1));
+        if (balData.notes)
+          elements.push(createBodyParagraph(balData.notes, { indentLeft: FORMAT.indent.level1 }));
+      }
+
+      elements.push(createSectionHeader('Functional Movement Assessment', 3));
       elements.push(
         createBodyParagraph(getSafeValue(obj, 'functional.assessment', ''), {
           indentLeft: FORMAT.indent.level1,
         }),
       );
+
       // Treatment Performed
       elements.push(createSectionHeader('Treatment Performed', 2));
       const tp = obj.treatmentPerformed || {};
-      const tpLines = [];
-      if (tp.patientEducation) tpLines.push(`Patient Education: ${tp.patientEducation}`);
-      if (tp.modalities) tpLines.push(`Modalities: ${tp.modalities}`);
-      if (tp.therapeuticExercise) tpLines.push(`Therapeutic Exercise: ${tp.therapeuticExercise}`);
-      if (tp.manualTherapy) tpLines.push(`Manual Therapy: ${tp.manualTherapy}`);
-      if (tpLines.length) {
-        elements.push(...createBulletedList(tpLines, FORMAT.indent.level1));
+      // Support new single-field and legacy 4-field formats
+      const tpText =
+        tp.description ||
+        [
+          tp.patientEducation && `Patient Education: ${tp.patientEducation}`,
+          tp.modalities && `Modalities: ${tp.modalities}`,
+          tp.therapeuticExercise && `Therapeutic Exercise: ${tp.therapeuticExercise}`,
+          tp.manualTherapy && `Manual Therapy: ${tp.manualTherapy}`,
+        ]
+          .filter(Boolean)
+          .join('\n');
+      if (tpText) {
+        elements.push(createBodyParagraph(tpText, { indentLeft: FORMAT.indent.level1 }));
       }
 
       // ASSESSMENT Section (draft-first)

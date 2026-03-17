@@ -2585,6 +2585,41 @@ body[data-route='instructor-editor'] .section-anchor {
   content: none;
 }
 
+/* Flat subsection wrapper for components that already render their own panel chrome. */
+.subjective-subsection-flat {
+  margin-top: var(--space-3, 0.75rem);
+}
+
+.subjective-subsection-flat > .med-panel {
+  margin-top: 0;
+}
+
+.plan-subsection-flat {
+  margin-top: var(--space-3, 0.75rem);
+}
+
+/* Keep SMART Goals aligned to full subsection width like other plan panels. */
+.section-anchor.goal-setting-subsection {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.patient-profile-inline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3, 0.75rem);
+}
+
+.patient-profile-inline-row__cell {
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .patient-profile-inline-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Indent form input wrappers within subsections to match labels */
 .section-anchor .form-input-wrapper {
   margin-left: 0;

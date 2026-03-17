@@ -80,6 +80,45 @@ route('#/instructor/editor', async (app, qs) => {
   return renderCaseEditor(app, qs, true); // true = faculty mode
 });
 
+function applySubjectiveProfileSyncToCase(c, draft, incoming) {
+  const nextName = String(incoming.patientName ?? incoming.title ?? '').trim();
+  const nextDob = String(incoming.patientBirthday ?? incoming.dob ?? '');
+  const nextAge = String(incoming.patientAge ?? incoming.age ?? '');
+  const nextSex =
+    String(incoming.patientGender ?? incoming.sex ?? '').toLowerCase() || 'unspecified';
+
+  draft.subjective = draft.subjective || {};
+  syncSubjectiveNameToCase(c, draft, nextName);
+  syncSubjectiveDemographicsToCase(c, draft, { nextDob, nextAge, nextSex });
+}
+
+function syncSubjectiveNameToCase(c, draft, nextName) {
+  if (nextName === '') return;
+  c.caseTitle = nextName;
+  c.title = nextName;
+  c.patientName = nextName;
+  c.meta = c.meta || {};
+  c.meta.title = nextName;
+  c.meta.patientName = nextName;
+  c.snapshot = c.snapshot || {};
+  c.snapshot.name = nextName;
+  draft.noteTitle = nextName;
+  draft.subjective.patientName = nextName;
+}
+
+function syncSubjectiveDemographicsToCase(c, draft, { nextDob, nextAge, nextSex }) {
+  c.patientDOB = nextDob;
+  c.patientAge = nextAge;
+  c.patientGender = nextSex;
+  c.snapshot = c.snapshot || {};
+  c.snapshot.dob = nextDob;
+  c.snapshot.age = nextAge;
+  c.snapshot.sex = nextSex;
+  draft.subjective.patientBirthday = nextDob;
+  draft.subjective.patientAge = nextAge;
+  draft.subjective.patientGender = nextSex;
+}
+
 async function renderCaseEditor(app, qs, isFacultyMode) {
   // AbortController for all event listeners in this view; router will call returned cleanup
   const ac = new AbortController();
@@ -272,6 +311,18 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   const { patientHeader, avatarEl, updatePatientAvatar } = headerElements;
   const updatePatientHeader = createPatientHeaderUpdater(c, caseWrapper, headerElements);
 
+  const handleProfileSync = (event) => {
+    const incoming = event?.detail || {};
+    if (!incoming || incoming.source !== 'subjective') return;
+
+    applySubjectiveProfileSyncToCase(c, draft, incoming);
+
+    updatePatientHeader();
+    save();
+    if (window.refreshChartProgress) window.refreshChartProgress();
+  };
+  window.addEventListener('pt-emr-profile-sync', handleProfileSync, { signal: ac.signal });
+
   // Wrap save function to include progress refresh and status updates
   const save = createSaveWrapper({
     originalSave,
@@ -419,18 +470,20 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   app.append(chartNav, mainContainer);
   // Initialize header immediately so CSS var is ready before sections mount
   updatePatientHeader();
+
+  // Initial nav state + optional deep link handling using modular configuration
+  const onCaseInfoUpdate = createCaseInfoUpdateHandler({ c, draft, save });
+  const onEditorSettingsChange = createEditorSettingsHandler({ draft, c, save });
+
   const renderPatientHeaderActions = createPatientHeaderActionsRenderer(
     isFacultyMode,
     caseId,
     c,
-    save,
+    onCaseInfoUpdate,
   );
   renderPatientHeaderActions();
   // Set up IntersectionObserver for active section tracking
   setupActiveSectionObserverWrapper();
-  // Initial nav state + optional deep link handling using modular configuration
-  const onCaseInfoUpdate = createCaseInfoUpdateHandler({ c, draft, save });
-  const onEditorSettingsChange = createEditorSettingsHandler({ draft, c, save });
 
   const initialConfig = createInitialChartNavConfig({
     active,

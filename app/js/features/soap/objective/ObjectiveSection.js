@@ -8,6 +8,23 @@ import {
   getNeuroscreenRegions,
 } from './CombinedNeuroscreenSection.js';
 import { el } from '../../../ui/utils.js';
+import { buildSystemsReview, isSubcatImpaired } from './SystemsReview.js';
+import {
+  buildTonePanel,
+  buildCoordinationPanel,
+  buildBalancePanel,
+  buildCranialNervesPanel,
+  buildEndurancePanel,
+  buildEdemaPanel,
+  buildAuscultationPanel,
+  buildSkinIntegrityPanel,
+  buildColorTempPanel,
+  buildOrientationPanel,
+  buildMemoryAttentionPanel,
+  buildSafetyAwarenessPanel,
+  buildVisionPerceptionPanel,
+  subsectionPanel,
+} from './GatedPanels.js';
 // CPT widget is intentionally only rendered in BillingSection to avoid duplication
 
 /**
@@ -22,162 +39,331 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   const data = normalizeObjectiveData(objectiveData);
   const updateField = makeUpdateField(data, onUpdate);
 
-  // Systematic examination approach
+  // ── Gated panel groups ──────────────────────────────────
+  // Each gate has a checkFn that returns true when the gate should be visible.
+  // Sub-category toggles in Systems Review fire onGateChange (no args)
+  // which re-evaluates every gate.
+  const gates = [];
+  const makeGate = (gateId, checkFn) => {
+    const wrapper = el('div', {
+      class: 'systems-gate',
+      'data-gate': gateId,
+    });
+    wrapper.hidden = !checkFn();
+    gates.push({ el: wrapper, check: checkFn });
+    return wrapper;
+  };
+
+  const refreshGates = () => {
+    for (const g of gates) g.el.hidden = !g.check();
+  };
+
+  // ── Always-visible panels ───────────────────────────────
   section.append(
     buildVitalsSection(data.vitals, (field, value) => updateField(`vitals.${field}`, value)),
   );
 
+  // ── Systems Review (gateway triage) ─────────────────────
   section.append(
-    buildObservationsSection(
-      data.observations,
-      (field, value) => updateField(`observations.${field}`, value),
-      data.inspection,
-      (v) => updateField('inspection.visual', v),
-      data.palpation,
-      (v) => updateField('palpation.findings', v),
+    buildSystemsReview(
+      data.systemsReview || {},
+      (updated) => {
+        data.systemsReview = updated;
+        onUpdate(data);
+      },
+      refreshGates,
     ),
   );
 
-  // Regional Assessment
-  section.append(
-    buildRegionalSection(data.regionalAssessments || {}, (assessmentData) =>
-      updateField('regionalAssessments', assessmentData),
-    ),
-  );
+  // ── Data-driven category definitions ────────────────────
+  // Each Systems Review parent maps to a category container.
+  // Children are individually gated within the container.
+  // To reorder the exam, reorder this array.
+  // To add a panel, add one entry to the appropriate category.
 
-  // Neurological screening
-  const neuroscreenAnchor = el('div', {
-    id: 'neurological-screening',
-    class: 'section-anchor section-panel',
-  });
-  const neuroscreenHeader = el('div', { class: 'section-panel__header' }, [
-    el('span', { class: 'section-panel__title' }, 'Neurological Screening'),
-  ]);
-  const neuroscreenBody = el('div', { class: 'section-panel__body' });
+  /** Build inline neuroscreen subsection (complex — region selector + tables) */
+  const buildNeuroscreenSubsection = () => {
+    const content = el('div', { class: 'subsection-panel__content' });
+    const anchor = el(
+      'div',
+      {
+        id: 'neurological-screening',
+        class: 'subsection-panel',
+      },
+      [el('h4', { class: 'subsection-panel__title' }, 'Neurological Screening'), content],
+    );
 
-  // Region selector with buttons (multi-select)
-  const regionOptions = getNeuroscreenRegions();
-  const selectedRegions = new Set(data.neuro.selectedRegions || []);
+    const regionOptions = getNeuroscreenRegions();
+    const selectedRegions = new Set(data.neuro.selectedRegions || []);
+    const regionSelector = el('div', { class: 'region-selector mb-16' });
+    const regionLabel = el('p', { class: 'region-selector__label' }, 'Select regions to assess:');
+    const regionButtons = el('div', { class: 'region-buttons' });
+    const neuroscreenTableContainer = el('div', { class: 'neuroscreen-table-container' });
 
-  const regionSelector = el('div', { class: 'region-selector mb-16' });
-  const regionLabel = el('p', { class: 'region-selector__label' }, 'Select regions to assess:');
-  const regionButtons = el('div', { class: 'region-buttons' });
-  const buttonsMap = {};
+    const rebuildTables = () => {
+      neuroscreenTableContainer.innerHTML = '';
+      if (selectedRegions.size === 0) {
+        neuroscreenTableContainer.appendChild(
+          el(
+            'div',
+            {
+              style:
+                'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
+            },
+            'Select one or more regions to assess.',
+          ),
+        );
+        return;
+      }
+      Array.from(selectedRegions).forEach((regionKey) => {
+        const newSection = createCombinedNeuroscreenSection(
+          regionKey,
+          data.neuro.dermatome || {},
+          data.neuro.myotome || {},
+          data.neuro.reflex || {},
+          (d) => updateField('neuro.dermatome', d),
+          (m) => updateField('neuro.myotome', m),
+          (r) => updateField('neuro.reflex', r),
+        );
+        neuroscreenTableContainer.appendChild(newSection.element);
+      });
+    };
 
-  // Table container
-  const neuroscreenTableContainer = el('div', { class: 'neuroscreen-table-container' });
-
-  // Function to rebuild all tables
-  const rebuildTables = () => {
-    neuroscreenTableContainer.innerHTML = '';
-    if (selectedRegions.size === 0) {
-      neuroscreenTableContainer.appendChild(
-        el(
-          'div',
-          {
-            style:
-              'padding: 20px; text-align: center; color: var(--text-muted); background: var(--surface-secondary); border-radius: 6px;',
+    regionOptions.forEach((region) => {
+      const isSelected = selectedRegions.has(region.value);
+      const button = el(
+        'button',
+        {
+          type: 'button',
+          class: `btn pill-btn region-toggle-btn ${isSelected ? 'primary' : 'secondary'}`,
+          onclick: () => {
+            if (selectedRegions.has(region.value)) {
+              selectedRegions.delete(region.value);
+              button.classList.remove('primary');
+              button.classList.add('secondary');
+            } else {
+              selectedRegions.add(region.value);
+              button.classList.remove('secondary');
+              button.classList.add('primary');
+            }
+            updateField('neuro.selectedRegions', Array.from(selectedRegions));
+            rebuildTables();
           },
-          'Select one or more regions to assess.',
-        ),
+        },
+        region.label,
       );
-      return;
-    }
-
-    Array.from(selectedRegions).forEach((regionKey) => {
-      const newSection = createCombinedNeuroscreenSection(
-        regionKey,
-        data.neuro.dermatome || {},
-        data.neuro.myotome || {},
-        data.neuro.reflex || {},
-        (d) => updateField('neuro.dermatome', d),
-        (m) => updateField('neuro.myotome', m),
-        (r) => updateField('neuro.reflex', r),
-      );
-      neuroscreenTableContainer.appendChild(newSection.element);
+      regionButtons.appendChild(button);
     });
+
+    regionSelector.appendChild(regionLabel);
+    regionSelector.appendChild(regionButtons);
+    rebuildTables();
+
+    content.appendChild(regionSelector);
+    content.appendChild(neuroscreenTableContainer);
+    return anchor;
   };
 
-  // Create region buttons
-  regionOptions.forEach((region) => {
-    const isSelected = selectedRegions.has(region.value);
-    const button = el(
-      'button',
-      {
-        type: 'button',
-        class: `btn pill-btn region-toggle-btn ${isSelected ? 'primary' : 'secondary'}`,
-        onclick: () => {
-          if (selectedRegions.has(region.value)) {
-            selectedRegions.delete(region.value);
-            button.classList.remove('primary');
-            button.classList.add('secondary');
-          } else {
-            selectedRegions.add(region.value);
-            button.classList.remove('secondary');
-            button.classList.add('primary');
-          }
-          updateField('neuro.selectedRegions', Array.from(selectedRegions));
-          rebuildTables();
+  const CATEGORIES = [
+    {
+      id: 'communication-cognition',
+      title: 'Communication / Cognition',
+      children: [
+        {
+          gateId: 'comm-orientation',
+          system: 'communication',
+          sub: 'orientation',
+          build: () =>
+            buildOrientationPanel(data.orientation, (u) => updateField('orientation', u)),
         },
-      },
-      region.label,
-    );
-    buttonsMap[region.value] = button;
-    regionButtons.appendChild(button);
-  });
+        {
+          gateId: 'comm-memory',
+          system: 'communication',
+          sub: 'memory',
+          build: () =>
+            buildMemoryAttentionPanel(data.memoryAttention, (u) =>
+              updateField('memoryAttention', u),
+            ),
+        },
+        {
+          gateId: 'comm-safety',
+          system: 'communication',
+          sub: 'safetyAwareness',
+          build: () =>
+            buildSafetyAwarenessPanel(data.safetyAwareness, (u) =>
+              updateField('safetyAwareness', u),
+            ),
+        },
+        {
+          gateId: 'comm-vision',
+          system: 'communication',
+          sub: 'visionPerception',
+          build: () =>
+            buildVisionPerceptionPanel(data.visionPerception, (u) =>
+              updateField('visionPerception', u),
+            ),
+        },
+      ],
+    },
+    {
+      id: 'cardiovascular-pulmonary',
+      title: 'Cardiovascular / Pulmonary',
+      children: [
+        {
+          gateId: 'cv-auscultation',
+          system: 'cardiovascular',
+          sub: 'auscultation',
+          build: () =>
+            buildAuscultationPanel(data.auscultation, (u) => updateField('auscultation', u)),
+        },
+        {
+          gateId: 'cv-edema',
+          system: 'cardiovascular',
+          sub: 'edema',
+          build: () => buildEdemaPanel(data.edema, (u) => updateField('edema', u)),
+        },
+        {
+          gateId: 'cv-endurance',
+          check: () =>
+            isSubcatImpaired(data.systemsReview, 'cardiovascular', 'endurance') ||
+            isSubcatImpaired(data.systemsReview, 'neuromuscular', 'endurance'),
+          build: () => buildEndurancePanel(data.endurance, (u) => updateField('endurance', u)),
+        },
+      ],
+    },
+    {
+      id: 'integumentary',
+      title: 'Integumentary',
+      children: [
+        {
+          gateId: 'integ-skin',
+          system: 'integumentary',
+          sub: 'skinIntegrity',
+          build: () =>
+            buildSkinIntegrityPanel(data.skinIntegrity, (u) => updateField('skinIntegrity', u)),
+        },
+        {
+          gateId: 'integ-color',
+          system: 'integumentary',
+          sub: 'colorTemp',
+          build: () => buildColorTempPanel(data.colorTemp, (u) => updateField('colorTemp', u)),
+        },
+      ],
+    },
+    {
+      id: 'musculoskeletal',
+      title: 'Musculoskeletal',
+      children: [
+        {
+          gateId: 'ms-regional',
+          check: () =>
+            ['rom', 'strength', 'specialTests', 'posture'].some((s) =>
+              isSubcatImpaired(data.systemsReview, 'musculoskeletal', s),
+            ),
+          build: () =>
+            buildRegionalSection(
+              data.regionalAssessments || {},
+              (d) => updateField('regionalAssessments', d),
+              data.inspection,
+              (v) => updateField('inspection.visual', v),
+              data.palpation,
+              (v) => updateField('palpation.findings', v),
+            ),
+        },
+      ],
+    },
+    {
+      id: 'neuromuscular',
+      title: 'Neuromuscular',
+      children: [
+        {
+          gateId: 'nm-neuroscreen',
+          check: () =>
+            isSubcatImpaired(data.systemsReview, 'neuromuscular', 'sensation') ||
+            isSubcatImpaired(data.systemsReview, 'neuromuscular', 'reflexes'),
+          build: buildNeuroscreenSubsection,
+        },
+        {
+          gateId: 'nm-tone',
+          system: 'neuromuscular',
+          sub: 'tone',
+          build: () => buildTonePanel(data.tone, (u) => updateField('tone', u)),
+        },
+        {
+          gateId: 'nm-cranialNerves',
+          system: 'neuromuscular',
+          sub: 'cranialNerves',
+          build: () =>
+            buildCranialNervesPanel(data.cranialNerves, (u) => updateField('cranialNerves', u)),
+        },
+        {
+          gateId: 'nm-coordination',
+          system: 'neuromuscular',
+          sub: 'coordination',
+          build: () =>
+            buildCoordinationPanel(data.coordination, (u) => updateField('coordination', u)),
+        },
+        {
+          gateId: 'nm-balance',
+          system: 'neuromuscular',
+          sub: 'balance',
+          build: () => buildBalancePanel(data.balance, (u) => updateField('balance', u)),
+        },
+        {
+          gateId: 'nm-gaitMobility',
+          system: 'neuromuscular',
+          sub: 'gaitMobility',
+          build: () =>
+            subsectionPanel('functional-movement', 'Functional Movement Assessment', [
+              textAreaField({
+                label: 'Observations',
+                value: data.functional.assessment || '',
+                onChange: (v) => updateField('functional.assessment', v),
+                hint: 'Transfers, bed mobility, ambulation quality, ADL performance, movement pattern deviations, compensatory strategies',
+              }),
+            ]),
+        },
+      ],
+    },
+  ];
 
-  regionSelector.appendChild(regionLabel);
-  regionSelector.appendChild(regionButtons);
+  // ── Generic category builder ────────────────────────────
+  // Two-level gating: category hides if no children active,
+  // each child hides independently within.
+  for (const cat of CATEGORIES) {
+    const body = el('div', { class: 'section-panel__body' });
+    const container = el('div', { id: cat.id, class: 'section-anchor section-panel' }, [
+      el('div', { class: 'section-panel__header' }, [
+        el('span', { class: 'section-panel__title' }, cat.title),
+      ]),
+      body,
+    ]);
 
-  // Initial render
-  rebuildTables();
+    const childChecks = [];
+    for (const child of cat.children) {
+      const checkFn =
+        child.check || (() => isSubcatImpaired(data.systemsReview, child.system, child.sub));
+      childChecks.push(checkFn);
+      const subGate = makeGate(child.gateId, checkFn);
+      subGate.append(child.build());
+      body.append(subGate);
+    }
 
-  neuroscreenAnchor.appendChild(neuroscreenHeader);
-  neuroscreenBody.appendChild(regionSelector);
-  neuroscreenBody.appendChild(neuroscreenTableContainer);
-  neuroscreenAnchor.appendChild(neuroscreenBody);
-  section.append(neuroscreenAnchor);
+    const catGate = makeGate(cat.id, () => childChecks.some((fn) => fn()));
+    catGate.append(container);
+    section.append(catGate);
+  }
 
-  // Functional movement assessment
-  section.append(
-    buildTextAreaSection(
-      'functional-movement',
-      'Functional Movement Assessment',
-      'Observations',
-      data.functional.assessment || '',
-      (v) => updateField('functional.assessment', v),
-      'Transfers, bed mobility, ambulation quality, ADL performance, movement pattern deviations, compensatory strategies',
-    ),
-  );
-
-  // Treatment Performed subsection
+  // ── Always-visible: Treatment Performed ─────────────────
   const performedHeader = el('div', { class: 'section-panel__header' }, [
     el('span', { class: 'section-panel__title' }, 'Treatment Performed'),
   ]);
   const performedBody = el('div', { class: 'section-panel__body' }, [
     textAreaField({
-      label: 'Patient Education',
-      value: data.treatmentPerformed.patientEducation || '',
-      onChange: (v) => updateField('treatmentPerformed.patientEducation', v),
-      hint: 'HEP instructions, posture/ergonomics, activity modification, body mechanics, self-management strategies',
-    }),
-    textAreaField({
-      label: 'Modalities',
-      value: data.treatmentPerformed.modalities || '',
-      onChange: (v) => updateField('treatmentPerformed.modalities', v),
-      hint: 'E-stim, ultrasound, heat/cold, TENS, iontophoresis — include parameters and region treated',
-    }),
-    textAreaField({
-      label: 'Therapeutic Exercise',
-      value: data.treatmentPerformed.therapeuticExercise || '',
-      onChange: (v) => updateField('treatmentPerformed.therapeuticExercise', v),
-      hint: 'Exercises performed, sets/reps/duration, resistance, progression from prior visit',
-    }),
-    textAreaField({
-      label: 'Manual Therapy',
-      value: data.treatmentPerformed.manualTherapy || '',
-      onChange: (v) => updateField('treatmentPerformed.manualTherapy', v),
-      hint: 'Technique(s), region(s) treated, grade/amplitude, number of sets, patient response',
+      label: 'Treatment Description',
+      value: data.treatmentPerformed.description || '',
+      onChange: (v) => updateField('treatmentPerformed.description', v),
+      hint: 'Describe all interventions performed: manual therapy, therapeutic exercise, modalities, patient education, parameters, and patient response',
     }),
   ]);
   const performed = el(
@@ -220,6 +406,7 @@ function normalizeObjectiveData(obj = {}) {
       myotome: {},
       reflex: {},
     },
+    systemsReview: { systems: {} },
     functional: { assessment: '' },
     regionalAssessments: {
       selectedRegions: [],
@@ -230,11 +417,22 @@ function normalizeObjectiveData(obj = {}) {
       promExcluded: [],
     },
     treatmentPerformed: {
-      patientEducation: '',
-      modalities: '',
-      therapeuticExercise: '',
-      manualTherapy: '',
+      description: '',
     },
+    // Sub-category exam fields (gateway-gated) — objects, not strings
+    tone: { entries: [], notes: '' },
+    coordination: { tests: {}, notes: '' },
+    balance: { notes: '' },
+    cranialNerves: { nerves: {}, notes: '' },
+    endurance: { notes: '' },
+    edema: { entries: [], notes: '' },
+    auscultation: { notes: '' },
+    skinIntegrity: { wounds: [], notes: '' },
+    colorTemp: { findings: [], notes: '' },
+    orientation: { person: true, place: true, time: true, situation: true, notes: '' },
+    memoryAttention: { notes: '' },
+    safetyAwareness: { notes: '' },
+    visionPerception: { notes: '' },
   };
   const data = { ...base, ...obj };
   data.vitals = data.vitals || {
@@ -263,13 +461,22 @@ function normalizeObjectiveData(obj = {}) {
     myotome: {},
     reflex: {},
   };
+  data.systemsReview = data.systemsReview || { systems: {} };
   data.functional = data.functional || { assessment: '' };
-  data.treatmentPerformed = data.treatmentPerformed || {
-    patientEducation: '',
-    modalities: '',
-    therapeuticExercise: '',
-    manualTherapy: '',
-  };
+  data.treatmentPerformed = data.treatmentPerformed || { description: '' };
+  // Migrate legacy 4-field format into single description
+  if (!data.treatmentPerformed.description) {
+    const parts = [
+      data.treatmentPerformed.patientEducation &&
+        `Patient Education: ${data.treatmentPerformed.patientEducation}`,
+      data.treatmentPerformed.modalities && `Modalities: ${data.treatmentPerformed.modalities}`,
+      data.treatmentPerformed.therapeuticExercise &&
+        `Therapeutic Exercise: ${data.treatmentPerformed.therapeuticExercise}`,
+      data.treatmentPerformed.manualTherapy &&
+        `Manual Therapy: ${data.treatmentPerformed.manualTherapy}`,
+    ].filter(Boolean);
+    if (parts.length) data.treatmentPerformed.description = parts.join('\n');
+  }
   data.regionalAssessments = data.regionalAssessments || {
     selectedRegions: [],
     rom: {},
@@ -278,6 +485,33 @@ function normalizeObjectiveData(obj = {}) {
     prom: {},
     promExcluded: [],
   };
+
+  // Migrate legacy string values to object form for gated panel fields
+  const migrateField = (val, defaults) => {
+    if (!val || val === '') return { ...defaults };
+    if (typeof val === 'string') return { ...defaults, notes: val };
+    return { ...defaults, ...val };
+  };
+  data.tone = migrateField(data.tone, { entries: [], notes: '' });
+  data.coordination = migrateField(data.coordination, { tests: {}, notes: '' });
+  data.balance = migrateField(data.balance, { notes: '' });
+  data.cranialNerves = migrateField(data.cranialNerves, { nerves: {}, notes: '' });
+  data.endurance = migrateField(data.endurance, { notes: '' });
+  data.edema = migrateField(data.edema, { entries: [], notes: '' });
+  data.auscultation = migrateField(data.auscultation, { notes: '' });
+  data.skinIntegrity = migrateField(data.skinIntegrity, { wounds: [], notes: '' });
+  data.colorTemp = migrateField(data.colorTemp, { findings: [], notes: '' });
+  data.orientation = migrateField(data.orientation, {
+    person: true,
+    place: true,
+    time: true,
+    situation: true,
+    notes: '',
+  });
+  data.memoryAttention = migrateField(data.memoryAttention, { notes: '' });
+  data.safetyAwareness = migrateField(data.safetyAwareness, { notes: '' });
+  data.visionPerception = migrateField(data.visionPerception, { notes: '' });
+
   return data;
 }
 
@@ -294,25 +528,32 @@ function makeUpdateField(data, onUpdate) {
   };
 }
 
-function buildTextAreaSection(id, title, label, value, onChange, hint) {
-  const header = el('div', { class: 'section-panel__header' }, [
-    el('span', { class: 'section-panel__title' }, title),
+function buildRegionalSection(
+  regionalAssessments,
+  onChange,
+  inspection,
+  onInspectionChange,
+  palpation,
+  onPalpationChange,
+) {
+  const body = el('div', { class: 'subsection-panel__content' });
+  const regionalSection = el('div', { id: 'regional-assessment', class: 'subsection-panel' }, [
+    el('h4', { class: 'subsection-panel__title' }, 'Regional Assessment'),
+    body,
   ]);
-  const body = el('div', { class: 'section-panel__body' }, [
-    textAreaField({ label, value, onChange, hint }),
-  ]);
-  return el('div', { id, class: 'section-anchor section-panel' }, [header, body]);
-}
-
-function buildRegionalSection(regionalAssessments, onChange) {
-  const header = el('div', { class: 'section-panel__header' }, [
-    el('span', { class: 'section-panel__title' }, 'Regional Assessment'),
-  ]);
-  const body = el('div', { class: 'section-panel__body' });
-  const regionalSection = el(
-    'div',
-    { id: 'regional-assessment', class: 'section-anchor section-panel' },
-    [header, body],
+  body.append(
+    textAreaField({
+      label: 'Inspection',
+      hint: 'Visual Assessment (swelling, deformity, skin changes, asymmetry)',
+      value: inspection?.visual || '',
+      onChange: onInspectionChange,
+    }),
+    textAreaField({
+      label: 'Palpation',
+      hint: 'Tenderness, Temperature, Muscle Tone, Tissue Quality',
+      value: palpation?.findings || '',
+      onChange: onPalpationChange,
+    }),
   );
   const multiAssessment = createMultiRegionalAssessment(regionalAssessments, onChange);
   body.append(multiAssessment.element);
@@ -511,52 +752,5 @@ function buildVitalsSection(vitals, onChange) {
 
   table.appendChild(tbody);
   body.appendChild(table);
-  return container;
-}
-
-function buildObservationsSection(
-  observations,
-  onChange,
-  inspection,
-  onInspectionChange,
-  palpation,
-  onPalpationChange,
-) {
-  const header = el('div', { class: 'section-panel__header' }, [
-    el('span', { class: 'section-panel__title' }, 'General Observations'),
-  ]);
-  const body = el('div', { class: 'section-panel__body' });
-  const container = el(
-    'div',
-    { id: 'general-observations', class: 'section-anchor section-panel' },
-    [header, body],
-  );
-
-  body.append(
-    textAreaField({
-      label: 'Mental Status & Affect',
-      hint: 'Orientation, affect, behavior (e.g., A&Ox3, cooperative, anxious, pain behavior)',
-      value: observations.generalAppearance,
-      onChange: (v) => onChange('generalAppearance', v),
-    }),
-    textAreaField({
-      label: 'Posture & Alignment',
-      hint: 'Static posture, gait pattern, movement quality, compensation strategies',
-      value: observations.posture,
-      onChange: (v) => onChange('posture', v),
-    }),
-    textAreaField({
-      label: 'Inspection',
-      hint: 'Visual Assessment (swelling, deformity, skin changes, asymmetry)',
-      value: inspection?.visual || '',
-      onChange: onInspectionChange,
-    }),
-    textAreaField({
-      label: 'Palpation',
-      hint: 'Tenderness, Temperature, Muscle Tone, Tissue Quality',
-      value: palpation?.findings || '',
-      onChange: onPalpationChange,
-    }),
-  );
   return container;
 }

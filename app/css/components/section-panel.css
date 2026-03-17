@@ -85,6 +85,28 @@
   margin-top: 0;
 }
 
+/* ── Subsection panels (children inside category containers) ── */
+.subsection-panel {
+  margin-top: 1rem;
+}
+.subsection-panel:first-child {
+  margin-top: 0;
+}
+.subsection-panel__title {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--text-secondary, #555);
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+  padding-bottom: 0.375rem;
+  margin: 0 0 0.75rem;
+}
+.subsection-panel__content {
+  /* intentionally minimal — children provide their own spacing */
+}
+.subsection-panel__content > .form-field:first-child {
+  margin-top: 0;
+}
+
 /* ── Tables inside panels ──────────────────────────────── */
 /* Flatten outer table border-radius when nested in a panel body;
    the panel wrapper already provides the container shape. */
@@ -106,8 +128,405 @@
   border-bottom: 0;
 }
 
+/* ── Systems Review – segmented toggles & cascade ──────── */
+
+/* System list layout */
+.sr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sr-block {
+  border-bottom: 1px solid var(--color-border, #e2e5e9);
+}
+.sr-block:last-child {
+  border-bottom: none;
+}
+
+/* System-level row */
+.sr-system {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 0.75rem;
+}
+.sr-system-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary, #1a1a2e);
+}
+
+/* ── Segmented toggle ──────────────────────────────────── */
+.sr-toggle {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid var(--color-border, #cbd5e1);
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+.sr-toggle__btn {
+  /* Override global button reset */
+  padding: 0.3rem 0.85rem !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none !important;
+  background: #f1f5f9;
+  color: #64748b;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  min-height: auto !important;
+  min-width: auto !important;
+}
+.sr-toggle__btn:first-child {
+  border-right: 1.5px solid var(--color-border, #cbd5e1) !important;
+}
+.sr-toggle__btn:hover:not(.sr-toggle__btn--active) {
+  background: #e2e8f0;
+}
+
+/* Active states: solid color */
+.sr-toggle__btn--add.sr-toggle__btn--active {
+  background: #16a34a;
+  color: #fff;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.sr-toggle__btn--defer.sr-toggle__btn--active {
+  background: #d97706;
+  color: #fff;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Defer-reason dropdown ─────────────────────────────── */
+.sr-defer-wrap {
+  padding: 0.35rem 0.75rem 0.5rem 2.5rem;
+}
+.sr-defer-wrap[hidden] {
+  display: none !important;
+}
+.sr-defer-wrap--sub {
+  padding: 0.2rem 0 0.15rem 0;
+}
+.sr-defer-reason {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text-primary, #334155);
+  max-width: 100%;
+  cursor: pointer;
+}
+.sr-defer-reason:focus {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 1px;
+}
+
+/* ── Sub-category drawer ───────────────────────────────── */
+.sr-subcats {
+  padding: 0.5rem 0.75rem 0.625rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1px dashed var(--color-border, #cbd5e1);
+  background: linear-gradient(135deg, #fefce8 0%, #fffbeb 100%);
+  border-left: 3px solid #d97706;
+  margin-left: 0.75rem;
+  margin-right: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 0 6px 6px;
+}
+.sr-subcats[hidden] {
+  display: none !important;
+}
+
+/* Sub-category toggle is smaller */
+.sr-subcats .sr-toggle {
+  border-radius: 5px;
+  border-width: 1px;
+}
+.sr-subcats .sr-toggle__btn {
+  padding: 0.2rem 0.65rem !important;
+  font-size: 0.73rem;
+}
+
+.sr-subcat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+}
+.sr-subcat-label {
+  flex: 1;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-primary, #334155);
+}
+
+/* ── Dark theme overrides ──────────────────────────────── */
+html[data-theme='dark'] .sr-block {
+  border-color: var(--color-border-dark, #3a3f47);
+}
+html[data-theme='dark'] .sr-system-label {
+  color: var(--text-primary-dark, #e2e8f0);
+}
+html[data-theme='dark'] .sr-toggle {
+  border-color: #4b5563;
+  background: #1e293b;
+}
+html[data-theme='dark'] .sr-toggle__btn {
+  background: #1e293b;
+  color: #94a3b8;
+}
+html[data-theme='dark'] .sr-toggle__btn:first-child {
+  border-color: #4b5563 !important;
+}
+html[data-theme='dark'] .sr-toggle__btn:hover:not(.sr-toggle__btn--active) {
+  background: #334155;
+}
+html[data-theme='dark'] .sr-toggle__btn--wnl.sr-toggle__btn--active {
+  background: #15803d;
+  color: #dcfce7;
+}
+html[data-theme='dark'] .sr-toggle__btn--impaired.sr-toggle__btn--active {
+  background: #b45309;
+  color: #fef3c7;
+}
+html[data-theme='dark'] .sr-subcats {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(217, 119, 6, 0.06) 100%);
+  border-color: #4b5563;
+  border-left-color: #d97706;
+}
+html[data-theme='dark'] .sr-subcat-label {
+  color: #cbd5e1;
+}
+html[data-theme='dark'] .sr-badge {
+  background: #15803d;
+  color: #dcfce7;
+}
+
 /* ── Dark theme ────────────────────────────────────────── */
 html[data-theme='dark'] .section-panel {
   border-color: var(--color-border-dark, #3a3f47);
   background: var(--surface-card-dark, #1e2127);
+}
+
+/* ── Gateway panel groups ──────────────────────────────── */
+.systems-gate {
+  display: contents; /* no extra box when visible */
+}
+.systems-gate[hidden] {
+  display: none !important;
+}
+
+/* ── Gated panel layouts ───────────────────────────────── */
+.gated-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 480px) {
+  .gated-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gated-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.gated-metric:last-child {
+  margin-bottom: 0;
+}
+.gated-metric__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary, #475569);
+}
+.gated-metric__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gated-metric__unit {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+}
+
+/* Keep text inputs and selects visually aligned in gated cards */
+.gated-grid input.combined-neuroscreen__input,
+.gated-grid select.combined-neuroscreen__input {
+  height: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.gated-empty {
+  text-align: center;
+  color: var(--text-muted, #94a3b8);
+  padding: 16px;
+  font-size: 0.875rem;
+  background: var(--surface-secondary, #f8fafc);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.gated-remove-btn {
+  padding: 2px 8px !important;
+  min-height: auto !important;
+  font-size: 1rem !important;
+  line-height: 1 !important;
+  color: #ef4444 !important;
+  background: transparent !important;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  flex-shrink: 0;
+}
+.gated-remove-btn:hover {
+  background: #fef2f2 !important;
+}
+
+.gated-add-btn {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+/* Compact notes blocks used across gated objective panels */
+.gated-notes {
+  margin-top: 0.5rem;
+}
+
+.gated-notes .form-field {
+  margin-bottom: 0;
+  gap: 0.375rem;
+}
+
+.gated-notes .form-label {
+  margin-bottom: 0.125rem;
+}
+
+.gated-notes .form-textarea,
+.gated-notes textarea.gated-notes__textarea {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  line-height: 1.35;
+}
+
+/* Wound / entry cards */
+.gated-card {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 8px;
+  background: var(--surface-secondary, #f8fafc);
+}
+.gated-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Orientation x4 toggles */
+.orient-toggles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.orient-toggle {
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  border: 2px solid var(--border-primary, #d1d5db) !important;
+  background: var(--surface-primary, #f8fafc) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  min-height: auto !important;
+}
+.orient-toggle--on {
+  border-color: #16a34a !important;
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+.orient-summary {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: 12px;
+  color: var(--text-primary, #1e293b);
+}
+
+/* Checkbox pills (findings) */
+.finding-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.finding-pill {
+  padding: 6px 14px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--border-primary, #d1d5db) !important;
+  background: var(--surface-primary, #f8fafc) !important;
+  cursor: pointer !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  min-height: auto !important;
+  transition: all 0.15s ease !important;
+  user-select: none;
+}
+.finding-pill--on {
+  border-color: #d97706 !important;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+/* ── Dark overrides for gated panels ───────────────────── */
+html[data-theme='dark'] .gated-metric__label {
+  color: #94a3b8;
+}
+html[data-theme='dark'] .gated-empty {
+  background: #1e293b;
+  color: #64748b;
+}
+html[data-theme='dark'] .gated-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+html[data-theme='dark'] .orient-toggle {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme='dark'] .orient-toggle--on {
+  border-color: #16a34a !important;
+  background: #052e16 !important;
+  color: #4ade80 !important;
+}
+html[data-theme='dark'] .orient-summary {
+  color: #e2e8f0;
+}
+html[data-theme='dark'] .finding-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme='dark'] .finding-pill--on {
+  border-color: #d97706 !important;
+  background: #451a03 !important;
+  color: #fbbf24 !important;
 }

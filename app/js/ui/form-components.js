@@ -222,7 +222,7 @@ export function textAreaField(options = {}) {
     placeholder: '',
     disabled: false,
     required: false,
-    rows: 3,
+    rows: 1,
     maxLength: null,
     autoResize: true,
     className: '',

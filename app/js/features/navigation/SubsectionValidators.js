@@ -72,17 +72,14 @@ function hasPlanSchedule(data, section) {
   };
 }
 
-/** Check whether the three history fields merged into HPI are all filled */
-function isHpiHistoryComplete(section) {
-  // Medications: accept structured array OR legacy string
-  const medsComplete = Array.isArray(section?.medications)
-    ? section.medications.length > 0
-    : isFieldComplete(section?.medicationsCurrent);
-  // Red flags: accept structured screening array OR legacy string
-  const redFlagsComplete = Array.isArray(section?.redFlagScreening)
-    ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
-    : isFieldComplete(section?.redFlags);
-  return medsComplete && redFlagsComplete && isFieldComplete(section?.additionalHistory);
+/** Check whether patient profile demographic fields are all filled */
+function isPatientProfileComplete(section) {
+  return (
+    isFieldComplete(section?.patientName) &&
+    isFieldComplete(section?.patientBirthday) &&
+    isFieldComplete(section?.patientAge) &&
+    isFieldComplete(section?.patientGender)
+  );
 }
 
 /** Resolve the chief complaint field from various possible keys */
@@ -92,23 +89,58 @@ function resolveChiefComplaint(section) {
 
 /** Resolve the HPI narrative text from various possible keys */
 function resolveHpiText(section) {
-  return section?.detailedHistoryOfCurrentCondition ?? section?.hpi ?? '';
+  return (
+    section?.historyOfPresentIllness ??
+    section?.detailedHistoryOfCurrentCondition ??
+    section?.hpi ??
+    ''
+  );
+}
+
+function hasInterviewContent(section) {
+  return Array.isArray(section?.qaItems)
+    ? section.qaItems.some((q) => isFieldComplete(q?.question) && isFieldComplete(q?.response))
+    : false;
 }
 
 // Subjective Section Validators
 export const SubjectiveValidators = {
   /**
-   * Validate history of present illness completeness
+   * Validate patient profile completeness
    * @param {Object} data - Subsection data
    * @param {Object} section - Full section context
    * @returns {boolean} True if complete
    */
+  hpi: (data, section) => {
+    return isPatientProfileComplete(section);
+  },
+
   'history-present-illness': (data, section) => {
+    return SubjectiveValidators.hpi(data, section);
+  },
+
+  history: (data, section) => {
     return (
       isFieldComplete(resolveChiefComplaint(section)) &&
       isFieldComplete(resolveHpiText(section)) &&
-      isHpiHistoryComplete(section)
+      isFieldComplete(section?.functionalLimitations) &&
+      isFieldComplete(section?.additionalHistory) &&
+      isFieldComplete(section?.priorLevel) &&
+      isFieldComplete(section?.patientGoals)
     );
+  },
+
+  /**
+   * Validate current medications subsection completeness
+   * @param {Object} data - Subsection data
+   * @param {Object} section - Full section context
+   * @returns {boolean} True if complete
+   */
+  'current-medications': (data, section) => {
+    const medsComplete = Array.isArray(section?.medications)
+      ? section.medications.length > 0
+      : isFieldComplete(section?.medicationsCurrent);
+    return medsComplete;
   },
 
   /**
@@ -133,21 +165,20 @@ export const SubjectiveValidators = {
     return requiredFields.every((field) => isFieldComplete(field));
   },
 
+  'red-flag-screening': (data, section) => {
+    return Array.isArray(section?.redFlagScreening)
+      ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
+      : isFieldComplete(section?.redFlags);
+  },
+
   /**
    * Validate functional status completeness (requires all 3 fields)
    * @param {Object} data - Subsection data
    * @param {Object} section - Full section context
    * @returns {boolean} True if complete
    */
-  'functional-status': (data, section) => {
-    const functionalLimitations = section?.functionalLimitations;
-    const priorLevel = section?.priorLevel;
-    const patientGoals = section?.patientGoals;
-    return (
-      isFieldComplete(functionalLimitations) &&
-      isFieldComplete(priorLevel) &&
-      isFieldComplete(patientGoals)
-    );
+  'interview-qa': (data, section) => {
+    return hasInterviewContent(section);
   },
 };
 

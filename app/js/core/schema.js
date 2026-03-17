@@ -353,6 +353,17 @@ export function migrateOldCaseData(caseData) {
   if (typeof caseData.subjective === 'string') {
     const oldSubjective = caseData.subjective;
     caseData.subjective = {
+      patientName: '',
+      patientBirthday: '',
+      patientAge: '',
+      patientGender: '',
+      patientGenderIdentityPronouns: '',
+      patientPreferredLanguage: 'English',
+      patientInterpreterNeeded: 'no',
+      patientWorkStatusOccupation: '',
+      patientLivingSituationHomeEnvironment: '',
+      patientSocialSupport: '',
+      patientDemographics: '',
       chiefComplaint: '',
       historyOfPresentIllness: oldSubjective,
       painLocation: '',

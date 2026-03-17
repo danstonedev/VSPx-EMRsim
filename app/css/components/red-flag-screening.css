@@ -4,11 +4,7 @@
 
 /* ── Panel wrapper ─────────────────────────────────────── */
 .rf-panel {
-  margin-top: var(--space-3, 0.75rem);
-  border: 1px solid var(--color-border, #d0d5dd);
-  border-radius: var(--radius-md, 8px);
-  background: var(--surface-card, #fff);
-  overflow: hidden;
+  margin-top: 0;
 }
 
 /* ── Header bar ────────────────────────────────────────── */
@@ -55,14 +51,27 @@
 
 /* ── Body ──────────────────────────────────────────────── */
 .rf-panel__body {
-  padding: var(--space-3, 0.75rem);
+  padding: 0;
+}
+
+.rf-panel__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.rf-panel__topbar-right {
+  display: flex;
+  align-items: center;
 }
 
 /* ── Toolbar (Deny All / Reset) ────────────────────────── */
 .rf-panel__toolbar {
   display: flex;
   gap: var(--space-2, 0.5rem);
-  margin-bottom: var(--space-3, 0.75rem);
+  margin-bottom: 0;
 }
 
 .rf-panel__deny-all-btn,
@@ -113,15 +122,16 @@
   color: var(--text-secondary, #667085);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  margin-bottom: var(--space-1, 0.25rem);
-  padding-bottom: var(--space-1, 0.25rem);
-  border-bottom: 1px solid var(--color-border, #d0d5dd);
 }
 
 /* ── Flag items list ───────────────────────────────────── */
 .rf-panel__items {
   display: flex;
   flex-direction: column;
+}
+
+.rf-panel__notes-card {
+  margin-top: var(--space-1, 0.25rem);
 }
 
 /* ── Individual flag row ───────────────────────────────── */
@@ -195,7 +205,7 @@
 /* ── Inline notes for positive findings ────────────────── */
 .rf-panel__row-notes {
   margin-left: calc(28px + var(--space-2, 0.5rem));
-  font-size: 0.85rem !important;
+  font-size: 1rem !important;
   height: 32px !important;
   min-height: 32px !important;
   padding: 0 var(--space-2, 0.5rem) !important;
@@ -211,13 +221,12 @@
 }
 
 .rf-panel__notes-input {
-  font-size: 0.9rem !important;
+  font-size: 1rem !important;
 }
 
 /* ── Dark theme overrides ──────────────────────────────── */
 html[data-theme='dark'] .rf-panel {
-  border-color: var(--neutral-600, #475467);
-  background: var(--surface-card, #1d2939);
+  background: transparent;
 }
 
 html[data-theme='dark'] .rf-panel__header {
@@ -241,7 +250,6 @@ html[data-theme='dark'] .rf-panel__badge--alert {
 
 html[data-theme='dark'] .rf-panel__category-label {
   color: var(--text-secondary, #98a2b3);
-  border-color: var(--neutral-600, #475467);
 }
 
 html[data-theme='dark'] .rf-panel__row {

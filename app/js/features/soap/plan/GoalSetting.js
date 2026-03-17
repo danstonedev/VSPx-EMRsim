@@ -3,24 +3,6 @@
 
 import { el, textareaAutoResize } from '../../../ui/utils.js';
 
-const TIMEFRAME_OPTIONS = [
-  { value: '', label: '— timeframe —' },
-  { value: '1-week', label: '1 week' },
-  { value: '2-weeks', label: '2 weeks' },
-  { value: '4-weeks', label: '4 weeks' },
-  { value: '6-weeks', label: '6 weeks' },
-  { value: '8-weeks', label: '8 weeks' },
-  { value: '12-weeks', label: '12 weeks' },
-  { value: 'discharge', label: 'By D/C' },
-];
-
-const ICF_OPTIONS = [
-  { value: '', label: '— ICF domain —' },
-  { value: 'body', label: 'Body Functions & Impairments' },
-  { value: 'activity', label: 'Activity Limitations' },
-  { value: 'participation', label: 'Participation Restrictions' },
-];
-
 /** Migrate from old goalsTable object format or seed an empty row */
 function migrateGoals(data) {
   if (Array.isArray(data.goals)) return;
@@ -34,19 +16,6 @@ function migrateGoals(data) {
   if (data.goals.length === 0) {
     for (let i = 0; i < 4; i++) data.goals.push({ goal: '', timeframe: '', icfDomain: '' });
   }
-}
-
-function makeSelect(options, value, onChange) {
-  const sel = el('select', {
-    class: 'goal-select combined-neuroscreen__input combined-neuroscreen__input--left',
-  });
-  options.forEach((opt) => {
-    const o = el('option', { value: opt.value }, opt.label);
-    if (opt.value === value) o.selected = true;
-    sel.appendChild(o);
-  });
-  sel.addEventListener('change', () => onChange(sel.value));
-  return sel;
 }
 
 function createGoalRow(entry, index, data, updateField, renderCallback) {
@@ -84,26 +53,6 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
   });
   goalCell.appendChild(goalInput);
   row.appendChild(goalCell);
-
-  // Timeframe select
-  const tfCell = el('td', { class: 'combined-neuroscreen-td' });
-  tfCell.appendChild(
-    makeSelect(TIMEFRAME_OPTIONS, entry.timeframe || '', (v) => {
-      data.goals[index].timeframe = v;
-      updateField('goals', data.goals);
-    }),
-  );
-  row.appendChild(tfCell);
-
-  // ICF domain select
-  const icfCell = el('td', { class: 'combined-neuroscreen-td' });
-  icfCell.appendChild(
-    makeSelect(ICF_OPTIONS, entry.icfDomain || '', (v) => {
-      data.goals[index].icfDomain = v;
-      updateField('goals', data.goals);
-    }),
-  );
-  row.appendChild(icfCell);
 
   // Remove button
   const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
@@ -188,16 +137,12 @@ export const GoalSetting = {
 
     const section = el('div', {
       id: 'goal-setting',
-      class: 'section-anchor section-panel goal-setting-subsection',
+      class: 'section-anchor goal-setting-subsection plan-subsection-flat',
+      'data-title': 'SMART Goals',
     });
 
-    const goalHeader = el('div', { class: 'section-panel__header' }, [
-      el('span', { class: 'section-panel__title' }, 'SMART Goals'),
-    ]);
-    section.append(goalHeader);
-
     const container = el('div', {
-      class: 'billing-section-container section-panel__body section-panel__body--flush',
+      class: 'billing-section-container',
     });
     section.append(container);
 
@@ -213,8 +158,6 @@ export const GoalSetting = {
         el('colgroup', {}, [
           el('col', { style: 'width: 2rem;' }),
           el('col', { style: 'width: auto;' }),
-          el('col', { style: 'width: 10rem;' }),
-          el('col', { style: 'width: 14rem;' }),
           el('col', { style: 'width: 3.75rem;' }),
         ]),
       );
@@ -242,9 +185,7 @@ export const GoalSetting = {
               { class: 'combined-neuroscreen-th billing-header intervention-drag-handle-col' },
               '',
             ),
-            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Goal'),
-            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'Timeframe'),
-            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'ICF Domain'),
+            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'SMART Goals'),
             el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, [addBtn]),
           ]),
         ]),

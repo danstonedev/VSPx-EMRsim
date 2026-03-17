@@ -61,7 +61,7 @@ function createQARow(item, index, { onUpdate, onDelete, totalCount }) {
   const questionLabel = el('label', { class: 'qa-row__label' }, 'Question');
   const questionTA = el('textarea', {
     class: 'qa-row__textarea form-textarea',
-    rows: 2,
+    rows: 1,
     placeholder: 'Enter your open-ended question…',
     value: item.question || '',
   });
@@ -98,7 +98,7 @@ function createQARow(item, index, { onUpdate, onDelete, totalCount }) {
   const responseLabel = el('label', { class: 'qa-row__label' }, 'Patient Response');
   const responseTA = el('textarea', {
     class: 'qa-row__textarea form-textarea',
-    rows: 2,
+    rows: 1,
     placeholder: "Document the patient's response…",
     value: item.response || '',
   });
@@ -208,12 +208,6 @@ export function createInterviewQAPanel(data, onUpdate) {
 
   const wrapper = el('div', { class: 'qa-panel' });
 
-  // ── Header
-  const header = el('div', { class: 'qa-panel__header' });
-  const title = el('span', { class: 'qa-panel__title' }, 'Interview Q/A');
-
-  header.append(title);
-
   // ── Body (contains rows)
   const body = el('div', { class: 'qa-panel__body' });
   const listContainer = el('div', { class: 'qa-panel__list' });
@@ -279,7 +273,7 @@ export function createInterviewQAPanel(data, onUpdate) {
   );
 
   body.append(listContainer, addBtn);
-  wrapper.append(header, body);
+  wrapper.append(body);
 
   // Initial render
   renderList();

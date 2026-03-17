@@ -56,6 +56,34 @@ const RED_FLAG_CATEGORIES = [
       { id: 'unexplained-diaphoresis', label: 'Unexplained diaphoresis' },
     ],
   },
+  {
+    category: 'Mental Health',
+    items: [
+      { id: 'phq2-little-interest', label: 'Little interest or pleasure in doing things (PHQ-2)' },
+      { id: 'phq2-feeling-down', label: 'Feeling down, depressed, or hopeless (PHQ-2)' },
+      { id: 'suicidal-ideation', label: 'Thoughts of self-harm or suicide' },
+      {
+        id: 'anxiety-excessive-worry',
+        label: 'Excessive worry or anxiety affecting daily function',
+      },
+    ],
+  },
+  {
+    category: 'Tobacco Use',
+    items: [
+      { id: 'tobacco-current', label: 'Current tobacco / nicotine use' },
+      { id: 'tobacco-former', label: 'Former tobacco use' },
+      { id: 'tobacco-never', label: 'Never used tobacco' },
+    ],
+  },
+  {
+    category: 'Alcohol Use',
+    items: [
+      { id: 'alcohol-current', label: 'Current alcohol use' },
+      { id: 'alcohol-heavy', label: 'Heavy or binge drinking (≥ 4-5 drinks/occasion)' },
+      { id: 'alcohol-cage-positive', label: 'CAGE screen positive (≥ 2 yes)' },
+    ],
+  },
 ];
 
 /** Status values for each flag item */
@@ -148,16 +176,7 @@ export const RedFlagScreening = {
       updateField('redFlags', buildSummaryString(data.redFlagScreening, data.redFlagNotes || ''));
     };
 
-    // ── Header
-    const headerRight = el('div', { class: 'rf-panel__header-right' });
     const statusBadge = el('span', { class: 'rf-panel__badge' });
-
-    const header = el('div', { class: 'rf-panel__header' }, [
-      el('span', { class: 'rf-panel__title' }, 'Red Flags / Screening'),
-      headerRight,
-    ]);
-    headerRight.append(statusBadge);
-    wrapper.append(header);
 
     // ── Body
     const body = el('div', { class: 'rf-panel__body' });
@@ -179,10 +198,14 @@ export const RedFlagScreening = {
     }
 
     // ── Render categories
-    function renderBody() {
+    function renderBody(options = {}) {
+      const preserveScroll = !!options.preserveScroll;
+      const focusFlagId = options.focusFlagId || '';
+      const prevScrollY = preserveScroll ? window.scrollY : null;
+
       body.replaceChildren();
 
-      // "Deny All" quick action
+      // Top action bar
       const toolbar = el('div', { class: 'rf-panel__toolbar' });
       const denyAllBtn = el(
         'button',
@@ -219,28 +242,35 @@ export const RedFlagScreening = {
         'Reset',
       );
       toolbar.append(denyAllBtn, resetBtn);
-      body.append(toolbar);
+
+      const topbar = el('div', { class: 'rf-panel__topbar' }, [
+        toolbar,
+        el('div', { class: 'rf-panel__topbar-right' }, [statusBadge]),
+      ]);
+      body.append(topbar);
 
       for (const cat of RED_FLAG_CATEGORIES) {
-        const catEl = el('div', { class: 'rf-panel__category' });
-        catEl.append(el('div', { class: 'rf-panel__category-label' }, cat.category));
-
         const itemsList = el('div', { class: 'rf-panel__items' });
         for (const item of cat.items) {
           const entry = data.redFlagScreening.find((s) => s.id === item.id);
           if (!entry) continue;
           itemsList.append(createFlagRow(item, entry, persist, renderBody));
         }
-        catEl.append(itemsList);
+
+        const catEl = el('div', { class: 'gated-card rf-panel__category' }, [
+          el('div', { class: 'gated-card__header' }, [
+            el('span', { class: 'rf-panel__category-label' }, cat.category),
+          ]),
+          itemsList,
+        ]);
         body.append(catEl);
       }
 
       // Additional notes textarea
-      const notesLabel = el('label', { class: 'rf-panel__notes-label' }, 'Additional Notes');
       const notesInput = el('textarea', {
         class:
           'rf-panel__notes-input combined-neuroscreen__input combined-neuroscreen__input--left',
-        rows: 2,
+        rows: 1,
         placeholder: 'Additional screening observations…',
         style: 'width: 100%; resize: vertical;',
       });
@@ -250,9 +280,30 @@ export const RedFlagScreening = {
         data.redFlagNotes = notesInput.value;
         persist();
       });
-      body.append(notesLabel, notesInput);
+      body.append(
+        el('div', { class: 'gated-card rf-panel__notes-card' }, [
+          el('div', { class: 'gated-card__header' }, [
+            el('span', { class: 'rf-panel__notes-label' }, 'Notes'),
+          ]),
+          notesInput,
+        ]),
+      );
 
       updateBadge();
+
+      if (preserveScroll) {
+        requestAnimationFrame(() => {
+          if (typeof prevScrollY === 'number') {
+            window.scrollTo({ top: prevScrollY, left: window.scrollX, behavior: 'auto' });
+          }
+          if (focusFlagId) {
+            const targetBtn = body.querySelector(
+              `.rf-panel__status-btn[data-flag-id="${focusFlagId}"]`,
+            );
+            if (targetBtn) targetBtn.focus({ preventScroll: true });
+          }
+        });
+      }
     }
 
     renderBody();
@@ -267,12 +318,13 @@ function createFlagRow(item, entry, persist, renderBody) {
   const statusBtn = el('button', {
     type: 'button',
     class: `rf-panel__status-btn rf-panel__status-btn--${entry.status}`,
+    'data-flag-id': item.id,
     title: statusTitle(entry.status),
     onclick: () => {
       entry.status = nextStatus(entry.status);
       if (entry.status !== STATUS.PRESENT) entry.notes = '';
       persist();
-      renderBody();
+      renderBody({ preserveScroll: true, focusFlagId: item.id });
     },
   });
   statusBtn.textContent = statusIcon(entry.status);

@@ -893,13 +893,8 @@ export const MedicationPanel = {
       updateField('medicationsCurrent', buildMedSummary(data.medications));
     };
 
-    // ── Header ──────────────────────────────────────────────────────────
+    // ── Count badge ─────────────────────────────────────────────────────
     const countBadge = el('span', { class: 'med-panel__badge' });
-    const header = el('div', { class: 'med-panel__header' }, [
-      el('span', { class: 'med-panel__title' }, 'Current Medications'),
-      el('div', { class: 'med-panel__header-right' }, [countBadge]),
-    ]);
-    wrapper.append(header);
 
     // ── Body ────────────────────────────────────────────────────────────
     const body = el('div', { class: 'med-panel__body' });
@@ -1065,9 +1060,20 @@ export const MedicationPanel = {
 
     function renderBody() {
       body.replaceChildren();
-      body.append(searchWrap);
 
-      // Hint below search
+      // ── Integrated search bar with icon and badge ───────────────────
+      const searchIcon = el(
+        'span',
+        { class: 'med-panel__search-icon', 'aria-hidden': 'true' },
+        '\u{1F50D}',
+      );
+      const searchBar = el('div', { class: 'med-panel__search-bar' }, [
+        searchIcon,
+        searchWrap,
+        countBadge,
+      ]);
+      body.append(searchBar);
+
       const hint = el(
         'div',
         { class: 'med-panel__search-hint' },
@@ -1075,6 +1081,7 @@ export const MedicationPanel = {
       );
       body.append(hint);
 
+      // ── Medication list ─────────────────────────────────────────────
       if (data.medications.length) {
         const list = el('div', { class: 'med-panel__list' });
 
@@ -1082,18 +1089,17 @@ export const MedicationPanel = {
           const chip = createMedChip(med, idx, data, persist, renderBody);
           list.append(chip);
         });
-
         body.append(list);
+      } else {
+        body.append(el('div', { class: 'med-panel__empty' }, 'No medications listed.'));
       }
 
       // Additional notes textarea
-      const notesLabel = el('label', { class: 'med-panel__notes-label' }, 'Additional Notes');
       const notesInput = el('textarea', {
         class:
           'med-panel__notes-input combined-neuroscreen__input combined-neuroscreen__input--left',
-        rows: 2,
+        rows: 1,
         placeholder: 'Medication allergies, interactions noted, pharmacist consult…',
-        style: 'width: 100%; resize: vertical;',
       });
       notesInput.value = data.medicationNotes || '';
       textareaAutoResize(notesInput);
@@ -1101,7 +1107,12 @@ export const MedicationPanel = {
         data.medicationNotes = notesInput.value;
         updateField('medicationNotes', data.medicationNotes);
       });
-      body.append(notesLabel, notesInput);
+
+      const notesSection = el('div', { class: 'med-panel__notes' }, [
+        el('label', { class: 'med-panel__notes-label' }, 'Notes'),
+        notesInput,
+      ]);
+      body.append(notesSection);
 
       updateBadge();
     }

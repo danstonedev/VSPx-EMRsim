@@ -4,11 +4,7 @@
 
 /* ── Panel wrapper ─────────────────────────────────────── */
 .qa-panel {
-  margin-top: var(--space-3, 0.75rem);
-  border: 1px solid var(--color-border, #d0d5dd);
-  border-radius: var(--radius-md, 8px);
-  background: var(--surface-card, #fff);
-  overflow: hidden;
+  /* No border/background — sits inside section-panel__body */
 }
 
 /* ── Header bar ────────────────────────────────────────── */
@@ -64,7 +60,7 @@
 
 /* ── Body container ────────────────────────────────────── */
 .qa-panel__body {
-  padding: var(--space-3, 0.75rem);
+  /* No padding — inherits from section-panel__body */
 }
 
 .qa-panel__list {
@@ -272,9 +268,6 @@ html[data-theme='dark'] .qa-row__closed-warning {
 }
 
 /* ── Dark theme ────────────────────────────────────────── */
-html[data-theme='dark'] .qa-panel {
-  border-color: var(--color-border, #3a3a3a);
-}
 
 html[data-theme='dark'] .qa-row {
   border-color: var(--color-border, #3a3a3a);

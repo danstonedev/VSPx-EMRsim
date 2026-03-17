@@ -22,6 +22,17 @@ function _mergeEvalSubjective(draft, evalSubj, normalizers) {
   if (!evalSubj) return;
   const { normalizePainQuality, normalizePainPattern } = normalizers;
   const directFields = [
+    'patientName',
+    'patientBirthday',
+    'patientAge',
+    'patientGender',
+    'patientGenderIdentityPronouns',
+    'patientPreferredLanguage',
+    'patientInterpreterNeeded',
+    'patientWorkStatusOccupation',
+    'patientLivingSituationHomeEnvironment',
+    'patientSocialSupport',
+    'patientDemographics',
     'chiefComplaint',
     'historyOfPresentIllness',
     'patientGoals',
@@ -330,39 +341,18 @@ function seedTreatmentPerformedFromPlan(draft, evalPlan) {
 
 function ensureTreatmentPerformedContainer(draft) {
   return (draft.objective.treatmentPerformed = draft.objective.treatmentPerformed || {
-    patientEducation: '',
-    modalities: '',
-    therapeuticExercise: '',
-    manualTherapy: '',
+    description: '',
   });
 }
 
 function fillTreatmentPerformedFromPlanText(tp, tplan) {
-  const extractParen = (label) => {
-    const re = new RegExp(label + '\\s*\\(([^)]*)\\)', 'i');
-    const m = tplan.match(re);
-    return m ? m[1].trim() : '';
-  };
-  if (!tp.manualTherapy) {
-    const mt = extractParen('Manual therapy');
-    if (mt) tp.manualTherapy = mt;
-    else if (/manual/i.test(tplan))
-      tp.manualTherapy = 'Manual therapy techniques as outlined in plan.';
-  }
-  if (!tp.therapeuticExercise) {
-    const te = extractParen('therapeutic exercise');
-    if (te) tp.therapeuticExercise = te;
-    else if (/therapeutic exercise/i.test(tplan))
-      tp.therapeuticExercise = 'Therapeutic exercise per plan.';
-  }
-  if (!tp.modalities) {
-    const mod =
-      extractParen('symptom modulation') ||
-      (/(taping|ice|heat|ultrasound|estim|e\s*-\s*stim|modalit)/i.test(tplan)
-        ? 'Symptom modulation (e.g., taping/ice/heat) as indicated.'
-        : '');
-    if (mod) tp.modalities = mod;
-  }
+  if (tp.description) return;
+  const parts = [];
+  if (/manual/i.test(tplan)) parts.push('Manual therapy techniques as outlined in plan.');
+  if (/therapeutic exercise/i.test(tplan)) parts.push('Therapeutic exercise per plan.');
+  if (/(taping|ice|heat|ultrasound|estim|e\s*-\s*stim|modalit)/i.test(tplan))
+    parts.push('Symptom modulation (e.g., taping/ice/heat) as indicated.');
+  if (parts.length) tp.description = parts.join('\n');
 }
 
 // Plan: merge eval plan and normalize enums
@@ -465,14 +455,21 @@ function mergeBillingFromEval(draft, evalBilling) {
 // Meta & Snapshot helpers
 function applyMetaAndSnapshot(draft, caseData) {
   const title = getCaseTitle(caseData);
+  const name = getCaseName(caseData);
   const age = getCaseAge(caseData);
   const sex = getCaseSex(caseData);
+  const dob = getCaseDob(caseData);
   setNoteTitleFromMeta(draft, title);
+  seedSubjectiveProfileFromSnapshot(draft, { name, age, sex, dob });
   maybeSeedHpiFromSnapshot(draft, { age, sex, title, generated: isCaseGenerated(caseData) });
 }
 
 function getCaseTitle(caseData) {
   return caseData?.meta?.title || caseData?.title;
+}
+
+function getCaseName(caseData) {
+  return caseData?.snapshot?.name;
 }
 
 function getCaseAge(caseData) {
@@ -483,12 +480,31 @@ function getCaseSex(caseData) {
   return caseData?.snapshot?.sex;
 }
 
+function getCaseDob(caseData) {
+  return caseData?.snapshot?.dob;
+}
+
 function isCaseGenerated(caseData) {
   return caseData?.meta?.generated === true || caseData?.generated === true;
 }
 
 function setNoteTitleFromMeta(draft, title) {
   if (title && !draft.noteTitle) draft.noteTitle = title;
+}
+
+function seedSubjectiveProfileFromSnapshot(draft, { name, age, sex, dob }) {
+  if (!draft?.subjective) return;
+
+  const assignIfEmpty = (key, rawValue) => {
+    if (draft.subjective[key]) return;
+    if (rawValue === undefined || rawValue === null || rawValue === '') return;
+    draft.subjective[key] = String(rawValue);
+  };
+
+  assignIfEmpty('patientName', name);
+  assignIfEmpty('patientAge', age);
+  assignIfEmpty('patientBirthday', dob);
+  assignIfEmpty('patientGender', sex && sex !== 'unspecified' ? String(sex).toLowerCase() : '');
 }
 
 function maybeSeedHpiFromSnapshot(draft, { age, sex, title, generated }) {
@@ -534,8 +550,10 @@ function createBlankCaseTemplate() {
       diagnosis: 'Musculoskeletal',
     },
     snapshot: {
+      name: '',
       age: '',
       sex: 'unspecified',
+      dob: '',
       teaser: '',
     },
     history: {
@@ -575,6 +593,17 @@ function createDefaultDraft() {
     // Simple SOAP free-text data (used when noteType === 'simple-soap')
     simpleSOAP: { subjective: '', objective: '', assessment: '', plan: '' },
     subjective: {
+      patientName: '',
+      patientBirthday: '',
+      patientAge: '',
+      patientGender: '',
+      patientGenderIdentityPronouns: '',
+      patientPreferredLanguage: 'English',
+      patientInterpreterNeeded: 'no',
+      patientWorkStatusOccupation: '',
+      patientLivingSituationHomeEnvironment: '',
+      patientSocialSupport: '',
+      patientDemographics: '',
       chiefComplaint: '',
       historyOfPresentIllness: '',
       painLocation: '',
@@ -640,6 +669,7 @@ function createDefaultDraft() {
           hpi: true,
           'functional-status': true,
           'pain-assessment': true,
+          'current-medications': true,
         },
         objective: {
           'general-observations': true,

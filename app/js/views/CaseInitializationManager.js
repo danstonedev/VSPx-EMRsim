@@ -86,6 +86,62 @@ function createCaseInfoConfig(c) {
   };
 }
 
+function syncCoreCaseFields(c, updatedInfo, normalizedTitle) {
+  c.caseTitle = updatedInfo.title;
+  c.title = updatedInfo.title;
+  c.setting = updatedInfo.setting;
+  c.patientAge = updatedInfo.age;
+  c.patientGender = updatedInfo.sex;
+  c.acuity = updatedInfo.acuity;
+  c.patientDOB = updatedInfo.dob;
+  c.patientName = normalizedTitle;
+}
+
+function syncCaseContainers(c, updatedInfo, normalizedTitle, normalizedSex) {
+  c.meta = c.meta || {};
+  c.meta.title = updatedInfo.title;
+  c.meta.setting = updatedInfo.setting;
+  c.meta.acuity = updatedInfo.acuity;
+  c.meta.patientName = normalizedTitle;
+
+  c.snapshot = c.snapshot || {};
+  c.snapshot.name = normalizedTitle;
+  c.snapshot.age = updatedInfo.age;
+  c.snapshot.sex = normalizedSex;
+  c.snapshot.dob = updatedInfo.dob;
+}
+
+function syncDraftProfile(draft, normalizedTitle, updatedInfo, normalizedSex) {
+  draft.subjective = draft.subjective || {};
+  draft.subjective.patientName = normalizedTitle;
+  draft.subjective.patientBirthday = updatedInfo.dob || '';
+  draft.subjective.patientAge = updatedInfo.age || '';
+  draft.subjective.patientGender = normalizedSex;
+  draft.noteTitle = normalizedTitle || draft.noteTitle || '';
+}
+
+function emitProfileSyncFromHeader(normalizedTitle, updatedInfo, normalizedSex) {
+  try {
+    window.dispatchEvent(
+      new CustomEvent('pt-emr-profile-sync', {
+        detail: {
+          source: 'header',
+          title: normalizedTitle,
+          patientName: normalizedTitle,
+          patientBirthday: updatedInfo.dob || '',
+          patientAge: updatedInfo.age || '',
+          patientGender: normalizedSex,
+          dob: updatedInfo.dob || '',
+          age: updatedInfo.age || '',
+          sex: normalizedSex,
+        },
+      }),
+    );
+  } catch {
+    /* window may not exist in tests */
+  }
+}
+
 /**
  * Creates initial chart navigation configuration
  * @param {Object} options - Configuration options
@@ -115,14 +171,11 @@ export function createCaseInfoUpdateHandler(options) {
   const { c, draft, save } = options;
 
   return function handleCaseInfoUpdate(updatedInfo) {
+    const normalizedTitle = String(updatedInfo.title || '').trim();
+    const normalizedSex = String(updatedInfo.sex || '').toLowerCase() || 'unspecified';
+
     // Update primary case properties
-    c.caseTitle = updatedInfo.title;
-    c.title = updatedInfo.title;
-    c.setting = updatedInfo.setting;
-    c.patientAge = updatedInfo.age;
-    c.patientGender = updatedInfo.sex;
-    c.acuity = updatedInfo.acuity;
-    c.patientDOB = updatedInfo.dob;
+    syncCoreCaseFields(c, updatedInfo, normalizedTitle);
 
     // Update modules if provided
     if (Array.isArray(updatedInfo.modules)) {
@@ -131,15 +184,12 @@ export function createCaseInfoUpdateHandler(options) {
     }
 
     // Keep canonical containers in sync
-    c.meta = c.meta || {};
-    c.meta.title = updatedInfo.title;
-    c.meta.setting = updatedInfo.setting;
-    c.meta.acuity = updatedInfo.acuity;
+    syncCaseContainers(c, updatedInfo, normalizedTitle, normalizedSex);
 
-    c.snapshot = c.snapshot || {};
-    c.snapshot.age = updatedInfo.age;
-    c.snapshot.sex = (updatedInfo.sex || '').toLowerCase() || 'unspecified';
-    c.snapshot.dob = updatedInfo.dob;
+    // Keep subjective patient profile and note title in sync with header/modal fields
+    syncDraftProfile(draft, normalizedTitle, updatedInfo, normalizedSex);
+
+    emitProfileSyncFromHeader(normalizedTitle, updatedInfo, normalizedSex);
 
     // Save changes and refresh progress
     save();

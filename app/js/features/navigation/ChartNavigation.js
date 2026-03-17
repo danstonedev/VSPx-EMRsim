@@ -182,23 +182,23 @@ function createSubsectionIndicator(status) {
 function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {}) {
   if (!subsectionData) return 'empty';
 
-  /** Check whether the three history fields merged into HPI are all filled */
-  function isHpiHistoryComplete(section) {
-    // Medications: accept structured array OR legacy string
-    const medsComplete = Array.isArray(section?.medications)
-      ? section.medications.length > 0
-      : isFieldComplete(section?.medicationsCurrent);
-    // Red flags: accept structured screening array OR legacy string
-    const redFlagsComplete = Array.isArray(section?.redFlagScreening)
-      ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
-      : isFieldComplete(section?.redFlags);
-    return medsComplete && redFlagsComplete && isFieldComplete(section?.additionalHistory);
+  /** Check whether the core patient profile fields are filled */
+  function isPatientProfileComplete(section) {
+    return (
+      isFieldComplete(section?.patientName) &&
+      isFieldComplete(section?.patientBirthday) &&
+      isFieldComplete(section?.patientAge) &&
+      isFieldComplete(section?.patientGender)
+    );
   }
 
   // Define required fields for each subsection type
   const subsectionRequirements = {
     // Subjective subsections
     hpi: (data, section) => {
+      return isPatientProfileComplete(section);
+    },
+    history: (data, section) => {
       const chiefComplaint = section?.chiefComplaint || section?.chiefConcern;
       const hpiText =
         section?.historyOfPresentIllness ??
@@ -206,8 +206,19 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
         section?.hpi ??
         '';
       return (
-        isFieldComplete(chiefComplaint) && isFieldComplete(hpiText) && isHpiHistoryComplete(section)
+        isFieldComplete(chiefComplaint) &&
+        isFieldComplete(hpiText) &&
+        isFieldComplete(section?.functionalLimitations) &&
+        isFieldComplete(section?.additionalHistory) &&
+        isFieldComplete(section?.priorLevel) &&
+        isFieldComplete(section?.patientGoals)
       );
+    },
+    'current-medications': (data, section) => {
+      const medsComplete = Array.isArray(section?.medications)
+        ? section.medications.length > 0
+        : isFieldComplete(section?.medicationsCurrent);
+      return medsComplete;
     },
     /* eslint-disable-next-line complexity */
     'pain-assessment': (data, section) => {
@@ -230,7 +241,6 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
       const painPattern = painData.painPattern || painData.pattern;
       const aggravatingFactors = painData.aggravatingFactors;
       const easingFactors = painData.easingFactors;
-
       return (
         isFieldComplete(painLocation) &&
         isFieldComplete(painScale) &&
@@ -240,16 +250,17 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
         isFieldComplete(easingFactors)
       );
     },
-    'functional-status': (data, section) => {
-      // Require all three fields in Functional Status subsection to be complete
-      const functionalLimitations = section?.functionalLimitations;
-      const priorLevel = section?.priorLevel;
-      const patientGoals = section?.patientGoals;
-      return (
-        isFieldComplete(functionalLimitations) &&
-        isFieldComplete(priorLevel) &&
-        isFieldComplete(patientGoals)
-      );
+    'red-flag-screening': (data, section) => {
+      return Array.isArray(section?.redFlagScreening)
+        ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
+        : isFieldComplete(section?.redFlags);
+    },
+    'functional-status': undefined,
+    'interview-qa': (data, section) => {
+      const hasInterview = Array.isArray(section?.qaItems)
+        ? section.qaItems.some((q) => isFieldComplete(q?.question) && isFieldComplete(q?.response))
+        : false;
+      return hasInterview;
     },
 
     // Objective subsections
@@ -262,14 +273,6 @@ function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {
       const hasTests = ra.specialTests && isFieldComplete(ra.specialTests);
       // Mark complete if any of the three sub-areas has entries
       return Boolean(hasRom || hasMmt || hasTests);
-    },
-    inspection: (data, section) => {
-      const inspection = section?.inspection?.visual || data;
-      return isFieldComplete(inspection);
-    },
-    palpation: (data, section) => {
-      const palpation = section?.palpation?.findings || data;
-      return isFieldComplete(palpation);
     },
     neuro: (data, section) => {
       const neuro = section?.neuro?.screening || data;
@@ -426,6 +429,16 @@ function computeAgeFromDob(dobStr) {
   const m = today.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
   return age >= 0 && age < 200 ? String(age) : '';
+}
+
+function formatSexDisplay(value) {
+  const v = String(value || '').toLowerCase();
+  if (!v || v === 'n/a' || v === 'na') return 'N/A';
+  if (v === 'unspecified') return 'Prefer not to say';
+  if (v === 'male') return 'Male';
+  if (v === 'female') return 'Female';
+  if (v === 'other') return 'Other';
+  return value;
 }
 
 // Collapse/expand subsection content while keeping the banner visible
@@ -613,7 +626,7 @@ function createEditableCaseHeader(caseInfo, onUpdate, options = {}) {
     { class: 'value' },
     computeAgeFromDob(caseInfo.dob) || caseInfo.age || 'N/A',
   );
-  const sexValue = el('span', { class: 'value' }, caseInfo.sex || 'N/A');
+  const sexValue = el('span', { class: 'value' }, formatSexDisplay(caseInfo.sex));
   const acuityValue = el('span', { class: 'value' }, caseInfo.acuity || 'N/A');
 
   const basicInfo = el('div', { class: 'case-info-grid' }, [
@@ -634,7 +647,7 @@ function createEditableCaseHeader(caseInfo, onUpdate, options = {}) {
   function updateBasicInfo() {
     settingValue.textContent = caseInfo.setting || 'N/A';
     ageValue.textContent = computeAgeFromDob(caseInfo.dob) || caseInfo.age || 'N/A';
-    sexValue.textContent = caseInfo.sex || 'N/A';
+    sexValue.textContent = formatSexDisplay(caseInfo.sex);
     acuityValue.textContent = caseInfo.acuity || 'N/A';
     const dobDisp = basicInfo.querySelector('#case-dob-display');
     if (dobDisp) dobDisp.textContent = caseInfo.dob || 'N/A';
@@ -1949,11 +1962,23 @@ export function createChartNavigation(config) {
   const subsectionDataResolvers = {
     // Subjective
     hpi: (section) => ({
+      patientName: section?.patientName,
+      patientBirthday: section?.patientBirthday,
+      patientAge: section?.patientAge,
+      patientGender: section?.patientGender,
+      patientDemographics: section?.patientDemographics,
+    }),
+    history: (section) => ({
       chiefComplaint: section?.chiefComplaint,
       historyOfPresentIllness: section?.historyOfPresentIllness,
-      medicationsCurrent: section?.medicationsCurrent,
-      redFlags: section?.redFlags,
+      functionalLimitations: section?.functionalLimitations,
       additionalHistory: section?.additionalHistory,
+      priorLevel: section?.priorLevel,
+      patientGoals: section?.patientGoals,
+    }),
+    'current-medications': (section) => ({
+      medications: section?.medications,
+      medicationsCurrent: section?.medicationsCurrent,
     }),
     'pain-assessment': (section) => ({
       location: section?.painLocation,
@@ -1963,15 +1988,17 @@ export function createChartNavigation(config) {
       aggravatingFactors: section?.aggravatingFactors,
       easingFactors: section?.easingFactors,
     }),
-    'functional-status': (section) => ({
-      functionalLimitations: section?.functionalLimitations,
-      priorLevel: section?.priorLevel,
-      patientGoals: section?.patientGoals,
+    'red-flag-screening': (section) => ({
+      redFlagScreening: section?.redFlagScreening,
+      redFlags: section?.redFlags,
+    }),
+    'functional-status': undefined,
+    'interview-qa': (section) => ({
+      qaItems: section?.qaItems,
     }),
     // Objective
-    'general-observations': (section) => section?.text,
-    inspection: (section) => section?.inspection?.visual,
-    palpation: (section) => section?.palpation?.findings,
+    'systems-review': (section) => section?.systemsReview,
+    'vital-signs': (section) => section?.vitals,
     'regional-assessment': (section) => ({
       rom: section?.rom,
       mmt: section?.mmt,
@@ -1980,7 +2007,50 @@ export function createChartNavigation(config) {
     }),
     'neurological-screening': (section) => section?.neuro?.screening,
     'functional-movement': (section) => section?.functional?.assessment,
+    'tone-assessment': (section) => section?.tone,
+    'coordination-assessment': (section) => section?.coordination,
+    'balance-assessment': (section) => section?.balance,
+    'cranial-nerves': (section) => section?.cranialNerves,
+    'endurance-assessment': (section) => section?.endurance,
+    'edema-assessment': (section) => section?.edema,
+    'auscultation-assessment': (section) => section?.auscultation,
+    'skin-integrity': (section) => section?.skinIntegrity,
+    'color-temperature': (section) => section?.colorTemp,
+    'orientation-alertness': (section) => section?.orientation,
+    'memory-attention': (section) => section?.memoryAttention,
+    'safety-awareness': (section) => section?.safetyAwareness,
+    'vision-perception': (section) => section?.visionPerception,
     'treatment-performed': (section) => section?.treatmentPerformed,
+    // Objective categories (aggregate children for sidebar status)
+    'communication-cognition': (section) => ({
+      orientation: section?.orientation,
+      memoryAttention: section?.memoryAttention,
+      safetyAwareness: section?.safetyAwareness,
+      visionPerception: section?.visionPerception,
+    }),
+    'cardiovascular-pulmonary': (section) => ({
+      auscultation: section?.auscultation,
+      edema: section?.edema,
+      endurance: section?.endurance,
+    }),
+    integumentary: (section) => ({
+      skinIntegrity: section?.skinIntegrity,
+      colorTemp: section?.colorTemp,
+    }),
+    musculoskeletal: (section) => ({
+      regionalAssessments: section?.regionalAssessments,
+      rom: section?.rom,
+      mmt: section?.mmt,
+      specialTests: section?.specialTests,
+    }),
+    neuromuscular: (section) => ({
+      neuro: section?.neuro,
+      tone: section?.tone,
+      cranialNerves: section?.cranialNerves,
+      coordination: section?.coordination,
+      balance: section?.balance,
+      functional: section?.functional,
+    }),
     // Assessment
     'primary-impairments': (section) => section?.primaryImpairments,
     'icf-classification': (section) => ({
@@ -2034,12 +2104,22 @@ export function createChartNavigation(config) {
 
   // Fallback subsection map and titles (used when section is not currently rendered)
   const subsectionFallbackMap = {
-    subjective: ['hpi', 'functional-status', 'pain-assessment'],
+    subjective: [
+      'hpi',
+      'history',
+      'interview-qa',
+      'pain-assessment',
+      'red-flag-screening',
+      'current-medications',
+    ],
     objective: [
-      'general-observations',
-      'regional-assessment',
-      'neurological-screening',
-      'functional-movement',
+      'vital-signs',
+      'systems-review',
+      'communication-cognition',
+      'cardiovascular-pulmonary',
+      'integumentary',
+      'musculoskeletal',
+      'neuromuscular',
       'treatment-performed',
     ],
     assessment: ['primary-impairments', 'icf-classification', 'pt-diagnosis', 'clinical-reasoning'],
@@ -2047,37 +2127,30 @@ export function createChartNavigation(config) {
     billing: ['diagnosis-codes', 'cpt-codes', 'orders-referrals'],
   };
   const subsectionTitleMap = {
-    hpi: 'History',
-    'functional-status': 'Functional Status',
+    hpi: 'Patient Profile',
+    history: 'History',
+    'interview-qa': 'Interview Q&A',
     'pain-assessment': 'Symptoms',
-    'general-observations': 'General Observations & Vital Signs',
-    'regional-assessment': 'Regional Assessment',
-    'neurological-screening': 'Neurological Screening',
-    'functional-movement': 'Functional Movement',
+    'red-flag-screening': 'Red Flags / Screening',
+    'current-medications': 'Medication & Supplements',
+    'systems-review': 'Systems Review',
+    'vital-signs': 'Vital Signs',
     'treatment-performed': 'Treatment Performed',
-    'primary-impairments': 'Primary Impairments',
-    'icf-classification': 'ICF Classification',
-    'pt-diagnosis': 'PT Diagnosis',
-    'clinical-reasoning': 'Clinical Reasoning',
-    'goal-setting': 'Goal Setting',
-    'in-clinic-treatment-plan': 'In-Clinic Treatment Plan',
-    'hep-plan': 'HEP',
-    'diagnosis-codes': 'Diagnosis Codes',
-    'cpt-codes': 'CPT Codes',
-    'billing-notes': 'Billing Notes',
-    'orders-referrals': 'Orders & Referrals',
-    'regional-assessment': 'Regional Assessment',
-    'neurological-screening': 'Neurological Screening',
-    'functional-movement': 'Functional Movement Assessment',
-    'treatment-performed': 'Treatment Performed',
+    'communication-cognition': 'Communication / Cognition',
+    'cardiovascular-pulmonary': 'Cardiovascular / Pulmonary',
+    integumentary: 'Integumentary',
+    musculoskeletal: 'Musculoskeletal',
+    neuromuscular: 'Neuromuscular',
     'primary-impairments': 'Primary Impairments',
     'icf-classification': 'ICF Classification',
     'pt-diagnosis': 'Physical Therapy Diagnosis & Prognosis',
     'clinical-reasoning': 'Clinical Impression',
     'in-clinic-treatment-plan': 'In-Clinic Treatment Plan',
     'goal-setting': 'Goals',
+    'hep-plan': 'HEP',
     'diagnosis-codes': 'ICD-10 Codes',
     'cpt-codes': 'CPT Codes',
+    'billing-notes': 'Billing Notes',
     'orders-referrals': 'Orders & Referrals',
   };
 
