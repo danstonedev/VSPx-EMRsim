@@ -45,8 +45,10 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
 
   // History of Present Illness section with anchor (includes Chief Concern, HPI narrative,
   // Interview Q/A, and medical history fields formerly in "Additional History")
-  const hpiSection = el('div', { id: 'hpi', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'History'),
+  const hpiHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'History'),
+  ]);
+  const hpiBody = el('div', { class: 'section-panel__body' }, [
     textAreaField({
       label: 'Chief Concern',
       value: data.chiefComplaint,
@@ -73,11 +75,17 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       onUpdate(data);
     }),
   ]);
+  const hpiSection = el('div', { id: 'hpi', class: 'section-anchor section-panel' }, [
+    hpiHeader,
+    hpiBody,
+  ]);
   section.append(hpiSection);
 
   // Functional status section with anchor
-  const functionalSection = el('div', { id: 'functional-status', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Functional Status'),
+  const funcHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Functional Status'),
+  ]);
+  const funcBody = el('div', { class: 'section-panel__body' }, [
     textAreaField({
       label: 'Current Functional Limitations',
       value: data.functionalLimitations,
@@ -97,12 +105,23 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       hint: 'Functional outcome goals: specific activities, roles, or performance levels the patient wants to achieve',
     }),
   ]);
+  const functionalSection = el(
+    'div',
+    { id: 'functional-status', class: 'section-anchor section-panel' },
+    [funcHeader, funcBody],
+  );
   section.append(functionalSection);
 
   // Pain assessment section with anchor - Using improved PainAssessment module
-  const painSection = el('div', { id: 'pain-assessment', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Symptoms'),
+  const painHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Symptoms'),
+  ]);
+  const painBody = el('div', { class: 'section-panel__body' }, [
     PainAssessment.create(data, updateField),
+  ]);
+  const painSection = el('div', { id: 'pain-assessment', class: 'section-anchor section-panel' }, [
+    painHeader,
+    painBody,
   ]);
   section.append(painSection);
 

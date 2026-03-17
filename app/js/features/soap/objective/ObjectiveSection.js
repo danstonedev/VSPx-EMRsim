@@ -48,9 +48,12 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   // Neurological screening
   const neuroscreenAnchor = el('div', {
     id: 'neurological-screening',
-    class: 'section-anchor',
+    class: 'section-anchor section-panel',
   });
-  const neuroscreenTitle = el('h4', { class: 'subsection-title' }, 'Neurological Screening');
+  const neuroscreenHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Neurological Screening'),
+  ]);
+  const neuroscreenBody = el('div', { class: 'section-panel__body' });
 
   // Region selector with buttons (multi-select)
   const regionOptions = getNeuroscreenRegions();
@@ -129,9 +132,10 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   // Initial render
   rebuildTables();
 
-  neuroscreenAnchor.appendChild(neuroscreenTitle);
-  neuroscreenAnchor.appendChild(regionSelector);
-  neuroscreenAnchor.appendChild(neuroscreenTableContainer);
+  neuroscreenAnchor.appendChild(neuroscreenHeader);
+  neuroscreenBody.appendChild(regionSelector);
+  neuroscreenBody.appendChild(neuroscreenTableContainer);
+  neuroscreenAnchor.appendChild(neuroscreenBody);
   section.append(neuroscreenAnchor);
 
   // Functional movement assessment
@@ -147,8 +151,10 @@ export function createObjectiveSection(objectiveData, onUpdate) {
   );
 
   // Treatment Performed subsection
-  const performed = el('div', { id: 'treatment-performed', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Treatment Performed'),
+  const performedHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Treatment Performed'),
+  ]);
+  const performedBody = el('div', { class: 'section-panel__body' }, [
     textAreaField({
       label: 'Patient Education',
       value: data.treatmentPerformed.patientEducation || '',
@@ -174,6 +180,11 @@ export function createObjectiveSection(objectiveData, onUpdate) {
       hint: 'Technique(s), region(s) treated, grade/amplitude, number of sets, patient response',
     }),
   ]);
+  const performed = el(
+    'div',
+    { id: 'treatment-performed', class: 'section-anchor section-panel' },
+    [performedHeader, performedBody],
+  );
   section.append(performed);
 
   // CPT Codes widget is rendered only in BillingSection to ensure single source of truth
@@ -284,24 +295,38 @@ function makeUpdateField(data, onUpdate) {
 }
 
 function buildTextAreaSection(id, title, label, value, onChange, hint) {
-  return el('div', { id, class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, title),
+  const header = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, title),
+  ]);
+  const body = el('div', { class: 'section-panel__body' }, [
     textAreaField({ label, value, onChange, hint }),
   ]);
+  return el('div', { id, class: 'section-anchor section-panel' }, [header, body]);
 }
 
 function buildRegionalSection(regionalAssessments, onChange) {
-  const regionalSection = el('div', { id: 'regional-assessment', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Regional Assessment'),
+  const header = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Regional Assessment'),
   ]);
+  const body = el('div', { class: 'section-panel__body' });
+  const regionalSection = el(
+    'div',
+    { id: 'regional-assessment', class: 'section-anchor section-panel' },
+    [header, body],
+  );
   const multiAssessment = createMultiRegionalAssessment(regionalAssessments, onChange);
-  regionalSection.append(multiAssessment.element);
+  body.append(multiAssessment.element);
   return regionalSection;
 }
 
 function buildVitalsSection(vitals, onChange) {
-  const container = el('div', { id: 'vital-signs', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Vital Signs'),
+  const header = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Vital Signs'),
+  ]);
+  const body = el('div', { class: 'section-panel__body' });
+  const container = el('div', { id: 'vital-signs', class: 'section-anchor section-panel' }, [
+    header,
+    body,
   ]);
 
   const table = el('table', {
@@ -485,7 +510,7 @@ function buildVitalsSection(vitals, onChange) {
   };
 
   table.appendChild(tbody);
-  container.appendChild(table);
+  body.appendChild(table);
   return container;
 }
 
@@ -497,11 +522,17 @@ function buildObservationsSection(
   palpation,
   onPalpationChange,
 ) {
-  const container = el('div', { id: 'general-observations', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'General Observations'),
+  const header = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'General Observations'),
   ]);
+  const body = el('div', { class: 'section-panel__body' });
+  const container = el(
+    'div',
+    { id: 'general-observations', class: 'section-anchor section-panel' },
+    [header, body],
+  );
 
-  container.append(
+  body.append(
     textAreaField({
       label: 'Mental Status & Affect',
       hint: 'Orientation, affect, behavior (e.g., A&Ox3, cooperative, anxious, pain behavior)',

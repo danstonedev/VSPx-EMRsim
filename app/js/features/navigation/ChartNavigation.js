@@ -431,7 +431,9 @@ function computeAgeFromDob(dobStr) {
 // Collapse/expand subsection content while keeping the banner visible
 function setSubsectionCollapsed(anchorEl, collapsed) {
   if (!anchorEl) return;
-  const header = anchorEl.querySelector('h4.subsection-title');
+  const header =
+    anchorEl.querySelector('h4.subsection-title') ||
+    anchorEl.querySelector('.section-panel__header');
   const children = Array.from(anchorEl.children || []);
   children.forEach((child) => {
     if (child !== header) {
@@ -458,7 +460,9 @@ function applySubsectionVisibilityControls({
     anchors.forEach((anchorEl) => {
       const subId = anchorEl.id;
       const visible = secVis[subId] !== false; // default true
-      const header = anchorEl.querySelector('h4.subsection-title');
+      const header =
+        anchorEl.querySelector('h4.subsection-title') ||
+        anchorEl.querySelector('.section-panel__header');
       if (!header) return;
 
       if (isFacultyMode) {
@@ -2009,7 +2013,9 @@ export function createChartNavigation(config) {
 
   // Title extraction helper (use only text nodes, ignore toggle UI like the banner 'Show' control)
   const extractTitle = (anchorEl) => {
-    const h = anchorEl.querySelector('.subsection-title');
+    const h =
+      anchorEl.querySelector('.subsection-title') ||
+      anchorEl.querySelector('.section-panel__title');
     if (h) {
       // Collect only TEXT_NODE contents to avoid including toggle label text
       const text = Array.from(h.childNodes)
@@ -2094,7 +2100,10 @@ export function createChartNavigation(config) {
           return anchors.map((a) => ({
             id: a.id,
             label:
-              a.querySelector('.subsection-title')?.textContent || subsectionTitleMap[a.id] || a.id,
+              a.querySelector('.subsection-title')?.textContent ||
+              a.querySelector('.section-panel__title')?.textContent ||
+              subsectionTitleMap[a.id] ||
+              a.id,
           }));
         }
       }

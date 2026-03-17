@@ -379,8 +379,8 @@ table.combined-neuroscreen-table:has(.action-col) {
 
 /* Goal-setting subsection vertical spacing */
 .goal-setting-subsection {
-  padding-top: var(--space-4, 1rem);
-  padding-bottom: var(--space-4, 1rem);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* Treatment plan / HEP inputs: match standard form-input sizing */

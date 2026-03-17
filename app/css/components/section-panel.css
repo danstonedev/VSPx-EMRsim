@@ -1,0 +1,113 @@
+/* ──────────────────────────────────────────────────────────
+   Section Panel – reusable panel wrapper for subsections
+   (dark header + rounded card body)
+   ────────────────────────────────────────────────────────── */
+
+/* ── Panel wrapper ─────────────────────────────────────── */
+.section-panel {
+  margin-top: var(--space-3, 0.75rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-card, #fff);
+  /* Use clip instead of hidden: clips to border-radius without creating
+     a scroll container or blocking focus rings / positioned children. */
+  overflow: clip;
+}
+
+/* ── Header bar ────────────────────────────────────────── */
+.section-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  background: var(--surface-table-head);
+  color: var(--table-head-text);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 0.9rem + 0.4vw, 1.075rem);
+  border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0;
+}
+
+.section-panel__title {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.section-panel__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ── Badge (on dark header) ────────────────────────────── */
+.section-panel__badge {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.section-panel__badge--empty {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Body ──────────────────────────────────────────────── */
+.section-panel__body {
+  padding: var(--space-3, 0.75rem);
+}
+
+/* Table-only panels: reduce top padding so table header
+   sits close to the dark panel header with a small gap. */
+.section-panel__body--flush {
+  padding-top: var(--space-2, 0.5rem);
+}
+
+/* When combined with section-anchor, remove its indent padding —
+   the panel body provides its own spacing.
+   Also override content-visibility: section-anchor uses auto for perf,
+   but this causes cross-browser rendering timing differences when
+   combined with panel overflow clipping. Panels always render eagerly. */
+.section-panel.section-anchor {
+  padding: 0;
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
+}
+
+/* Reset form-field spacing inside panels for tighter layout */
+.section-panel__body > .form-field:first-child {
+  margin-top: 0;
+}
+
+/* ── Tables inside panels ──────────────────────────────── */
+/* Flatten outer table border-radius when nested in a panel body;
+   the panel wrapper already provides the container shape. */
+.section-panel__body table.combined-neuroscreen-table {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+/* Keep top border-radius on table when it's the first child (directly
+   after the panel header with no preceding siblings). */
+.section-panel__body > :first-child table.combined-neuroscreen-table,
+.section-panel__body > table.combined-neuroscreen-table:first-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+/* Remove bottom border on last table to avoid double border with panel */
+.section-panel__body table.combined-neuroscreen-table:last-child,
+.section-panel__body > :last-child table.combined-neuroscreen-table {
+  border-bottom: 0;
+}
+
+/* ── Dark theme ────────────────────────────────────────── */
+html[data-theme='dark'] .section-panel {
+  border-color: var(--color-border-dark, #3a3f47);
+  background: var(--surface-card-dark, #1e2127);
+}

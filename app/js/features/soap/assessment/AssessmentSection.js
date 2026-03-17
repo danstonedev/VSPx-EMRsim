@@ -36,8 +36,10 @@ export function createAssessmentSection(assessmentData, onUpdate) {
   };
 
   // PT Diagnosis & Prognosis (top of section, includes clinical reasoning)
-  const diagnosisSection = el('div', { id: 'pt-diagnosis', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'Physical Therapy Diagnosis'),
+  const diagHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'Physical Therapy Diagnosis'),
+  ]);
+  const diagBody = el('div', { class: 'section-panel__body' }, [
     inputField({
       label: 'PT Diagnosis / Movement System Diagnosis',
       value: finalData.ptDiagnosis,
@@ -63,11 +65,18 @@ export function createAssessmentSection(assessmentData, onUpdate) {
       hint: 'Movement system diagnosis, contributing factors, tissue vs. movement-based hypothesis, response to examination findings',
     }),
   ]);
+  const diagnosisSection = el(
+    'div',
+    { id: 'pt-diagnosis', class: 'section-anchor section-panel' },
+    [diagHeader, diagBody],
+  );
   section.append(diagnosisSection);
 
   // ICF Classification
-  const icfSection = el('div', { id: 'icf-classification', class: 'section-anchor' }, [
-    el('h4', { class: 'subsection-title' }, 'ICF Summary'),
+  const icfHeader = el('div', { class: 'section-panel__header' }, [
+    el('span', { class: 'section-panel__title' }, 'ICF Summary'),
+  ]);
+  const icfBody = el('div', { class: 'section-panel__body' }, [
     textAreaField({
       label: 'Body Functions, Structures & Impairments',
       value: finalData.bodyFunctions,
@@ -87,6 +96,11 @@ export function createAssessmentSection(assessmentData, onUpdate) {
       hint: 'Social roles, occupational demands, recreational activities, and community engagement affected by condition',
     }),
   ]);
+  const icfSection = el(
+    'div',
+    { id: 'icf-classification', class: 'section-anchor section-panel' },
+    [icfHeader, icfBody],
+  );
   section.append(icfSection);
 
   return section;

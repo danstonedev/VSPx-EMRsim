@@ -18,6 +18,7 @@
 /* Extracted modules (must appear before any style rules) - combined-rom.css loads FIRST for proper cascade */
 @import url('./components/combined-rom.css');
 @import url('./components/combined-neuroscreen.css');
+@import url('./components/section-panel.css');
 @import url('./components/subjective-qa.css');
 @import url('./components/red-flag-screening.css');
 @import url('./components/medication-panel.css');
@@ -2547,6 +2548,12 @@ html[data-theme='dark'] input[type='checkbox'] {
   /* Performance optimization - only render visible sections */
   content-visibility: auto;
   contain-intrinsic-size: 200px; /* Estimated section height */
+}
+
+/* Section-panel subsections handle their own internal spacing;
+   zero-out the indent padding so it doesn't double up. */
+.section-anchor.section-panel {
+  padding: 0;
 }
 
 /* Editor routes: disable content-visibility paint containment to avoid clipping focus rings */

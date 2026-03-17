@@ -31,7 +31,9 @@ function migrateGoals(data) {
   } else {
     data.goals = [];
   }
-  if (data.goals.length === 0) data.goals.push({ goal: '', timeframe: '', icfDomain: '' });
+  if (data.goals.length === 0) {
+    for (let i = 0; i < 4; i++) data.goals.push({ goal: '', timeframe: '', icfDomain: '' });
+  }
 }
 
 function makeSelect(options, value, onChange) {
@@ -186,15 +188,16 @@ export const GoalSetting = {
 
     const section = el('div', {
       id: 'goal-setting',
-      class: 'section-anchor goal-setting-subsection',
+      class: 'section-anchor section-panel goal-setting-subsection',
     });
 
-    section.append(
-      el('h4', { class: 'subsection-title', style: 'margin-bottom: 8px;' }, 'SMART Goals'),
-    );
+    const goalHeader = el('div', { class: 'section-panel__header' }, [
+      el('span', { class: 'section-panel__title' }, 'SMART Goals'),
+    ]);
+    section.append(goalHeader);
 
     const container = el('div', {
-      class: 'billing-section-container',
+      class: 'billing-section-container section-panel__body section-panel__body--flush',
     });
     section.append(container);
 

@@ -34,7 +34,15 @@ export function textareaAutoResize(t) {
     const rows = parseInt(t.getAttribute('rows') || '2', 10);
     return Math.ceil(lineHeight * rows + paddingTop + paddingBottom + borderTop + borderBottom);
   };
+  let _retries = 0;
   const fit = () => {
+    // Defer sizing until element is in the DOM — getComputedStyle returns
+    // zeros for detached elements, causing wrong heights across browsers.
+    if (!t.isConnected && _retries < 30) {
+      _retries++;
+      requestAnimationFrame(fit);
+      return;
+    }
     const cs = window.getComputedStyle(t);
     const lineHeight = parseFloat(cs.lineHeight) || 18;
     const base = computeBaseHeight();

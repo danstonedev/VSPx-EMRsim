@@ -8,7 +8,9 @@ import { el } from '../../ui/utils.js';
 // subsection visibility rules without forcing the monolith to stay resident.
 function setSubsectionCollapsed(anchorEl, collapsed) {
   if (!anchorEl) return;
-  const header = anchorEl.querySelector('h4.subsection-title');
+  const header =
+    anchorEl.querySelector('h4.subsection-title') ||
+    anchorEl.querySelector('.section-panel__header');
   const children = Array.from(anchorEl.children || []);
   children.forEach((child) => {
     if (child !== header) child.style.display = collapsed ? 'none' : '';
@@ -32,7 +34,9 @@ function applySubsectionVisibilityControls({
     anchors.forEach((anchorEl) => {
       const subId = anchorEl.id;
       const visible = secVis[subId] !== false; // default true
-      const header = anchorEl.querySelector('h4.subsection-title');
+      const header =
+        anchorEl.querySelector('h4.subsection-title') ||
+        anchorEl.querySelector('.section-panel__header');
       if (!header) return;
 
       if (isFacultyMode) {

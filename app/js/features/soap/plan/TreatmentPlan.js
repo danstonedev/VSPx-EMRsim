@@ -27,21 +27,18 @@ export const TreatmentPlan = {
     // --- In-Clinic Treatment Plan Section ---
     const inClinicSection = el('div', {
       id: 'in-clinic-treatment-plan',
-      class: 'section-anchor treatment-plan-subsection',
+      class: 'section-anchor section-panel treatment-plan-subsection',
     });
     container.append(inClinicSection);
 
     // Header
-    inClinicSection.append(
-      el(
-        'h4',
-        { class: 'subsection-title', style: 'margin-bottom: 8px;' },
-        'In-Clinic Treatment Plan',
-      ),
-    );
+    const inClinicHeader = el('div', { class: 'section-panel__header' }, [
+      el('span', { class: 'section-panel__title' }, 'In-Clinic Treatment Plan'),
+    ]);
+    inClinicSection.append(inClinicHeader);
 
     const inClinicContent = el('div', {
-      class: 'billing-section-container',
+      class: 'billing-section-container section-panel__body section-panel__body--flush',
     });
     inClinicSection.append(inClinicContent);
 
@@ -158,22 +155,19 @@ export const TreatmentPlan = {
     // --- Home Exercise Program (HEP) Section ---
     const hepSection = el('div', {
       id: 'hep-plan',
-      class: 'section-anchor treatment-plan-subsection',
+      class: 'section-anchor section-panel treatment-plan-subsection',
       style: 'margin-top: 32px;',
     });
     container.append(hepSection);
 
     // Header
-    hepSection.append(
-      el(
-        'h4',
-        { class: 'subsection-title', style: 'margin-bottom: 8px;' },
-        'Home Exercise Program (HEP)',
-      ),
-    );
+    const hepHeader = el('div', { class: 'section-panel__header' }, [
+      el('span', { class: 'section-panel__title' }, 'Home Exercise Program (HEP)'),
+    ]);
+    hepSection.append(hepHeader);
 
     const hepContent = el('div', {
-      class: 'billing-section-container',
+      class: 'billing-section-container section-panel__body section-panel__body--flush',
     });
     hepSection.append(hepContent);
 
