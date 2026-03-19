@@ -26,18 +26,34 @@ export function loadCSS(href, media = 'all', critical = false) {
     link.href = href;
     link.media = critical ? 'all' : 'print'; // Load as print initially to avoid blocking
 
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`Timed out loading CSS: ${href}`));
+    }, 10000);
+
+    const settle = (fn) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      fn();
+    };
+
     link.onload = () => {
-      if (!critical) {
-        // Switch to 'all' after load to apply styles
-        setTimeout(() => {
-          link.media = media;
-        }, 0);
-      }
-      resolve();
+      settle(() => {
+        if (!critical) {
+          // Switch to 'all' after load to apply styles
+          setTimeout(() => {
+            link.media = media;
+          }, 0);
+        }
+        resolve();
+      });
     };
 
     link.onerror = () => {
-      reject(new Error(`Failed to load CSS: ${href}`));
+      settle(() => reject(new Error(`Failed to load CSS: ${href}`)));
     };
 
     document.head.appendChild(link);

@@ -169,11 +169,16 @@ export function showAccessGate() {
       input.disabled = true;
       setStatus('Verifying access code…', 'info');
 
+      let timeoutId = null;
+
       try {
+        const controller = new AbortController();
+        timeoutId = window.setTimeout(() => controller.abort(), 10000);
         const res = await fetch('/api/verify-access', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),
+          signal: controller.signal,
         });
 
         let data = null;
@@ -196,6 +201,7 @@ export function showAccessGate() {
       } catch {
         setStatus('Unable to verify. Check your connection and try again.', 'error');
       } finally {
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
         if (!isClosing) {
           btn.disabled = false;
           btn.textContent = 'Enter';

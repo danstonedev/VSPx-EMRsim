@@ -285,42 +285,54 @@ export function startRouter() {
     const seq = ++__renderSeq;
     const { hash, path, query } = getNormalizedHash();
     const debug = isDebugEnabled();
-    if (debug && performance && performance.mark) performance.mark('router:render:start');
+    try {
+      if (debug && performance && performance.mark) performance.mark('router:render:start');
 
-    // Role-gate: redirect students away from faculty-only routes
-    if (isStudentOnly(path)) {
-      window.location.hash = '#/student/cases';
-      return;
-    }
+      // Role-gate: redirect students away from faculty-only routes
+      if (isStudentOnly(path)) {
+        window.location.hash = '#/student/cases';
+        return;
+      }
 
-    // Ensure the route module for this path is loaded and registered before resolving
-    await ensureRouteModuleLoaded(path);
+      // Ensure the route module for this path is loaded and registered before resolving
+      await ensureRouteModuleLoaded(path);
 
-    const { renderer, params } = resolveRendererAndParams(path);
-    if (!renderer) return;
+      let { renderer, params } = resolveRendererAndParams(path);
+      if (!renderer) {
+        await ensureRouteModuleLoaded('#/404');
+        ({ renderer, params } = resolveRendererAndParams(path));
+      }
+      if (!renderer) {
+        renderRouteError(app, path, new Error('No renderer registered for route'));
+        return;
+      }
 
-    // Load route-specific CSS and schedule preload
-    const routeType = await loadCssForPathAndPreload(path, debug);
+      // Load route-specific CSS and schedule preload
+      const routeType = await loadCssForPathAndPreload(path, debug);
 
-    // Teardown previous view before rendering the next one
-    safeCleanup();
+      // Teardown previous view before rendering the next one
+      safeCleanup();
 
-    persistLastRoute(hash, path);
-    updateNavigation(hash);
-    setBodyRouteKey(path);
+      persistLastRoute(hash, path);
+      updateNavigation(hash);
+      setBodyRouteKey(path);
 
-    const { before, after } = applyRouteTransition(app, 'fade');
-    const newWrapper = buildRouteWrapper(app, before);
-    const maybeCleanup = await renderer(newWrapper, new URLSearchParams(query || ''), params);
-    currentCleanup = typeof maybeCleanup === 'function' ? maybeCleanup : null;
-    // Guard against out-of-order renders
-    if (seq !== __renderSeq) return;
-    after(newWrapper);
-    applyPostRenderA11y(newWrapper, path);
-    postRenderPerfAndPrefetch(routeType, path, debug);
-    if (!__firstRenderDone) {
-      __firstRenderDone = true;
-      window.dispatchEvent(new Event('app-ready'));
+      const { before, after } = applyRouteTransition(app, 'fade');
+      const newWrapper = buildRouteWrapper(app, before);
+      const maybeCleanup = await renderer(newWrapper, new URLSearchParams(query || ''), params);
+      currentCleanup = typeof maybeCleanup === 'function' ? maybeCleanup : null;
+      // Guard against out-of-order renders
+      if (seq !== __renderSeq) return;
+      after(newWrapper);
+      applyPostRenderA11y(newWrapper, path);
+      postRenderPerfAndPrefetch(routeType, path, debug);
+      if (!__firstRenderDone) {
+        __firstRenderDone = true;
+        window.dispatchEvent(new Event('app-ready'));
+      }
+    } catch (error) {
+      if (seq !== __renderSeq) return;
+      renderRouteError(app, path, error);
     }
   }
   window.addEventListener('hashchange', render);
@@ -376,6 +388,51 @@ function buildRouteWrapper(app, before) {
     app.appendChild(newWrapper);
   });
   return newWrapper;
+}
+
+function renderRouteError(app, path, error) {
+  try {
+    app.replaceChildren();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'route-transition-container';
+
+    const panel = document.createElement('section');
+    panel.setAttribute('role', 'alert');
+    panel.style.padding = '1rem';
+    panel.style.margin = '1rem';
+    panel.style.border = '1px solid #e5e7eb';
+    panel.style.borderRadius = '8px';
+    panel.style.background = '#fff';
+
+    const title = document.createElement('h1');
+    title.textContent = 'Page failed to load';
+    title.style.margin = '0 0 0.5rem';
+    title.style.fontSize = '1.25rem';
+
+    const body = document.createElement('p');
+    body.textContent =
+      'Something went wrong while loading this page. Please refresh and try again.';
+    body.style.margin = '0 0 0.75rem';
+
+    const routeInfo = document.createElement('p');
+    routeInfo.textContent = `Route: ${path || '#/'}`;
+    routeInfo.style.margin = '0';
+    routeInfo.style.fontSize = '0.875rem';
+    routeInfo.style.color = '#374151';
+
+    panel.append(title, body, routeInfo);
+    wrapper.appendChild(panel);
+    app.appendChild(wrapper);
+  } catch (uiErr) {
+    console.warn('[Router] failed to render fallback error UI:', uiErr);
+  }
+
+  console.error('[Router] render failed:', error);
+
+  if (!__firstRenderDone) {
+    __firstRenderDone = true;
+    window.dispatchEvent(new Event('app-ready'));
+  }
 }
 
 // Disable CSS transitions during window resize/rotation to avoid janky animations
