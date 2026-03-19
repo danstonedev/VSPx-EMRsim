@@ -105,11 +105,22 @@
   cursor: not-allowed;
 }
 
-.access-gate-error {
+.access-gate-status {
   font-size: 0.875rem;
-  color: #dc2626;
   min-height: 1.25rem;
   margin: 0.25rem 0 0;
+}
+
+.access-gate-status.is-info {
+  color: #1f2937;
+}
+
+.access-gate-status.is-success {
+  color: #166534;
+}
+
+.access-gate-status.is-error {
+  color: #dc2626;
 }
 
 @keyframes access-gate-in {

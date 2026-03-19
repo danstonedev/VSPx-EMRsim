@@ -19,17 +19,17 @@ function migrateGoals(data) {
 }
 
 function createGoalRow(entry, index, data, updateField, renderCallback) {
-  const row = el('tr', {
-    class: 'combined-neuroscreen-row intervention-row',
+  const row = el('div', {
+    class: 'goal-row',
     'data-row-index': String(index),
   });
 
   // Drag handle
   row.appendChild(
     el(
-      'td',
+      'span',
       {
-        class: 'combined-neuroscreen-td intervention-drag-handle',
+        class: 'goal-row__handle',
         draggable: 'true',
         title: 'Drag to reorder',
       },
@@ -38,12 +38,10 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
   );
 
   // Goal textarea
-  const goalCell = el('td', { class: 'combined-neuroscreen-td' });
   const goalInput = el('textarea', {
-    class: 'combined-neuroscreen__input',
-    rows: 2,
+    class: 'goal-row__input form-textarea',
+    rows: 1,
     placeholder: 'State the measurable functional goal…',
-    style: 'width: 100%; resize: vertical;',
   });
   goalInput.value = entry.goal || '';
   textareaAutoResize(goalInput);
@@ -51,16 +49,14 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
     data.goals[index].goal = goalInput.value;
     updateField('goals', data.goals);
   });
-  goalCell.appendChild(goalInput);
-  row.appendChild(goalCell);
+  row.appendChild(goalInput);
 
   // Remove button
-  const actionCell = el('td', { class: 'combined-neuroscreen-td action-col' });
-  actionCell.appendChild(
+  row.appendChild(
     el(
       'button',
       {
-        class: 'remove-btn',
+        class: 'goal-row__remove',
         title: 'Remove goal',
         type: 'button',
         onclick: () => {
@@ -73,48 +69,47 @@ function createGoalRow(entry, index, data, updateField, renderCallback) {
       '×',
     ),
   );
-  row.appendChild(actionCell);
 
   return row;
 }
 
-function enableGoalDragReorder(tbody, items, onReorder) {
+function enableGoalDragReorder(container, items, onReorder) {
   let dragSrcIndex = null;
 
-  tbody.addEventListener('dragstart', (e) => {
-    const row = e.target.closest('.intervention-row');
-    if (!row || !e.target.classList.contains('intervention-drag-handle')) {
+  container.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.goal-row');
+    if (!row || !e.target.classList.contains('goal-row__handle')) {
       e.preventDefault();
       return;
     }
     dragSrcIndex = parseInt(row.getAttribute('data-row-index'), 10);
-    row.classList.add('intervention-row--dragging');
+    row.classList.add('goal-row--dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(dragSrcIndex));
   });
 
-  tbody.addEventListener('dragover', (e) => {
+  container.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest('.intervention-row');
+    const target = e.target.closest('.goal-row');
     if (!target || parseInt(target.getAttribute('data-row-index'), 10) === dragSrcIndex) return;
-    tbody
-      .querySelectorAll('.intervention-row--drag-over')
-      .forEach((r) => r.classList.remove('intervention-row--drag-over'));
-    target.classList.add('intervention-row--drag-over');
+    container
+      .querySelectorAll('.goal-row--drag-over')
+      .forEach((r) => r.classList.remove('goal-row--drag-over'));
+    target.classList.add('goal-row--drag-over');
   });
 
-  tbody.addEventListener('dragleave', (e) => {
-    const t = e.target.closest('.intervention-row');
-    if (t) t.classList.remove('intervention-row--drag-over');
+  container.addEventListener('dragleave', (e) => {
+    const t = e.target.closest('.goal-row');
+    if (t) t.classList.remove('goal-row--drag-over');
   });
 
-  tbody.addEventListener('drop', (e) => {
+  container.addEventListener('drop', (e) => {
     e.preventDefault();
-    tbody
-      .querySelectorAll('.intervention-row--drag-over')
-      .forEach((r) => r.classList.remove('intervention-row--drag-over'));
-    const targetRow = e.target.closest('.intervention-row');
+    container
+      .querySelectorAll('.goal-row--drag-over')
+      .forEach((r) => r.classList.remove('goal-row--drag-over'));
+    const targetRow = e.target.closest('.goal-row');
     if (!targetRow) return;
     const toIndex = parseInt(targetRow.getAttribute('data-row-index'), 10);
     if (toIndex === dragSrcIndex || dragSrcIndex === null) return;
@@ -123,10 +118,10 @@ function enableGoalDragReorder(tbody, items, onReorder) {
     onReorder();
   });
 
-  tbody.addEventListener('dragend', () => {
-    tbody
-      .querySelectorAll('.intervention-row--dragging')
-      .forEach((r) => r.classList.remove('intervention-row--dragging'));
+  container.addEventListener('dragend', () => {
+    container
+      .querySelectorAll('.goal-row--dragging')
+      .forEach((r) => r.classList.remove('goal-row--dragging'));
     dragSrcIndex = null;
   });
 }
@@ -135,72 +130,53 @@ export const GoalSetting = {
   create(data, updateField) {
     migrateGoals(data);
 
+    const addBtn = el(
+      'button',
+      {
+        type: 'button',
+        class: 'section-panel__action-btn',
+        title: 'Add Goal',
+        onclick: () => {
+          data.goals.push({ goal: '', timeframe: '', icfDomain: '' });
+          updateField('goals', data.goals);
+          renderGoals();
+          // Focus the new row's textarea
+          const rows = listContainer.querySelectorAll('.goal-row');
+          const last = rows[rows.length - 1];
+          if (last) {
+            last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const ta = last.querySelector('.goal-row__input');
+            if (ta) setTimeout(() => ta.focus(), 120);
+          }
+        },
+      },
+      '+',
+    );
+
     const section = el('div', {
       id: 'goal-setting',
-      class: 'section-anchor goal-setting-subsection plan-subsection-flat',
-      'data-title': 'SMART Goals',
+      class: 'section-anchor section-panel',
     });
 
-    const container = el('div', {
-      class: 'billing-section-container',
-    });
-    section.append(container);
+    const header = el('div', { class: 'section-panel__header' }, [
+      el('span', { class: 'section-panel__title' }, 'SMART Goals'),
+      addBtn,
+    ]);
+
+    const body = el('div', { class: 'section-panel__body' });
+    const listContainer = el('div', { class: 'goal-list' });
+    body.append(listContainer);
+    section.append(header, body);
 
     function renderGoals() {
-      container.replaceChildren();
-
-      const table = el('table', {
-        class: 'combined-neuroscreen-table combined-neuroscreen-table--compact',
-        style: 'width: 100%;',
-      });
-
-      table.appendChild(
-        el('colgroup', {}, [
-          el('col', { style: 'width: 2rem;' }),
-          el('col', { style: 'width: auto;' }),
-          el('col', { style: 'width: 3.75rem;' }),
-        ]),
-      );
-
-      const addBtn = el(
-        'button',
-        {
-          type: 'button',
-          class: 'billing-row-add-btn',
-          title: 'Add Goal',
-          onclick: () => {
-            data.goals.push({ goal: '', timeframe: '', icfDomain: '' });
-            updateField('goals', data.goals);
-            renderGoals();
-          },
-        },
-        '+',
-      );
-
-      table.appendChild(
-        el('thead', { class: 'combined-neuroscreen-thead' }, [
-          el('tr', {}, [
-            el(
-              'th',
-              { class: 'combined-neuroscreen-th billing-header intervention-drag-handle-col' },
-              '',
-            ),
-            el('th', { class: 'combined-neuroscreen-th billing-header' }, 'SMART Goals'),
-            el('th', { class: 'combined-neuroscreen-th billing-header action-col' }, [addBtn]),
-          ]),
-        ]),
-      );
-
-      const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
+      listContainer.replaceChildren();
       data.goals.forEach((entry, index) => {
-        tbody.appendChild(createGoalRow(entry, index, data, updateField, renderGoals));
+        listContainer.appendChild(createGoalRow(entry, index, data, updateField, renderGoals));
       });
-      enableGoalDragReorder(tbody, data.goals, () => {
+      enableGoalDragReorder(listContainer, data.goals, () => {
         updateField('goals', data.goals);
         renderGoals();
       });
-      table.appendChild(tbody);
-      container.appendChild(table);
     }
 
     renderGoals();

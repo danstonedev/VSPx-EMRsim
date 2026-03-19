@@ -99,7 +99,7 @@ export function showAccessGate() {
           />
           <button type="submit" class="access-gate-btn">Enter</button>
         </form>
-        <p class="access-gate-error" aria-live="polite"></p>
+        <p class="access-gate-status" aria-live="polite" role="status"></p>
         <h2 class="access-gate-title">University of North Dakota</h2>
         <p class="access-gate-line2">School of Medicine &amp; Health Sciences</p>
         <p class="access-gate-line3">Department of Physical Therapy</p>
@@ -110,19 +110,64 @@ export function showAccessGate() {
 
     const form = overlay.querySelector('.access-gate-form');
     const input = overlay.querySelector('.access-gate-input');
-    const errorEl = overlay.querySelector('.access-gate-error');
+    const statusEl = overlay.querySelector('.access-gate-status');
     const btn = overlay.querySelector('.access-gate-btn');
+    let isClosing = false;
+
+    const setStatus = (message, kind = 'info') => {
+      statusEl.textContent = message;
+      statusEl.classList.remove('is-info', 'is-success', 'is-error');
+      statusEl.classList.add(`is-${kind}`);
+    };
+
+    const closeGate = () => {
+      if (isClosing) return;
+      isClosing = true;
+
+      const finish = () => {
+        if (!overlay.isConnected) return;
+        overlay.remove();
+        resolve();
+      };
+
+      const prefersReducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        finish();
+        return;
+      }
+
+      overlay.classList.add('access-gate-fade-out');
+      const fallbackTimer = window.setTimeout(finish, 450);
+      overlay.addEventListener(
+        'animationend',
+        () => {
+          window.clearTimeout(fallbackTimer);
+          finish();
+        },
+        { once: true },
+      );
+    };
 
     input.focus();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (isClosing) return;
+
       const code = input.value.trim();
-      if (!code) return;
+      if (!code) {
+        setStatus('Enter an access code to continue.', 'error');
+        input.focus();
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = 'Checking…';
-      errorEl.textContent = '';
+      input.disabled = true;
+      setStatus('Verifying access code…', 'info');
 
       try {
         const res = await fetch('/api/verify-access', {
@@ -131,27 +176,31 @@ export function showAccessGate() {
           body: JSON.stringify({ code }),
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.valid) {
-            grantAccess(data.role);
-            overlay.classList.add('access-gate-fade-out');
-            overlay.addEventListener('animationend', () => {
-              overlay.remove();
-              resolve();
-            });
-            return;
-          }
+        let data = null;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
         }
 
-        errorEl.textContent = 'Invalid access code. Please try again.';
+        if (res.ok && data && data.valid) {
+          grantAccess(data.role);
+          setStatus('Access accepted. Loading…', 'success');
+          closeGate();
+          return;
+        }
+
+        setStatus(data?.error || 'Invalid access code. Please try again.', 'error');
         input.value = '';
         input.focus();
       } catch {
-        errorEl.textContent = 'Unable to verify. Check your connection and try again.';
+        setStatus('Unable to verify. Check your connection and try again.', 'error');
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Enter';
+        if (!isClosing) {
+          btn.disabled = false;
+          btn.textContent = 'Enter';
+          input.disabled = false;
+        }
       }
     });
   });

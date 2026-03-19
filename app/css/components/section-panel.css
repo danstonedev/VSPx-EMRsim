@@ -58,6 +58,27 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* ── Action button (+ in header) ───────────────────────── */
+.section-panel__action-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--white, #fff);
+  font-size: 1.15rem;
+  line-height: 1;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.section-panel__action-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 /* ── Body ──────────────────────────────────────────────── */
 .section-panel__body {
   padding: var(--space-3, 0.75rem);
@@ -529,4 +550,67 @@ html[data-theme='dark'] .finding-pill--on {
   border-color: #d97706 !important;
   background: #451a03 !important;
   color: #fbbf24 !important;
+}
+
+/* ── Goal list (SMART Goals rows) ──────────────────────── */
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.goal-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.goal-row__handle {
+  flex-shrink: 0;
+  cursor: grab;
+  color: var(--text-muted, #98a2b3);
+  font-size: 1.1rem;
+  line-height: 1;
+  user-select: none;
+}
+.goal-row__handle:active {
+  cursor: grabbing;
+}
+
+.goal-row__input {
+  flex: 1;
+  min-width: 0;
+  width: auto; /* override form-textarea 100% */
+  min-height: 0; /* override form-textarea 44px touch target */
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.goal-row__remove {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--text-muted, #98a2b3);
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.goal-row__remove:hover {
+  color: var(--danger, #e53e3e);
+  border-color: var(--danger, #e53e3e);
+}
+
+.goal-row--dragging {
+  opacity: 0.4;
+}
+.goal-row--drag-over {
+  border-top: 2px solid var(--accent, #009a44);
 }
