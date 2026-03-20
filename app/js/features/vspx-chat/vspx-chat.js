@@ -3,13 +3,14 @@
  * Floating voice-chat panel embedding the VSPx patient simulator.
  *
  * States: idle | expanded
- * Trigger button lives in #patient-sticky-header (patient info bar).
- * Green dot indicates an active conversation (iframe alive).
+ * Trigger button lives in #patient-header-actions (top-right of patient info bar).
+ * Active state highlights the full button while call session is alive.
  * Panel is draggable/resizable. iframe kept alive on minimize.
  */
 import { el } from '../../ui/utils.js';
+import { getCase, updateCase } from '../../core/store.js';
 
-const VSPX_URL = 'https://gray-pond-069cfc21e.3.azurestaticapps.net/';
+const DEFAULT_VSPX_URL = 'https://gray-pond-069cfc21e.3.azurestaticapps.net/';
 const STORAGE_KEY = 'vspx_chat_geometry';
 const IFRAME_LOAD_TIMEOUT = 8000;
 const MIN_W = 320;
@@ -17,6 +18,7 @@ const MIN_H = 400;
 const DEFAULT_W = 400;
 const DEFAULT_H = 560;
 const EDGE_PAD = 48;
+const ACCESS_CACHE_PREFIX = 'vspx_access_ok_';
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,12 @@ let iframeEl = null;
 let panelBody = null;
 let headerBtn = null;
 let geo = { x: 0, y: 0, w: DEFAULT_W, h: DEFAULT_H, positioned: false };
+let currentCaseId = null;
+let canUseVspx = false;
+let isFacultyCase = false;
+let isFacultyEditorView = false;
+let eligibilityCheckId = 0;
+let currentVspxUrl = DEFAULT_VSPX_URL;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -66,6 +74,215 @@ function ensurePositioned(panel) {
   geo.y = rect.top;
   geo.positioned = true;
   panel.classList.add('vspx-chat--positioned');
+}
+
+function getCurrentCaseIdFromHash() {
+  const hash = window.location.hash || '';
+  const queryIndex = hash.indexOf('?');
+  if (queryIndex === -1) return null;
+  const params = new URLSearchParams(hash.slice(queryIndex + 1));
+  return params.get('case') || params.get('c') || null;
+}
+
+function isInstructorEditorRoute() {
+  return (window.location.hash || '').startsWith('#/instructor/editor');
+}
+
+function isFacultyAuthoredCase(caseWrapper) {
+  if (!caseWrapper || typeof caseWrapper !== 'object') return false;
+  if (caseWrapper.caseObj?.meta?.vspxFacultyCase === true) return true;
+  const facultyAuthored =
+    caseWrapper.isFacultyCase === true ||
+    Boolean(caseWrapper.createdBy || caseWrapper.createdByName);
+  return facultyAuthored;
+}
+
+function isVspxEnabledForCase(caseWrapper) {
+  return caseWrapper?.caseObj?.meta?.vspxEnabled === true;
+}
+
+function normalizeUrl(url) {
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+  return url;
+}
+
+function resolveVspxUrl(caseWrapper) {
+  const configured = caseWrapper?.caseObj?.meta?.vspxUrl;
+  const raw = typeof configured === 'string' ? configured.trim() : '';
+  return normalizeUrl(raw) || DEFAULT_VSPX_URL;
+}
+
+function getAccessCacheKey(caseId) {
+  return ACCESS_CACHE_PREFIX + caseId;
+}
+
+function hasVerifiedAccessCode(caseId) {
+  if (!caseId) return false;
+  try {
+    return sessionStorage.getItem(getAccessCacheKey(caseId)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setVerifiedAccessCode(caseId, isVerified) {
+  if (!caseId) return;
+  try {
+    if (isVerified) {
+      sessionStorage.setItem(getAccessCacheKey(caseId), '1');
+    } else {
+      sessionStorage.removeItem(getAccessCacheKey(caseId));
+    }
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+async function verifyFacultyAccessCode(caseId) {
+  // Pre-flight: check if the verification API is available
+  let apiAvailable = false;
+  try {
+    const ping = await fetch('/api/verify-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: '' }),
+    });
+    const pingData = await ping.json().catch(() => null);
+    if (!pingData) {
+      // Response wasn't JSON — API proxy returned HTML error page
+    } else if (ping.ok && pingData.valid && pingData.role === 'faculty') {
+      // No codes configured — everyone is faculty
+      setVerifiedAccessCode(caseId, true);
+      return true;
+    } else {
+      // Got a proper JSON error (400/401) — API is live and enforcing codes
+      apiAvailable = true;
+    }
+  } catch {
+    // Network error — API unreachable
+  }
+
+  if (!apiAvailable) {
+    // Local dev or API offline — skip access gate
+    setVerifiedAccessCode(caseId, true);
+    return true;
+  }
+
+  // API is live and requires a code — prompt the user
+  const code = window.prompt('Enter faculty access code to open VSPx call tools:');
+  if (!code) return false;
+
+  try {
+    const res = await fetch('/api/verify-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.valid && data.role === 'faculty') {
+      setVerifiedAccessCode(caseId, true);
+      return true;
+    }
+  } catch {
+    setVerifiedAccessCode(caseId, true);
+    return true;
+  }
+
+  alert('Invalid faculty access code.');
+  return false;
+}
+
+async function refreshEligibility() {
+  const requestId = ++eligibilityCheckId;
+  isFacultyEditorView = isInstructorEditorRoute();
+  const caseId = getCurrentCaseIdFromHash();
+  currentCaseId = caseId;
+
+  if (!caseId) {
+    canUseVspx = false;
+    isFacultyCase = false;
+    currentVspxUrl = DEFAULT_VSPX_URL;
+    return;
+  }
+
+  let faculty = false;
+  let enabled = false;
+  let caseWrapper = null;
+  try {
+    caseWrapper = await getCase(caseId);
+    faculty = isFacultyAuthoredCase(caseWrapper);
+    enabled = isVspxEnabledForCase(caseWrapper);
+    currentVspxUrl = resolveVspxUrl(caseWrapper);
+  } catch {
+    faculty = false;
+    enabled = false;
+    currentVspxUrl = DEFAULT_VSPX_URL;
+  }
+
+  if (requestId !== eligibilityCheckId) return;
+  isFacultyCase = faculty;
+  canUseVspx = faculty && enabled;
+
+  if (!canUseVspx) {
+    setVerifiedAccessCode(caseId, false);
+  }
+}
+
+function promptVspxSettings(caseWrapper) {
+  const currentUrl = resolveVspxUrl(caseWrapper);
+  const urlInput = window.prompt(
+    `Enter the VSPx patient URL for this case:\n(current: ${currentUrl})`,
+    currentUrl,
+  );
+  if (urlInput === null) return null;
+
+  const enable = window.confirm(
+    'Enable VSPx call portal for this case?\nOK = Enable, Cancel = Disable',
+  );
+  let nextUrl = String(urlInput || '').trim();
+  if (nextUrl) nextUrl = normalizeUrl(nextUrl);
+
+  const nextCaseObj = { ...(caseWrapper.caseObj || {}) };
+  nextCaseObj.meta = { ...(nextCaseObj.meta || {}) };
+  nextCaseObj.meta.vspxFacultyCase = true;
+  nextCaseObj.meta.vspxEnabled = enable;
+  nextCaseObj.meta.vspxUrl = nextUrl;
+  return { nextCaseObj, enable };
+}
+
+async function configureVspxForCase() {
+  if (!currentCaseId) return;
+
+  let caseWrapper;
+  try {
+    caseWrapper = await getCase(currentCaseId);
+  } catch {
+    alert('Unable to load this case for VSPx setup.');
+    return;
+  }
+
+  if (!isFacultyEditorView) {
+    alert('VSPx setup is only available on faculty-created cases.');
+    return;
+  }
+
+  const settings = promptVspxSettings(caseWrapper);
+  if (!settings) return;
+
+  try {
+    await updateCase(currentCaseId, settings.nextCaseObj);
+  } catch (err) {
+    console.error('[VSPx] Failed to save VSPx settings:', err);
+    alert('Failed to save VSPx settings. Please try again.');
+    return;
+  }
+
+  alert(`VSPx ${settings.enable ? 'enabled' : 'disabled'} for this case.`);
+  await injectTrigger();
+  if (!canUseVspx && state === 'expanded') {
+    closePanel();
+  }
 }
 
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
@@ -137,11 +354,29 @@ function buildHeaderButton() {
       class: classes,
       'aria-label': 'Call patient voice chat',
       title: 'Call Patient (Alt+Shift+C)',
-      onclick: () => openPanel(),
+      onclick: () => {
+        void openPanel();
+      },
     },
     [micIcon(), label],
   );
   return btn;
+}
+
+function buildConfigButton() {
+  return el(
+    'button',
+    {
+      class: 'vspx-chat-config-btn no-print',
+      type: 'button',
+      'aria-label': 'Configure VSPx for this case',
+      title: 'Configure VSPx for this case',
+      onclick: () => {
+        void configureVspxForCase();
+      },
+    },
+    'VSPx Setup',
+  );
 }
 
 function updateHeaderState() {
@@ -156,15 +391,65 @@ function updateHeaderState() {
   }
 }
 
-function injectTrigger() {
+function removeHeaderButton(host, selector) {
+  const button = host?.querySelector(selector);
+  if (button) button.remove();
+}
+
+function clearHostButtons(host, header) {
+  removeHeaderButton(host, '.vspx-chat-trigger');
+  if (header && host !== header) {
+    removeHeaderButton(header, '.vspx-chat-trigger');
+  }
+}
+
+function ensureConfigButton(host) {
+  if (!host.querySelector('.vspx-chat-config-btn')) {
+    host.appendChild(buildConfigButton());
+  }
+}
+
+function ensureCallButton(host) {
+  if (host.querySelector('.vspx-chat-trigger')) return;
+  headerBtn = buildHeaderButton();
+  host.appendChild(headerBtn);
+}
+
+async function injectTrigger() {
+  await refreshEligibility();
   const header = document.getElementById('patient-sticky-header');
-  if (!header) {
+  const actions = document.getElementById('patient-header-actions');
+  const host = actions || header;
+  if (!host) {
     headerBtn = null;
     return;
   }
-  if (header.querySelector('.vspx-chat-trigger')) return;
-  headerBtn = buildHeaderButton();
-  header.appendChild(headerBtn);
+
+  if (!isFacultyEditorView) {
+    removeHeaderButton(host, '.vspx-chat-config-btn');
+    if (header && host !== header) {
+      removeHeaderButton(header, '.vspx-chat-config-btn');
+    }
+    if (!canUseVspx) {
+      clearHostButtons(host, header);
+      headerBtn = null;
+      return;
+    }
+
+    ensureCallButton(host);
+    return;
+  }
+
+  ensureConfigButton(host);
+
+  if (!canUseVspx) {
+    clearHostButtons(host, header);
+    headerBtn = null;
+    if (!isFacultyCase) return;
+  }
+
+  if (!canUseVspx) return;
+  ensureCallButton(host);
 }
 
 // ─── iframe Lifecycle ───────────────────────────────────────────────────────
@@ -197,7 +482,7 @@ function buildTitlebar(mobile) {
       title: 'Open in new tab',
       onclick: (e) => {
         e.stopPropagation();
-        window.open(VSPX_URL, '_blank', 'noopener');
+        window.open(currentVspxUrl, '_blank', 'noopener');
       },
     },
     [iconExternal()],
@@ -250,7 +535,8 @@ function buildTitlebar(mobile) {
 function wireIframeLoad(iframe, onLoaded, onError) {
   iframe.addEventListener('load', onLoaded, { once: true });
   iframe.addEventListener('error', onError, { once: true });
-  iframe.src = VSPX_URL;
+  console.warn('[VSPx] Loading iframe URL:', currentVspxUrl);
+  iframe.src = currentVspxUrl;
 
   const timer = setTimeout(() => {
     const loading = panelBody?.querySelector('.vspx-chat__loading');
@@ -273,7 +559,7 @@ function buildIframeBody() {
       el('button', { class: 'vspx-chat__error-btn', onclick: () => retryIframe() }, 'Retry'),
       el(
         'a',
-        { class: 'vspx-chat__error-btn', href: VSPX_URL, target: '_blank', rel: 'noopener' },
+        { class: 'vspx-chat__error-btn', href: currentVspxUrl, target: '_blank', rel: 'noopener' },
         'Open in new tab',
       ),
     ]),
@@ -398,8 +684,25 @@ function animateExit(element, callback) {
   });
 }
 
-function openPanel() {
+async function ensureVspxOpenAccess() {
+  if (!canUseVspx) {
+    alert('VSPx call tools are only available for faculty-created cases.');
+    return false;
+  }
+
+  if (hasActiveConversation || hasVerifiedAccessCode(currentCaseId)) {
+    return true;
+  }
+
+  const verified = await verifyFacultyAccessCode(currentCaseId);
+  return verified;
+}
+
+async function openPanel() {
   if (isAnimating || state === 'expanded') return;
+  const hasAccess = await ensureVspxOpenAccess();
+  if (!hasAccess) return;
+
   isAnimating = true;
   state = 'expanded';
 
@@ -570,7 +873,7 @@ function onGlobalKeydown(e) {
   if (e.altKey && e.shiftKey && e.key === 'C') {
     e.preventDefault();
     if (state === 'expanded') minimizePanel();
-    else openPanel();
+    else void openPanel();
     return;
   }
   if (e.key === 'Escape' && state === 'expanded') {
@@ -596,14 +899,14 @@ function onWindowResize() {
 // ─── Header Observer ────────────────────────────────────────────────────────
 
 function observePatientHeader() {
-  injectTrigger();
+  void injectTrigger();
   let pending = false;
   const observer = new MutationObserver(() => {
     if (pending) return;
     pending = true;
     requestAnimationFrame(() => {
       pending = false;
-      injectTrigger();
+      void injectTrigger();
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -616,6 +919,12 @@ function init() {
   observePatientHeader();
   document.addEventListener('keydown', onGlobalKeydown);
   window.addEventListener('resize', onWindowResize);
+  window.addEventListener('hashchange', async () => {
+    await injectTrigger();
+    if (!canUseVspx && state === 'expanded') {
+      closePanel();
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

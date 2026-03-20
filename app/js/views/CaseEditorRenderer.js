@@ -75,6 +75,7 @@ export function createPatientHeader() {
       avatarEl,
       el('div', { class: 'patient-header-text' }, [patientHeaderNameEl, patientHeaderDemoEl]),
     ]),
+    el('div', { id: 'patient-header-actions', class: 'patient-header-actions' }, []),
   ]);
 
   // Initial neutral avatar

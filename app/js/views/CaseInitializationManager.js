@@ -82,6 +82,8 @@ function createCaseInfoConfig(c) {
     sex: getPatientSex(c),
     acuity: getCaseAcuity(c),
     dob: getPatientDOB(c),
+    vspxEnabled: c.meta?.vspxEnabled === true,
+    vspxUrl: typeof c.meta?.vspxUrl === 'string' ? c.meta.vspxUrl : '',
     modules: Array.isArray(c.modules) ? c.modules : [],
   };
 }
@@ -102,6 +104,8 @@ function syncCaseContainers(c, updatedInfo, normalizedTitle, normalizedSex) {
   c.meta.title = updatedInfo.title;
   c.meta.setting = updatedInfo.setting;
   c.meta.acuity = updatedInfo.acuity;
+  c.meta.vspxEnabled = updatedInfo.vspxEnabled === true;
+  c.meta.vspxUrl = String(updatedInfo.vspxUrl || '').trim();
   c.meta.patientName = normalizedTitle;
 
   c.snapshot = c.snapshot || {};

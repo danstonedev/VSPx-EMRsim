@@ -74,6 +74,8 @@ export function getCaseInfo(c) {
     sex: demographics.sex,
     acuity: c.acuity || (c.meta && c.meta.acuity) || 'unspecified',
     dob: demographics.dob,
+    vspxEnabled: c.meta?.vspxEnabled === true,
+    vspxUrl: typeof c.meta?.vspxUrl === 'string' ? c.meta.vspxUrl : '',
     modules: Array.isArray(c.modules) ? c.modules : [],
   };
 }
@@ -135,6 +137,8 @@ export function updateCaseObject(c, updatedInfo, draft = null) {
   c.meta.title = updatedInfo.title;
   c.meta.setting = updatedInfo.setting;
   c.meta.acuity = updatedInfo.acuity;
+  c.meta.vspxEnabled = updatedInfo.vspxEnabled === true;
+  c.meta.vspxUrl = String(updatedInfo.vspxUrl || '').trim();
 
   c.snapshot = c.snapshot || {};
   c.snapshot.age = updatedInfo.age;
@@ -389,6 +393,14 @@ export function handleCaseInfoUpdate(
       c.meta = c.meta || {};
       c.meta.acuity = updatedInfo.acuity;
     }
+    if (updatedInfo.vspxEnabled != null) {
+      c.meta = c.meta || {};
+      c.meta.vspxEnabled = updatedInfo.vspxEnabled === true;
+    }
+    if (updatedInfo.vspxUrl != null) {
+      c.meta = c.meta || {};
+      c.meta.vspxUrl = String(updatedInfo.vspxUrl || '').trim();
+    }
     if (updatedInfo.age != null) {
       c.patientAge = updatedInfo.age;
       c.snapshot = c.snapshot || {};
@@ -470,6 +482,8 @@ export function prepareCaseInfoForNavigation(c) {
     sex: getFieldWithMultipleFallbacks(c, ['patientGender', 'sex', 'snapshot.sex'], 'N/A'),
     acuity: getFieldWithMultipleFallbacks(c, ['acuity', 'meta.acuity'], 'unspecified'),
     dob: getFieldWithMultipleFallbacks(c, ['patientDOB', 'dob', 'snapshot.dob'], ''),
+    vspxEnabled: c.meta?.vspxEnabled === true,
+    vspxUrl: typeof c.meta?.vspxUrl === 'string' ? c.meta.vspxUrl : '',
     modules: Array.isArray(c.modules) ? c.modules : [],
   };
 }

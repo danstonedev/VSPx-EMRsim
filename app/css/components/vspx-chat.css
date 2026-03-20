@@ -36,6 +36,31 @@
   flex-shrink: 0;
   margin-left: 8px;
 }
+.vspx-chat-config-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0 10px;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+.vspx-chat-config-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.vspx-chat-config-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 .vspx-chat-trigger:hover {
   background: rgba(255, 255, 255, 0.28);
 }
