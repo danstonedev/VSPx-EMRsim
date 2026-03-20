@@ -964,6 +964,12 @@ export function exportToWord(caseData, draft) {
       const profileLivingSituationHomeEnvironment =
         subj.patientLivingSituationHomeEnvironment || '';
       const profileSocialSupport = subj.patientSocialSupport || '';
+      const profileHeightFt = subj.patientHeightFt || '';
+      const profileHeightIn = subj.patientHeightIn || '';
+      const profileHeightCm = subj.patientHeightCm || '';
+      const profileWeight = subj.patientWeight || '';
+      const profileWeightKg = subj.patientWeightKg || '';
+      const profileBmi = subj.patientBmi || '';
       const profileNotes = subj.patientDemographics || '';
       const hasProfile = !!(
         profileName ||
@@ -973,6 +979,12 @@ export function exportToWord(caseData, draft) {
         profilePronouns ||
         profileLanguage ||
         profileInterpreterNeeded ||
+        profileHeightFt ||
+        profileHeightIn ||
+        profileHeightCm ||
+        profileWeight ||
+        profileWeightKg ||
+        profileBmi ||
         profileWorkStatusOccupation ||
         profileLivingSituationHomeEnvironment ||
         profileSocialSupport ||
@@ -1028,6 +1040,35 @@ export function exportToWord(caseData, draft) {
                 indentLeft: FORMAT.indent.level1,
               },
             ),
+          );
+        if (profileHeightFt || profileHeightIn || profileHeightCm) {
+          const impStr =
+            profileHeightFt || profileHeightIn
+              ? `${profileHeightFt || 0}'${profileHeightIn || 0}"`
+              : '';
+          const cmStr = profileHeightCm ? `${profileHeightCm} cm` : '';
+          const heightDisplay = impStr && cmStr ? `${impStr} (${cmStr})` : impStr || cmStr;
+          elements.push(
+            createLabelValueLine('Height', heightDisplay, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        }
+        if (profileWeight || profileWeightKg) {
+          const lbsStr = profileWeight ? `${profileWeight} lbs` : '';
+          const kgStr = profileWeightKg ? `${profileWeightKg} kg` : '';
+          const weightDisplay = lbsStr && kgStr ? `${lbsStr} (${kgStr})` : lbsStr || kgStr;
+          elements.push(
+            createLabelValueLine('Weight', weightDisplay, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        }
+        if (profileBmi)
+          elements.push(
+            createLabelValueLine('BMI', `${profileBmi} kg/m²`, {
+              indentLeft: FORMAT.indent.level1,
+            }),
           );
         if (profileWorkStatusOccupation)
           elements.push(
@@ -1274,12 +1315,6 @@ export function exportToWord(caseData, draft) {
         { label: 'Respiratory Rate', fmt: (v) => (v.rr ? `${v.rr} breaths/min` : '') },
         { label: 'SpO2', fmt: (v) => (v.spo2 ? `${v.spo2}%` : '') },
         { label: 'Temperature', fmt: (v) => (v.temperature ? `${v.temperature}°F` : '') },
-        {
-          label: 'Height',
-          fmt: (v) => (v.heightFt || v.heightIn ? `${v.heightFt || 0}'${v.heightIn || 0}"` : ''),
-        },
-        { label: 'Weight', fmt: (v) => (v.weight ? `${v.weight} lbs` : '') },
-        { label: 'BMI', fmt: (v) => (v.bmi ? `${v.bmi} kg/m²` : '') },
       ];
 
       // Build table data rows (only include rows that have at least one value)

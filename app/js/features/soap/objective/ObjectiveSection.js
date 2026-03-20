@@ -689,32 +689,10 @@ function buildVitalsSection(objectiveData, onChange) {
     return false;
   };
 
-  const computeBMI = (ft, inch, lbs) => {
-    const f = parseFloat(ft);
-    const i = parseFloat(inch);
-    const w = parseFloat(lbs);
-    if (!isNaN(f) && !isNaN(w)) {
-      const totalInches = f * 12 + (isNaN(i) ? 0 : i);
-      if (totalInches > 0) {
-        return ((703 * w) / (totalInches * totalInches)).toFixed(1);
-      }
-    }
-    return '';
-  };
-
-  const updateVitalField = (entryId, field, value, recalcBmi = false) => {
+  const updateVitalField = (entryId, field, value) => {
     const entry = vitalsSeries.find((item) => item.id === entryId);
     if (!entry) return;
     entry.vitals[field] = value || '';
-    if (recalcBmi) {
-      entry.vitals.bmi = computeBMI(
-        entry.vitals.heightFt,
-        entry.vitals.heightIn,
-        entry.vitals.weight,
-      );
-      const bmiInput = table.querySelector(`input[data-bmi-for="${entryId}"]`);
-      if (bmiInput) bmiInput.value = entry.vitals.bmi || '';
-    }
     activeEntryId = entryId;
     commitVitals();
   };
@@ -818,62 +796,6 @@ function buildVitalsSection(objectiveData, onChange) {
             onblur: (e) => updateVitalField(entry.id, 'temperature', e.target.value),
           }),
           el('span', { class: 'text-muted' }, '°F'),
-        ]),
-    },
-    {
-      label: 'Height',
-      render: (entry) =>
-        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
-          el('input', {
-            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-            placeholder: 'ft',
-            value: entry.vitals.heightFt || '',
-            onfocus: () => {
-              activeEntryId = entry.id;
-            },
-            onblur: (e) => updateVitalField(entry.id, 'heightFt', e.target.value, true),
-          }),
-          el('span', { class: 'text-muted' }, 'ft'),
-          el('input', {
-            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-            placeholder: 'in',
-            value: entry.vitals.heightIn || '',
-            onfocus: () => {
-              activeEntryId = entry.id;
-            },
-            onblur: (e) => updateVitalField(entry.id, 'heightIn', e.target.value, true),
-          }),
-          el('span', { class: 'text-muted' }, 'in'),
-        ]),
-    },
-    {
-      label: 'Weight',
-      render: (entry) =>
-        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
-          el('input', {
-            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-            value: entry.vitals.weight || '',
-            onfocus: () => {
-              activeEntryId = entry.id;
-            },
-            onblur: (e) => updateVitalField(entry.id, 'weight', e.target.value, true),
-          }),
-          el('span', { class: 'text-muted' }, 'lbs'),
-        ]),
-    },
-    {
-      label: 'BMI',
-      render: (entry) =>
-        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
-          el('input', {
-            class:
-              'combined-neuroscreen__input combined-neuroscreen__input--sm combined-neuroscreen__input--readonly',
-            'data-bmi-for': entry.id,
-            value: entry.vitals.bmi || '',
-            readonly: true,
-            disabled: true,
-          }),
-          el('span', { class: 'text-muted' }, 'kg/m²'),
         ]),
     },
   ];

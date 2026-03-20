@@ -23,6 +23,7 @@
 @import url('./components/red-flag-screening.css');
 @import url('./components/medication-panel.css');
 @import url('./components/custom-select.css');
+@import url('./components/patient-cards.css');
 @import url('./buttons.css');
 @import url('./sidebar.css');
 @import url('./tables.css');
@@ -2617,6 +2618,233 @@ body[data-route='instructor-editor'] .section-anchor {
 @media (max-width: 720px) {
   .patient-profile-inline-row {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Body Measurements Strip ── */
+.body-measurements {
+  margin-top: var(--space-2, 0.5rem);
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-alt, #f7f8f9);
+  overflow: hidden;
+}
+
+.body-measurements__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+  background: var(--surface-alt-hover, #f0f2f4);
+  border-bottom: 1px solid var(--color-border, #d0d5dd);
+}
+
+.body-measurements__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.body-measurements__toggle {
+  display: flex;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+}
+
+.body-measurements__toggle-btn {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted, #6b7280);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.body-measurements__toggle-btn--active {
+  background: var(--und-green, #009a44);
+  color: #fff;
+}
+
+.body-measurements__toggle-btn:not(.body-measurements__toggle-btn--active):hover {
+  background: var(--surface-alt, #f7f8f9);
+}
+
+.body-measurements__strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+.body-measurements__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+  flex-shrink: 0;
+}
+
+.body-measurements__group-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted, #6b7280);
+  white-space: nowrap;
+}
+
+.body-measurements__input {
+  width: 3.5rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--color-border, #d0d5dd);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-card, #fff);
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--text-primary, #111);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.body-measurements__input--height {
+  width: 4.2rem;
+}
+
+.body-measurements__input--weight {
+  width: 3.5rem;
+}
+
+.body-measurements__input:focus {
+  outline: none;
+  border-color: var(--und-green, #009a44);
+  box-shadow: var(--table-focus-ring, 0 0 0 2.5px rgba(0, 154, 68, 0.28));
+}
+
+.body-measurements__input::placeholder {
+  color: var(--neutral-400, #bdbdbd);
+}
+
+.body-measurements__unit {
+  font-size: 0.78rem;
+  color: var(--neutral-500, #9e9e9e);
+  font-weight: 500;
+  display: inline-block;
+  min-width: 2rem;
+}
+
+.body-measurements__divider {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--color-border, #d0d5dd);
+  flex-shrink: 0;
+}
+
+.body-measurements__bmi {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.body-measurements__bmi-value {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #111);
+  min-width: 2.5rem;
+}
+
+.body-measurements__bmi-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.body-measurements__bmi-badge--underweight {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.body-measurements__bmi-badge--normal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.body-measurements__bmi-badge--overweight {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.body-measurements__bmi-badge--obese {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+html[data-theme='dark'] .body-measurements {
+  background: var(--surface-muted, var(--neutral-850));
+  border-color: var(--color-border, var(--neutral-700));
+}
+
+html[data-theme='dark'] .body-measurements__header {
+  background: var(--neutral-800, #424242);
+  border-bottom-color: var(--color-border, var(--neutral-700));
+}
+
+html[data-theme='dark'] .body-measurements__label {
+  color: var(--neutral-400, #bdbdbd);
+}
+
+html[data-theme='dark'] .body-measurements__toggle {
+  border-color: var(--color-border, var(--neutral-700));
+}
+
+html[data-theme='dark'] .body-measurements__toggle-btn {
+  color: var(--neutral-400, #bdbdbd);
+}
+
+html[data-theme='dark'] .body-measurements__toggle-btn:not(.body-measurements__toggle-btn--active):hover {
+  background: var(--neutral-700, #616161);
+}
+
+html[data-theme='dark'] .body-measurements__input {
+  background: var(--neutral-900, #2c2c2c);
+  border-color: var(--color-border, var(--neutral-700));
+  color: var(--text-primary, #e0e0e0);
+}
+
+html[data-theme='dark'] .body-measurements__bmi-badge--underweight {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+html[data-theme='dark'] .body-measurements__bmi-badge--normal {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+html[data-theme='dark'] .body-measurements__bmi-badge--overweight {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .body-measurements__bmi-badge--obese {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+@media (max-width: 720px) {
+  .body-measurements__strip {
+    flex-wrap: wrap;
+  }
+  .body-measurements__divider {
+    display: none;
+  }
+  .body-measurements__bmi {
+    flex-basis: 100%;
   }
 }
 

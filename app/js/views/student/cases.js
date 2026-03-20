@@ -35,267 +35,78 @@ function spriteIcon(name, { className = 'icon', size } = {}) {
   return svg;
 }
 
-// Modal to create a blank SOAP note (not tied to a case)
-function openCreateNoteModal() {
-  const overlay = el('div', {
-    class:
-      'modal-overlay popup-overlay-base fixed inset-0 overlay-50 d-flex ai-center jc-center z-modal',
-    onclick: (e) => {
-      if (e.target === overlay) close();
-    },
-  });
-  const defaultTitle = `Blank SOAP Note — ${new Date().toLocaleDateString()}`;
-  const content = el(
-    'div',
-    {
-      class: 'modal-content case-details-modal popup-card-base',
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-label': 'Create SOAP Note',
-      onclick: (e) => e.stopPropagation(),
-    },
-    [
-      // Header (inherits green band styles from case-details-modal)
-      el('div', { class: 'modal-header' }, [
-        el('h3', {}, 'Create SOAP Note'),
-        el('button', { class: 'close-btn', 'aria-label': 'Close', onclick: () => close() }, '✕'),
-      ]),
-      // Body
-      el('div', { class: 'modal-body case-details-body' }, [
-        el(
-          'form',
-          {
-            onsubmit: (e) => {
-              e.preventDefault();
-              const input = content.querySelector('#student-note-title-input');
-              const title = (input && input.value ? input.value : '').trim() || 'Blank SOAP Note';
-              const id = `blank-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-              try {
-                const draftKey = `draft_${id}_eval`;
-                const initialDraft = { noteTitle: title, __savedAt: Date.now() };
-                storage.setItem(draftKey, JSON.stringify(initialDraft));
-              } catch (e2) {
-                console.warn('Could not pre-save blank note draft:', e2);
-              }
-              close();
-              urlNavigate('/student/editor', { case: id, v: 0, encounter: 'eval' });
-            },
-          },
-          [
-            el('div', { class: 'instructor-form-field' }, [
-              el(
-                'label',
-                { class: 'instructor-form-label', for: 'student-note-title-input' },
-                'Note Title',
-              ),
-              el('input', {
-                id: 'student-note-title-input',
-                name: 'student-note-title-input',
-                type: 'text',
-                class: 'instructor-form-input',
-                value: defaultTitle,
-                placeholder: 'e.g., Shoulder Pain Eval - Aug 2025',
-              }),
-            ]),
-            // Actions
-            el('div', { class: 'modal-actions' }, [
-              el(
-                'button',
-                { type: 'button', class: 'btn secondary', onclick: () => close() },
-                'Cancel',
-              ),
-              el('button', { type: 'submit', class: 'btn primary' }, 'Create'),
-            ]),
-          ],
-        ),
-      ]),
-    ],
-  );
-  function close() {
-    overlay.classList.remove('is-open');
-    content.classList.remove('is-open');
-    const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const removeNow = () => {
-      try {
-        ac.abort();
-        // Clean inline fallback styles if applied
-        overlay.style.opacity = '';
-        const card = overlay.querySelector('.popup-card-base');
-        if (card) {
-          card.style.opacity = '';
-          card.style.transform = '';
-        }
-        overlay.remove();
-      } catch {
-        /* overlay or card may already be removed */
-      }
-    };
-    if (prefersReduce) return removeNow();
-    overlay.addEventListener('transitionend', removeNow, { once: true });
-    setTimeout(removeNow, 480);
-  }
-  overlay.append(content);
-  document.body.append(overlay);
-  // Esc to close (auto-cleaned via AbortController)
-  const ac = new AbortController();
-  document.addEventListener(
-    'keydown',
-    (e) => {
-      if (e.key === 'Escape') close();
-    },
-    { signal: ac.signal },
-  );
-  requestAnimationFrame(() => {
-    overlay.classList.add('is-open');
-    content.classList.add('is-open');
-    // Mobile/sticky transition fallback
-    setTimeout(() => {
-      try {
-        const card = overlay.querySelector('.popup-card-base');
-        const overlayStyle = getComputedStyle(overlay);
-        const cardStyle = card ? getComputedStyle(card) : null;
-        if (overlayStyle && overlayStyle.opacity === '0') overlay.style.opacity = '1';
-        if (card && cardStyle && cardStyle.opacity === '0') {
-          card.style.opacity = '1';
-          card.style.transform = 'scale(1)';
-        }
-      } catch {
-        /* element may not exist */
-      }
-      content.querySelector('#student-note-title-input')?.focus();
-    }, 90);
-  });
+// ── Patient metadata helpers ──
+// Stored as patient_{id} → { name, dob, sex, created }
+
+function savePatientMeta(patientId, meta) {
+  storage.setItem(`patient_${patientId}`, JSON.stringify(meta));
 }
 
-// Modal to create a Simple SOAP note (free-text only, not tied to a case)
-function openCreateSimpleNoteModal() {
-  const overlay = el('div', {
-    class:
-      'modal-overlay popup-overlay-base fixed inset-0 overlay-50 d-flex ai-center jc-center z-modal',
-    onclick: (e) => {
-      if (e.target === overlay) close();
-    },
-  });
-  const defaultTitle = `Simple SOAP Note — ${new Date().toLocaleDateString()}`;
-  const content = el(
-    'div',
-    {
-      class: 'modal-content case-details-modal popup-card-base',
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-label': 'Create Simple SOAP Note',
-      onclick: (e) => e.stopPropagation(),
-    },
-    [
-      el('div', { class: 'modal-header' }, [
-        el('h3', {}, 'Create Simple SOAP Note'),
-        el('button', { class: 'close-btn', 'aria-label': 'Close', onclick: () => close() }, '✕'),
-      ]),
-      el('div', { class: 'modal-body case-details-body' }, [
-        el(
-          'form',
-          {
-            onsubmit: (e) => {
-              e.preventDefault();
-              const input = content.querySelector('#simple-note-title-input');
-              const title = (input && input.value ? input.value : '').trim() || 'Simple SOAP Note';
-              const id = `blank-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-              try {
-                const draftKey = `draft_${id}_eval`;
-                const initialDraft = {
-                  noteType: 'simple-soap',
-                  noteTitle: title,
-                  simpleSOAP: { subjective: '', objective: '', assessment: '', plan: '' },
-                  __savedAt: Date.now(),
-                };
-                storage.setItem(draftKey, JSON.stringify(initialDraft));
-              } catch (e2) {
-                console.warn('Could not pre-save simple note draft:', e2);
-              }
-              close();
-              urlNavigate('/student/editor', { case: id, v: 0, encounter: 'eval' });
-            },
-          },
-          [
-            el('div', { class: 'instructor-form-field' }, [
-              el(
-                'label',
-                { class: 'instructor-form-label', for: 'simple-note-title-input' },
-                'Note Title',
-              ),
-              el('input', {
-                id: 'simple-note-title-input',
-                name: 'simple-note-title-input',
-                type: 'text',
-                class: 'instructor-form-input',
-                value: defaultTitle,
-                placeholder: 'e.g., Quick Eval Note - Mar 2026',
-              }),
-            ]),
-            el('div', { class: 'modal-actions' }, [
-              el(
-                'button',
-                { type: 'button', class: 'btn secondary', onclick: () => close() },
-                'Cancel',
-              ),
-              el('button', { type: 'submit', class: 'btn primary' }, 'Create'),
-            ]),
-          ],
-        ),
-      ]),
-    ],
-  );
-  function close() {
-    overlay.classList.remove('is-open');
-    content.classList.remove('is-open');
-    const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const removeNow = () => {
-      try {
-        ac.abort();
-        overlay.style.opacity = '';
-        const card = overlay.querySelector('.popup-card-base');
-        if (card) {
-          card.style.opacity = '';
-          card.style.transform = '';
-        }
-        overlay.remove();
-      } catch {
-        /* overlay or card may already be removed */
-      }
-    };
-    if (prefersReduce) return removeNow();
-    overlay.addEventListener('transitionend', removeNow, { once: true });
-    setTimeout(removeNow, 480);
+function getPatientMeta(patientId) {
+  return safeJsonParse(storage.getItem(`patient_${patientId}`));
+}
+
+function deletePatientMeta(patientId) {
+  storage.removeItem(`patient_${patientId}`);
+}
+
+/** Parse MM/DD/YYYY or YYYY-MM-DD → { m, d, y } or null */
+function parseDob(str) {
+  if (!str) return null;
+  let m, d, y;
+  if (str.includes('-')) {
+    [y, m, d] = str.split('-').map(Number);
+  } else {
+    [m, d, y] = str.split('/').map(Number);
   }
-  overlay.append(content);
-  document.body.append(overlay);
-  const ac = new AbortController();
-  document.addEventListener(
-    'keydown',
-    (e) => {
-      if (e.key === 'Escape') close();
-    },
-    { signal: ac.signal },
-  );
-  requestAnimationFrame(() => {
-    overlay.classList.add('is-open');
-    content.classList.add('is-open');
-    setTimeout(() => {
-      try {
-        const card = overlay.querySelector('.popup-card-base');
-        const overlayStyle = getComputedStyle(overlay);
-        const cardStyle = card ? getComputedStyle(card) : null;
-        if (overlayStyle && overlayStyle.opacity === '0') overlay.style.opacity = '1';
-        if (card && cardStyle && cardStyle.opacity === '0') {
-          card.style.opacity = '1';
-          card.style.transform = 'scale(1)';
-        }
-      } catch {
-        /* element may not exist */
-      }
-      content.querySelector('#simple-note-title-input')?.focus();
-    }, 90);
-  });
+  if (!m || !d || !y || y < 1900) return null;
+  return { m, d, y };
+}
+
+function calcAge(dobStr) {
+  const p = parseDob(dobStr);
+  if (!p) return '';
+  const dob = new Date(p.y, p.m - 1, p.d);
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const md = now.getMonth() - dob.getMonth();
+  if (md < 0 || (md === 0 && now.getDate() < dob.getDate())) age--;
+  return age >= 0 && age < 150 ? String(age) : '';
+}
+
+/** MM/DD/YYYY → YYYY-MM-DD (for <input type="date">) */
+function dobToIso(dobStr) {
+  const p = parseDob(dobStr);
+  if (!p) return '';
+  return `${String(p.y).padStart(4, '0')}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`;
+}
+
+/** YYYY-MM-DD → MM/DD/YYYY (for storage) */
+function isoToDob(isoStr) {
+  if (!isoStr) return '';
+  const [y, m, d] = isoStr.split('-');
+  return `${m}/${d}/${y}`;
+}
+
+/** Normalize sex to editor-consistent lowercase values */
+function normalizeSex(val) {
+  const v = String(val || '')
+    .trim()
+    .toLowerCase();
+  if (v === 'm' || v === 'male') return 'male';
+  if (v === 'f' || v === 'female') return 'female';
+  if (v === 'other') return 'other';
+  if (v === 'unspecified' || v === 'prefer not to say' || v === 'prefer-not-to-say')
+    return 'unspecified';
+  return v;
+}
+
+function formatPatientTitle(name, dob, sex) {
+  const age = calcAge(dob);
+  const namePart = name ? (age ? `${name} (${age} yo)` : name) : '';
+  const sexDisplay = sex && sex !== 'unspecified' ? sex.charAt(0).toUpperCase() + sex.slice(1) : '';
+  const parts = [namePart, sexDisplay].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : '';
 }
 
 // Helper: scan localStorage-backed drafts and compute completion summary per case/encounter
@@ -640,7 +451,7 @@ function buildStatusContent(evalDraft) {
   return el('span', { class: 'status status--not-started' }, 'Not Started');
 }
 
-function buildActionButtons(c, evalDraft, storage, urlNavigate) {
+function buildActionButtons(c, evalDraft, storage, urlNavigate, onRefresh) {
   const buttonText = evalDraft && evalDraft.hasContent ? 'Continue Working' : 'Start Case';
   const buttons = [
     el(
@@ -668,7 +479,7 @@ function buildActionButtons(c, evalDraft, storage, urlNavigate) {
           onClick: () =>
             confirmAnd('Delete this blank SOAP note? This cannot be undone.', () => {
               storage.removeItem(localStorageKey);
-              urlNavigate('/student/cases');
+              if (onRefresh) onRefresh();
             }),
         },
         'Remove',
@@ -685,7 +496,7 @@ function buildActionButtons(c, evalDraft, storage, urlNavigate) {
           onClick: () =>
             confirmAnd('Reset your draft for this case? This will clear your local work.', () => {
               storage.removeItem(localStorageKey);
-              urlNavigate('/student/cases');
+              if (onRefresh) onRefresh();
             }),
         },
         'Reset',
@@ -731,11 +542,11 @@ function buildActionButtons(c, evalDraft, storage, urlNavigate) {
   return buttons;
 }
 
-function createCaseRow(c, drafts, storage, urlNavigate) {
+function createCaseRow(c, drafts, storage, urlNavigate, onRefresh) {
   const draftInfo = drafts[c.id];
   const evalDraft = draftInfo?.eval;
   const statusContent = buildStatusContent(evalDraft);
-  const actionButtons = buildActionButtons(c, evalDraft, storage, urlNavigate);
+  const actionButtons = buildActionButtons(c, evalDraft, storage, urlNavigate, onRefresh);
   const badge = createCaseBadge(c);
 
   return el('tr', {}, [
@@ -767,27 +578,7 @@ function makeCasesPanel(app, initialCases, drafts) {
 
   const casesPanel = el('div', { class: 'panel' }, [
     el('div', { class: 'flex-between mb-16 ai-center' }, [
-      el('div', {}, [el('h2', {}, 'Student Dashboard')]),
-      el('div', { class: 'd-flex gap-10' }, [
-        el(
-          'button',
-          {
-            class: 'btn primary d-flex ai-center gap-8',
-            title: 'Create a blank SOAP note not attached to a case',
-            onClick: () => openCreateNoteModal(),
-          },
-          [spriteIcon('plus'), 'SOAP Note'],
-        ),
-        el(
-          'button',
-          {
-            class: 'btn secondary d-flex ai-center gap-8',
-            title: 'Create a simple free-text SOAP note',
-            onClick: () => openCreateSimpleNoteModal(),
-          },
-          [spriteIcon('plus'), 'Simple SOAP Note'],
-        ),
-      ]),
+      el('div', {}, [el('h2', {}, 'Case Library')]),
     ]),
     el('input', {
       type: 'text',
@@ -861,7 +652,12 @@ function makeCasesPanel(app, initialCases, drafts) {
       el(
         'tbody',
         {},
-        filtered.map((c) => createCaseRow(c, drafts, storage, urlNavigate)),
+        filtered.map((c) =>
+          createCaseRow(c, drafts, storage, urlNavigate, () => {
+            drafts = scanDrafts(storage);
+            renderTable();
+          }),
+        ),
       ),
     ]);
     const existing = casesPanel.querySelector('.table-responsive');
@@ -888,85 +684,655 @@ function safeJsonParse(str) {
   }
 }
 
-function getBlankNoteItems() {
-  const items = storage
+// ── Patient cards helpers ──
+
+function getPatientItems() {
+  const patients = new Map(); // patientId → { meta, draftKey, draftData }
+
+  // 1. Scan patient metadata records
+  storage
+    .keys()
+    .filter((k) => k && k.startsWith('patient_blank'))
+    .forEach((key) => {
+      const patientId = key.replace('patient_', '');
+      const meta = safeJsonParse(storage.getItem(key)) || {};
+      patients.set(patientId, { meta, draftKey: null, draftData: null });
+    });
+
+  // 2. Scan draft records
+  storage
     .keys()
     .filter((k) => k && k.startsWith('draft_blank'))
-    .map((key) => {
-      const data = safeJsonParse(storage.getItem(key)) || {};
-      const ts = data.__savedAt || 0;
-      const title =
-        (data.noteTitle && data.noteTitle.trim()) || key.replace('draft_', '').replace('_eval', '');
-      return { key, title, ts };
-    })
-    .sort((a, b) => b.ts - a.ts || a.title.localeCompare(b.title));
-  return items;
+    .forEach((key) => {
+      const noteId = key.replace('draft_', '').replace('_eval', '');
+      const draftData = safeJsonParse(storage.getItem(key)) || {};
+      if (patients.has(noteId)) {
+        const p = patients.get(noteId);
+        p.draftKey = key;
+        p.draftData = draftData;
+      } else {
+        // Backward compat: draft exists without patient meta
+        patients.set(noteId, {
+          meta: { name: '', dob: '', sex: '', created: draftData.__savedAt || 0 },
+          draftKey: key,
+          draftData,
+        });
+      }
+    });
+
+  return Array.from(patients.entries()).map(([patientId, { meta, draftKey, draftData }]) => {
+    const name = meta.name || '';
+    const dob = meta.dob || '';
+    const sex = normalizeSex(meta.sex);
+    const displayTitle =
+      formatPatientTitle(name, dob, sex) ||
+      (draftData && draftData.noteTitle ? draftData.noteTitle.trim() : '') ||
+      'New Patient';
+    const ts = (draftData && draftData.__savedAt) || meta.created || 0;
+    const hasNote = !!draftKey;
+    const isSimple = hasNote && draftData && draftData.noteType === 'simple-soap';
+    let completed = 0;
+    let totalSections = 0;
+    let percent = 0;
+    let statusKey = 'not-started';
+    if (hasNote && draftData) {
+      totalSections = isSimple ? 4 : 6;
+      if (isSimple) {
+        const soap = draftData.simpleSOAP || {};
+        completed = ['subjective', 'objective', 'assessment', 'plan'].filter(
+          (k) => typeof soap[k] === 'string' && soap[k].trim().length > 0,
+        ).length;
+      } else {
+        completed = sectionCompletionCount(draftData);
+        if (hasObjectiveContent(draftData)) completed++;
+      }
+      percent = totalSections > 0 ? Math.round((completed / totalSections) * 100) : 0;
+      if (completed > 0 && percent < 100) statusKey = 'in-progress';
+      else if (percent === 100) statusKey = 'complete';
+    }
+    return {
+      patientId,
+      name,
+      dob,
+      sex,
+      key: draftKey,
+      noteId: patientId,
+      title: displayTitle,
+      ts,
+      isSimple,
+      completed,
+      totalSections,
+      percent,
+      statusKey,
+      hasNote,
+    };
+  });
 }
 
-function renderBlankNotesPanel(app) {
-  const blankItems = getBlankNoteItems();
-  const headerRow = el('div', { class: 'mb-8' }, [el('h3', { class: 'm-0' }, 'My Blank Notes')]);
-  const panelChildren = [
-    headerRow,
-    el('p', { class: 'small m-0' }, 'Manage scratch SOAP notes not tied to a case.'),
-  ];
-  if (blankItems.length > 0) {
-    const list = el('ul', { class: 'mt-8 pl-18' });
-    blankItems.forEach(({ key, title }) => {
-      const noteId = key.replace('draft_', '').replace('_eval', '');
-      const li = el('li', { class: 'mb-6' }, [
-        el('span', { class: 'mr-12 fw-500' }, title),
-        el(
-          'button',
-          {
-            class: 'btn primary small mr-6',
-            onClick: () =>
-              urlNavigate('/student/editor', { case: noteId, v: 0, encounter: 'eval' }),
-          },
-          'Open',
-        ),
-        el(
-          'button',
-          {
-            class: 'btn subtle-danger small',
-            onClick: () => {
-              if (confirm('Delete this blank note?')) {
-                storage.removeItem(key);
-                urlNavigate('/student/cases');
-              }
-            },
-          },
-          'Remove',
-        ),
-      ]);
-      list.append(li);
-    });
-    panelChildren.push(list);
-  } else {
-    panelChildren.push(
+function relativeTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+const STATUS_LABELS = {
+  'not-started': 'Not Started',
+  'in-progress': 'In Progress',
+  complete: 'Complete',
+};
+
+function buildPatientCard(item, onRefresh) {
+  const card = el('div', { class: 'patient-card', 'data-patient-id': item.noteId });
+
+  // Chevron — inline width/height prevent FOUC when CSS hasn't loaded yet
+  const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  chevron.setAttribute('class', 'patient-card-chevron');
+  chevron.setAttribute('viewBox', '0 0 20 20');
+  chevron.setAttribute('width', '18');
+  chevron.setAttribute('height', '18');
+  chevron.setAttribute('fill', 'currentColor');
+  chevron.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute(
+    'd',
+    'M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z',
+  );
+  chevron.appendChild(path);
+
+  // Title = Name, Age, Sex (or "New Patient" if empty)
+  const titleSpan = el('span', { class: 'patient-card-title' }, item.title);
+
+  // Meta badges — only show note-type & progress if a note exists
+  const metaChildren = [];
+  if (item.hasNote) {
+    const typeBadgeClass = item.isSimple
+      ? 'patient-card-badge--simple'
+      : 'patient-card-badge--soap';
+    const typeBadgeText = item.isSimple ? 'Simple SOAP' : 'SOAP Note';
+    metaChildren.push(
+      el('span', { class: `patient-card-badge ${typeBadgeClass}` }, typeBadgeText),
       el(
-        'p',
-        { class: 'small text-secondary mt-8' },
-        'No blank notes yet. Create one to get started.',
+        'span',
+        { class: `patient-card-status patient-card-status--${item.statusKey}` },
+        STATUS_LABELS[item.statusKey],
       ),
+      el('span', { class: 'patient-card-progress' }, `${item.completed}/${item.totalSections}`),
+    );
+  } else {
+    metaChildren.push(
+      el('span', { class: 'patient-card-status patient-card-status--not-started' }, 'No Notes Yet'),
     );
   }
-  app.append(el('div', { class: 'panel' }, panelChildren));
+  if (item.ts) {
+    metaChildren.push(el('span', { class: 'patient-card-timestamp' }, relativeTime(item.ts)));
+  }
+
+  const header = el(
+    'div',
+    {
+      class: 'patient-card-header',
+      tabindex: '0',
+      role: 'button',
+      'aria-expanded': 'false',
+      onClick: () => toggleCard(card, header),
+      onKeydown: (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleCard(card, header);
+        }
+      },
+    },
+    [chevron, titleSpan, el('div', { class: 'patient-card-meta' }, metaChildren)],
+  );
+
+  // ── Expanded body ──
+  const bodyChildren = [];
+
+  // Inline edit fields — always visible in body
+  let updateNoteButtons = null;
+  const saveField = (field, value) => {
+    const meta = getPatientMeta(item.patientId) || {
+      name: '',
+      dob: '',
+      sex: '',
+      created: Date.now(),
+    };
+    meta[field] = value;
+    savePatientMeta(item.patientId, meta);
+    // Update title in header
+    titleSpan.textContent = formatPatientTitle(meta.name, meta.dob, meta.sex) || 'New Patient';
+    // Also update noteTitle on the draft if one exists
+    if (item.key) {
+      const draft = safeJsonParse(storage.getItem(item.key));
+      if (draft) {
+        draft.noteTitle = formatPatientTitle(meta.name, meta.dob, meta.sex) || 'New Patient';
+        storage.setItem(item.key, JSON.stringify(draft));
+      }
+    }
+    if (updateNoteButtons) updateNoteButtons();
+  };
+
+  const nameInput = el('input', {
+    type: 'text',
+    class: 'patient-edit-input patient-name-input',
+    placeholder: 'Patient name',
+    value: item.name,
+    onInput: (e) => saveField('name', e.target.value.trim()),
+  });
+  const dobInput = el('input', {
+    type: 'date',
+    class: 'patient-edit-input patient-edit-input--dob',
+    value: dobToIso(item.dob),
+    onChange: (e) => {
+      const stored = isoToDob(e.target.value);
+      saveField('dob', stored);
+    },
+  });
+
+  const sexOptions = [
+    { value: '', label: 'Sex' },
+    { value: 'female', label: 'Female' },
+    { value: 'male', label: 'Male' },
+    { value: 'other', label: 'Other' },
+  ];
+  const sexSelect = el(
+    'select',
+    {
+      class: 'patient-edit-input patient-edit-input--short',
+      onChange: (e) => saveField('sex', e.target.value),
+    },
+    sexOptions.map((opt) =>
+      el(
+        'option',
+        { value: opt.value, ...(opt.value === item.sex ? { selected: 'selected' } : {}) },
+        opt.label,
+      ),
+    ),
+  );
+
+  bodyChildren.push(
+    el('div', { class: 'patient-edit-fields' }, [
+      el('div', { class: 'patient-edit-field' }, [nameInput]),
+      el('div', { class: 'patient-edit-field patient-edit-field--dob' }, [dobInput]),
+      el('div', { class: 'patient-edit-field patient-edit-field--short' }, [sexSelect]),
+    ]),
+  );
+
+  // Existing note row (if draft exists)
+  if (item.hasNote) {
+    const noteTypeLabel = item.isSimple ? 'Simple SOAP Note' : 'Initial Evaluation (SOAP)';
+    const noteSubtitle = item.ts
+      ? `Last edited: ${new Date(item.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : '';
+    const noteActions = [
+      el(
+        'button',
+        {
+          class: 'btn primary small',
+          onClick: (e) => {
+            e.stopPropagation();
+            urlNavigate('/student/editor', { case: item.noteId, v: 0, encounter: 'eval' });
+          },
+        },
+        'Open',
+      ),
+    ];
+    if (item.statusKey === 'complete') {
+      noteActions.push(
+        el(
+          'button',
+          {
+            class: 'btn success small',
+            onClick: (e) => {
+              e.stopPropagation();
+              exportPatientNote(item);
+            },
+          },
+          'Download',
+        ),
+      );
+    }
+    noteActions.push(
+      el(
+        'button',
+        {
+          class: 'btn subtle-danger small',
+          title: 'Remove this note only',
+          onClick: (e) => {
+            e.stopPropagation();
+            if (
+              confirm('Remove this note from the patient record? The patient record will be kept.')
+            ) {
+              if (item.key) storage.removeItem(item.key);
+              if (onRefresh) onRefresh();
+            }
+          },
+        },
+        'Remove Note',
+      ),
+    );
+    bodyChildren.push(
+      el('div', { class: 'patient-card-note' }, [
+        spriteIcon('edit', { className: 'patient-card-note-icon' }),
+        el('div', { class: 'patient-card-note-info' }, [
+          el('div', { class: 'patient-card-note-title' }, noteTypeLabel),
+          el('div', { class: 'patient-card-note-subtitle' }, noteSubtitle),
+        ]),
+        el('div', { class: 'patient-card-note-actions' }, noteActions),
+      ]),
+    );
+  }
+
+  // Note type buttons — create new notes
+  const startNote = (isSimple) => {
+    const draftKey = `draft_${item.patientId}_eval`;
+    const meta = getPatientMeta(item.patientId) || { name: '', dob: '', sex: '' };
+    const noteTitle = formatPatientTitle(meta.name, meta.dob, meta.sex) || 'New Patient';
+    // Seed subjective patient profile from patient metadata
+    const subjective = {
+      patientName: meta.name || '',
+      patientBirthday: meta.dob ? dobToIso(meta.dob) : '',
+      patientAge: calcAge(meta.dob) || '',
+      patientGender: normalizeSex(meta.sex) || '',
+      patientGenderIdentityPronouns: meta.genderIdentityPronouns || '',
+      patientPreferredLanguage: meta.preferredLanguage || '',
+      patientInterpreterNeeded: meta.interpreterNeeded || '',
+    };
+    const draft = isSimple
+      ? {
+          noteType: 'simple-soap',
+          noteTitle,
+          subjective,
+          simpleSOAP: { subjective: '', objective: '', assessment: '', plan: '' },
+          __savedAt: Date.now(),
+        }
+      : { noteTitle, subjective, __savedAt: Date.now() };
+    storage.setItem(draftKey, JSON.stringify(draft));
+    urlNavigate('/student/editor', { case: item.patientId, v: 0, encounter: 'eval' });
+  };
+
+  const noteTypeBtns = [];
+  if (!item.hasNote) {
+    const hasName = !!(item.name && item.name.trim());
+    const soapBtn = el(
+      'button',
+      {
+        class: 'btn primary small',
+        disabled: !hasName,
+        title: hasName ? '' : 'Enter a patient name first',
+        onClick: (e) => {
+          e.stopPropagation();
+          startNote(false);
+        },
+      },
+      'New Eval (SOAP Note)',
+    );
+    const simpleBtn = el(
+      'button',
+      {
+        class: 'btn secondary small',
+        disabled: !hasName,
+        title: hasName ? '' : 'Enter a patient name first',
+        onClick: (e) => {
+          e.stopPropagation();
+          startNote(true);
+        },
+      },
+      'Simple SOAP Note',
+    );
+    updateNoteButtons = () => {
+      const m = getPatientMeta(item.patientId) || {};
+      const filled = !!(m.name && m.name.trim());
+      soapBtn.disabled = !filled;
+      simpleBtn.disabled = !filled;
+      soapBtn.title = filled ? '' : 'Enter a patient name first';
+      simpleBtn.title = filled ? '' : 'Enter a patient name first';
+    };
+    noteTypeBtns.push(soapBtn, simpleBtn);
+  }
+  // Future note types (always shown, always disabled)
+  noteTypeBtns.push(
+    el(
+      'button',
+      { class: 'patient-card-future-btn', title: 'Coming soon', disabled: 'true' },
+      '+ Treatment Note',
+    ),
+    el(
+      'button',
+      { class: 'patient-card-future-btn', title: 'Coming soon', disabled: 'true' },
+      '+ Follow-up',
+    ),
+    el(
+      'button',
+      { class: 'patient-card-future-btn', title: 'Coming soon', disabled: 'true' },
+      '+ Progress Note',
+    ),
+  );
+  bodyChildren.push(el('div', { class: 'patient-card-note-types' }, noteTypeBtns));
+
+  // Footer — danger zone (deletes patient + any notes)
+  bodyChildren.push(
+    el('div', { class: 'patient-card-footer patient-card-danger-zone' }, [
+      el(
+        'button',
+        {
+          class: 'btn-text-danger small',
+          onClick: (e) => {
+            e.stopPropagation();
+            if (
+              confirm(
+                'Delete this entire patient record' +
+                  (item.hasNote ? ' and its note' : '') +
+                  '? This cannot be undone.',
+              )
+            ) {
+              if (item.key) storage.removeItem(item.key);
+              deletePatientMeta(item.patientId);
+              if (onRefresh) onRefresh();
+            }
+          },
+        },
+        'Delete Patient Record',
+      ),
+    ]),
+  );
+
+  const body = el('div', { class: 'patient-card-body' }, bodyChildren);
+  card.append(header, body);
+  return card;
 }
+
+function toggleCard(card, header) {
+  const isOpen = card.classList.toggle('is-open');
+  header.setAttribute('aria-expanded', String(isOpen));
+}
+
+function exportPatientNote(item) {
+  try {
+    const savedDraft = storage.getItem(item.key);
+    if (!savedDraft) {
+      alert('Could not find draft data for export.');
+      return;
+    }
+    const draft = JSON.parse(savedDraft);
+    const caseObj = { id: item.noteId, title: item.title };
+    const content = createExportDocHTML(caseObj, draft);
+    const blob = new Blob([content], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${item.title.replace(/[^a-z0-9]/gi, '_')}_EVAL_NOTE.doc`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Export failed:', err);
+    alert('Export failed. Please try again.');
+  }
+}
+
+// ── My Patients panel ──
+
+function renderMyPatientsPanel(app) {
+  let items = getPatientItems();
+  let filterStatus = 'all';
+  let sortBy = 'modified';
+  let searchTerm = '';
+
+  const section = el('div', { class: 'panel patient-cards-section' });
+
+  // Header row: title + New Patient button
+  const newPatientBtn = el(
+    'button',
+    {
+      class: 'btn primary d-flex ai-center gap-8',
+      onClick: () => {
+        const patientId = `blank-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        savePatientMeta(patientId, { name: '', dob: '', sex: '', created: Date.now() });
+        items = getPatientItems();
+        renderCards();
+        // Auto-expand the new card and focus name input
+        requestAnimationFrame(() => {
+          const newCard = cardList.querySelector(`[data-patient-id="${patientId}"]`);
+          if (newCard) {
+            newCard.classList.add('is-open');
+            const hdr = newCard.querySelector('.patient-card-header');
+            if (hdr) hdr.setAttribute('aria-expanded', 'true');
+            const nameField = newCard.querySelector('.patient-name-input');
+            if (nameField) nameField.focus();
+          }
+        });
+      },
+    },
+    [spriteIcon('plus'), '+ New Patient'],
+  );
+
+  section.append(
+    el('div', { class: 'flex-between mb-16 ai-center' }, [
+      el('h2', { class: 'm-0' }, 'My Patients'),
+      newPatientBtn,
+    ]),
+  );
+
+  // Toolbar: search + sort
+  const searchInput = el('input', {
+    type: 'text',
+    placeholder: 'Search patient records...',
+    class: 'form-input-standard patient-search',
+    onInput: (e) => {
+      searchTerm = (e.target.value || '').toLowerCase();
+      renderCards();
+    },
+  });
+
+  const sortSelect = el(
+    'select',
+    {
+      onChange: (e) => {
+        sortBy = e.target.value;
+        renderCards();
+      },
+    },
+    [
+      el('option', { value: 'modified' }, 'Modified (newest)'),
+      el('option', { value: 'modified-asc' }, 'Modified (oldest)'),
+      el('option', { value: 'title' }, 'Title (A–Z)'),
+      el('option', { value: 'title-desc' }, 'Title (Z–A)'),
+      el('option', { value: 'status' }, 'Status'),
+    ],
+  );
+
+  section.append(
+    el('div', { class: 'patient-cards-toolbar' }, [
+      searchInput,
+      el('div', { class: 'patient-cards-sort' }, [el('span', {}, 'Sort:'), sortSelect]),
+    ]),
+  );
+
+  // Filter tabs
+  const tabsRow = el('div', { class: 'patient-filter-tabs' });
+  const filters = [
+    { key: 'all', label: 'All' },
+    { key: 'in-progress', label: 'In Progress' },
+    { key: 'complete', label: 'Complete' },
+    { key: 'not-started', label: 'Not Started' },
+  ];
+  filters.forEach(({ key, label }) => {
+    const tab = el(
+      'button',
+      {
+        class: `patient-filter-tab${key === 'all' ? ' active' : ''}`,
+        'data-filter': key,
+        onClick: () => {
+          filterStatus = key;
+          tabsRow
+            .querySelectorAll('.patient-filter-tab')
+            .forEach((t) => t.classList.remove('active'));
+          tab.classList.add('active');
+          renderCards();
+        },
+      },
+      label,
+    );
+    tabsRow.append(tab);
+  });
+  section.append(tabsRow);
+
+  // Card list container
+  const cardList = el('div', { class: 'patient-card-list' });
+  section.append(cardList);
+
+  function getFilteredSorted() {
+    let list = items;
+    // Search
+    if (searchTerm) {
+      list = list.filter(
+        (it) =>
+          it.title.toLowerCase().includes(searchTerm) ||
+          (it.name && it.name.toLowerCase().includes(searchTerm)),
+      );
+    }
+    // Filter
+    if (filterStatus !== 'all') {
+      list = list.filter((it) => it.statusKey === filterStatus);
+    }
+    // Sort
+    list = [...list];
+    switch (sortBy) {
+      case 'modified':
+        list.sort((a, b) => b.ts - a.ts);
+        break;
+      case 'modified-asc':
+        list.sort((a, b) => a.ts - b.ts);
+        break;
+      case 'title':
+        list.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'title-desc':
+        list.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'status': {
+        const order = { 'in-progress': 0, 'not-started': 1, complete: 2 };
+        list.sort((a, b) => (order[a.statusKey] ?? 9) - (order[b.statusKey] ?? 9));
+        break;
+      }
+    }
+    return list;
+  }
+
+  function renderCards() {
+    cardList.replaceChildren();
+    const filtered = getFilteredSorted();
+    if (filtered.length === 0) {
+      const emptyMsg =
+        items.length === 0
+          ? 'No patient records yet. Click "+ New Patient" to get started.'
+          : 'No patient records match your search or filter.';
+      cardList.append(el('div', { class: 'patient-cards-empty' }, emptyMsg));
+      return;
+    }
+    filtered.forEach((item) => cardList.append(buildPatientCard(item, refreshPatients)));
+  }
+
+  function refreshPatients() {
+    items = getPatientItems();
+    renderCards();
+  }
+
+  renderCards();
+  app.append(section);
+
+  return refreshPatients;
+}
+
+// ── Route handler ──
+
 route('#/student/cases', async (app) => {
   app.replaceChildren();
   try {
+    // My Patients (cards) first
+    renderMyPatientsPanel(app);
+
     let updateCases = null;
     const cases = await _listCaseSummaries({
       onRemoteUpdate: (merged) => {
         if (updateCases) {
           updateCases(merged);
         } else {
-          // Remote arrived before initial render finished — re-render fully
+          // Remote arrived before initial render finished — keep My Patients, re-render cases table
+          const patientsSection = app.querySelector('.patient-cards-section');
           app.replaceChildren();
+          if (patientsSection) app.append(patientsSection);
           const drafts = scanDrafts(storage);
-          makeCasesPanel(app, merged, drafts);
-          renderBlankNotesPanel(app);
+          updateCases = makeCasesPanel(app, merged, drafts);
         }
       },
     });
@@ -978,7 +1344,6 @@ route('#/student/cases', async (app) => {
     } else {
       updateCases = makeCasesPanel(app, cases, drafts);
     }
-    renderBlankNotesPanel(app);
   } catch (error) {
     console.error('Failed to render student cases:', error);
     appendErrorPanel(app, 'Error loading cases. Please check the console for details.');

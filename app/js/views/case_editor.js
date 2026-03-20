@@ -1,5 +1,5 @@
 // Modern Case Editor with Conservative Imports
-import { route } from '../core/index.js';
+import { route, storage } from '../core/index.js';
 import { onRouteChange } from '../core/url.js';
 import { el } from '../ui/utils.js';
 // SOAP sections now loaded dynamically for better code splitting
@@ -181,6 +181,46 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   const draftManager = initializeDraft(caseId, encounter, isFacultyMode, c, isKeyMode);
   let { draft, save: originalSave, hasUnsavedChanges } = draftManager;
 
+  // For student-created patients (blank-*), seed draft.subjective from patient meta
+  if (caseId && caseId.startsWith('blank')) {
+    try {
+      const raw = storage.getItem('patient_' + caseId);
+      if (raw) {
+        const meta = JSON.parse(raw);
+        draft.subjective = draft.subjective || {};
+        const sub = draft.subjective;
+        // Only fill fields not already set in the draft
+        if (!sub.patientName && meta.name) sub.patientName = meta.name;
+        if (!sub.patientBirthday && meta.dob) {
+          // Convert MM/DD/YYYY → YYYY-MM-DD for editor
+          const parts = meta.dob.split('/');
+          if (parts.length === 3)
+            sub.patientBirthday = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+        }
+        if (!sub.patientAge && meta.dob) {
+          const parts = meta.dob.split('/');
+          if (parts.length === 3) {
+            const d = new Date(+parts[2], +parts[0] - 1, +parts[1]);
+            const now = new Date();
+            let age = now.getFullYear() - d.getFullYear();
+            const md = now.getMonth() - d.getMonth();
+            if (md < 0 || (md === 0 && now.getDate() < d.getDate())) age--;
+            if (age >= 0 && age < 150) sub.patientAge = String(age);
+          }
+        }
+        if (!sub.patientGender && meta.sex) sub.patientGender = meta.sex;
+        if (!sub.patientGenderIdentityPronouns && meta.genderIdentityPronouns)
+          sub.patientGenderIdentityPronouns = meta.genderIdentityPronouns;
+        if (!sub.patientPreferredLanguage && meta.preferredLanguage)
+          sub.patientPreferredLanguage = meta.preferredLanguage;
+        if (!sub.patientInterpreterNeeded && meta.interpreterNeeded)
+          sub.patientInterpreterNeeded = meta.interpreterNeeded;
+      }
+    } catch (_) {
+      /* ignore parse errors */
+    }
+  }
+
   // --- Unsaved Changes Protection ---
   const onBeforeUnload = (e) => {
     if (hasUnsavedChanges && hasUnsavedChanges()) {
@@ -316,6 +356,33 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
     if (!incoming || incoming.source !== 'subjective') return;
 
     applySubjectiveProfileSyncToCase(c, draft, incoming);
+
+    // Write demographics back to patient metadata for student-created cases
+    if (caseId && caseId.startsWith('blank')) {
+      try {
+        const raw = storage.getItem('patient_' + caseId);
+        const meta = raw ? JSON.parse(raw) : { created: Date.now() };
+        const name = String(incoming.patientName ?? incoming.title ?? '').trim();
+        if (name) meta.name = name;
+        const birthday = incoming.patientBirthday ?? incoming.dob ?? '';
+        if (birthday) {
+          // Editor stores YYYY-MM-DD, patient meta stores MM/DD/YYYY
+          const parts = String(birthday).split('-');
+          meta.dob = parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : birthday;
+        }
+        const sex = String(incoming.patientGender ?? incoming.sex ?? '').toLowerCase();
+        if (sex) meta.sex = sex;
+        if (incoming.patientGenderIdentityPronouns != null)
+          meta.genderIdentityPronouns = incoming.patientGenderIdentityPronouns;
+        if (incoming.patientPreferredLanguage != null)
+          meta.preferredLanguage = incoming.patientPreferredLanguage;
+        if (incoming.patientInterpreterNeeded != null)
+          meta.interpreterNeeded = incoming.patientInterpreterNeeded;
+        storage.setItem('patient_' + caseId, JSON.stringify(meta));
+      } catch (_) {
+        /* ignore */
+      }
+    }
 
     updatePatientHeader();
     save();
@@ -472,7 +539,14 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   updatePatientHeader();
 
   // Initial nav state + optional deep link handling using modular configuration
-  const onCaseInfoUpdate = createCaseInfoUpdateHandler({ c, draft, save });
+  const onCaseInfoUpdate = createCaseInfoUpdateHandler({
+    c,
+    draft,
+    save,
+    caseId,
+    storageAdapter: storage,
+    onHeaderUpdate: updatePatientHeader,
+  });
   const onEditorSettingsChange = createEditorSettingsHandler({ draft, c, save });
 
   const renderPatientHeaderActions = createPatientHeaderActionsRenderer(

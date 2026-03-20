@@ -106,6 +106,70 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     return `${yyyy}-${mm}-${dd}`;
   };
 
+  const computeBMI = (heightCm, weightKg) => {
+    const h = parseFloat(heightCm);
+    const w = parseFloat(weightKg);
+    if (!isNaN(h) && !isNaN(w) && h > 0) {
+      const m = h / 100;
+      return (w / (m * m)).toFixed(1);
+    }
+    return '';
+  };
+
+  const cmToFtIn = (cm) => {
+    const totalInches = parseFloat(cm) / 2.54;
+    if (isNaN(totalInches) || totalInches <= 0) return { ft: '', inch: '' };
+    const ft = Math.floor(totalInches / 12);
+    const inch = Math.round(totalInches % 12);
+    return { ft: String(inch === 12 ? ft + 1 : ft), inch: String(inch === 12 ? 0 : inch) };
+  };
+
+  const ftInToCm = (ft, inch) => {
+    const f = parseFloat(ft) || 0;
+    const i = parseFloat(inch) || 0;
+    const totalInches = f * 12 + i;
+    if (totalInches <= 0) return '';
+    return (totalInches * 2.54).toFixed(1);
+  };
+
+  const kgToLbs = (kg) => {
+    const v = parseFloat(kg);
+    return isNaN(v) || v <= 0 ? '' : (v * 2.20462).toFixed(1);
+  };
+
+  const lbsToKg = (lbs) => {
+    const v = parseFloat(lbs);
+    return isNaN(v) || v <= 0 ? '' : (v / 2.20462).toFixed(1);
+  };
+
+  const parseImperialHeight = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return { ft: '', inch: '' };
+    const primeMatch = s.match(/^(\d+)\s*[''′]\s*(\d+)\s*[""″]?\s*$/);
+    if (primeMatch) return { ft: primeMatch[1], inch: primeMatch[2] };
+    const spaceMatch = s.match(/^(\d+)\s+(\d+)$/);
+    if (spaceMatch) return { ft: spaceMatch[1], inch: spaceMatch[2] };
+    const dotMatch = s.match(/^(\d+)\.(\d+)$/);
+    if (dotMatch) return { ft: dotMatch[1], inch: dotMatch[2] };
+    const num = parseFloat(s);
+    if (isNaN(num)) return { ft: '', inch: '' };
+    if (num > 8) {
+      const ft = Math.floor(num / 12);
+      const inch = Math.round(num % 12);
+      return { ft: String(ft), inch: String(inch) };
+    }
+    return { ft: String(Math.floor(num)), inch: '' };
+  };
+
+  const formatImperialHeight = (ft, inch) => {
+    const f = ft ? String(ft) : '';
+    const i = inch ? String(inch) : '';
+    if (!f && !i) return '';
+    if (f && i && i !== '0') return `${f}' ${i}"`;
+    if (f) return `${f}'`;
+    return `${i}"`;
+  };
+
   // Initialize data structure if needed
   const data = {
     patientName: '',
@@ -115,6 +179,13 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     patientGenderIdentityPronouns: '',
     patientPreferredLanguage: '',
     patientInterpreterNeeded: '',
+    patientHeightFt: '',
+    patientHeightIn: '',
+    patientHeightCm: '',
+    patientWeight: '',
+    patientWeightKg: '',
+    patientBmi: '',
+    patientMeasurementUnit: 'imperial',
     patientWorkStatusOccupation: '',
     patientLivingSituationHomeEnvironment: '',
     patientSocialSupport: '',
@@ -311,6 +382,188 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     ],
     onChange: (v) => updateField('patientInterpreterNeeded', v),
   });
+  const getBmiCategory = (bmi) => {
+    const v = parseFloat(bmi);
+    if (isNaN(v)) return null;
+    if (v < 18.5) return { label: 'Underweight', modifier: 'underweight' };
+    if (v < 25) return { label: 'Normal', modifier: 'normal' };
+    if (v < 30) return { label: 'Overweight', modifier: 'overweight' };
+    return { label: 'Obese', modifier: 'obese' };
+  };
+
+  // --- Migrate legacy data: compute cm/kg if only imperial values exist ---
+  if (data.patientHeightFt && !data.patientHeightCm) {
+    data.patientHeightCm = ftInToCm(data.patientHeightFt, data.patientHeightIn);
+  }
+  if (data.patientWeight && !data.patientWeightKg) {
+    data.patientWeightKg = lbsToKg(data.patientWeight);
+  }
+  if (!data.patientMeasurementUnit) {
+    data.patientMeasurementUnit = 'imperial';
+  }
+
+  let isMetric = data.patientMeasurementUnit === 'metric';
+
+  const currentBmi = data.patientBmi || computeBMI(data.patientHeightCm, data.patientWeightKg);
+  const bmiCategory = getBmiCategory(currentBmi);
+
+  const bmiValueEl = el('span', { class: 'body-measurements__bmi-value' }, currentBmi || '—');
+  const bmiBadgeEl = el(
+    'span',
+    {
+      class:
+        'body-measurements__bmi-badge' +
+        (bmiCategory ? ` body-measurements__bmi-badge--${bmiCategory.modifier}` : ''),
+    },
+    bmiCategory ? bmiCategory.label : '',
+  );
+
+  const updateBmiDisplay = () => {
+    const bmi = computeBMI(data.patientHeightCm, data.patientWeightKg);
+    data.patientBmi = bmi;
+    bmiValueEl.textContent = bmi || '—';
+    const cat = getBmiCategory(bmi);
+    bmiBadgeEl.textContent = cat ? cat.label : '';
+    bmiBadgeEl.className =
+      'body-measurements__bmi-badge' +
+      (cat ? ` body-measurements__bmi-badge--${cat.modifier}` : '');
+    onUpdate(data);
+  };
+
+  // Smart height input + unit toggle elements
+  const heightInput = el('input', {
+    class: 'body-measurements__input body-measurements__input--height',
+    type: isMetric ? 'number' : 'text',
+    inputmode: 'decimal',
+    placeholder: isMetric ? 'cm' : '5\' 10"',
+    value: isMetric
+      ? data.patientHeightCm || ''
+      : formatImperialHeight(data.patientHeightFt, data.patientHeightIn),
+  });
+  const heightUnitEl = el(
+    'span',
+    { class: 'body-measurements__unit' },
+    isMetric ? 'cm' : 'ft / in',
+  );
+
+  heightInput.addEventListener('blur', () => {
+    if (isMetric) {
+      const cm = parseFloat(heightInput.value);
+      data.patientHeightCm = isNaN(cm) || cm <= 0 ? '' : String(cm);
+      const imp = cmToFtIn(data.patientHeightCm);
+      data.patientHeightFt = imp.ft;
+      data.patientHeightIn = imp.inch;
+    } else {
+      const parsed = parseImperialHeight(heightInput.value);
+      data.patientHeightFt = parsed.ft;
+      data.patientHeightIn = parsed.inch;
+      heightInput.value = formatImperialHeight(parsed.ft, parsed.inch);
+      data.patientHeightCm = ftInToCm(parsed.ft, parsed.inch);
+    }
+    // Keep legacy lbs in sync via kg
+    data.patientWeight = data.patientWeightKg ? kgToLbs(data.patientWeightKg) : data.patientWeight;
+    updateBmiDisplay();
+  });
+
+  const weightInput = el('input', {
+    class: 'body-measurements__input body-measurements__input--weight',
+    type: 'number',
+    placeholder: isMetric ? 'kg' : 'lbs',
+    value: isMetric ? data.patientWeightKg || '' : data.patientWeight || '',
+    min: '0',
+  });
+  const weightUnitEl = el('span', { class: 'body-measurements__unit' }, isMetric ? 'kg' : 'lbs');
+
+  weightInput.addEventListener('blur', () => {
+    if (isMetric) {
+      data.patientWeightKg = weightInput.value;
+      data.patientWeight = kgToLbs(weightInput.value);
+    } else {
+      data.patientWeight = weightInput.value;
+      data.patientWeightKg = lbsToKg(weightInput.value);
+    }
+    updateBmiDisplay();
+  });
+
+  // Toggle pill buttons
+  const imperialBtn = el(
+    'button',
+    {
+      type: 'button',
+      class:
+        'body-measurements__toggle-btn' +
+        (isMetric ? '' : ' body-measurements__toggle-btn--active'),
+    },
+    'Imperial',
+  );
+  const metricBtn = el(
+    'button',
+    {
+      type: 'button',
+      class:
+        'body-measurements__toggle-btn' +
+        (isMetric ? ' body-measurements__toggle-btn--active' : ''),
+    },
+    'Metric',
+  );
+
+  const switchUnit = (toMetric) => {
+    if (toMetric === isMetric) return;
+    isMetric = toMetric;
+    data.patientMeasurementUnit = isMetric ? 'metric' : 'imperial';
+
+    imperialBtn.classList.toggle('body-measurements__toggle-btn--active', !isMetric);
+    metricBtn.classList.toggle('body-measurements__toggle-btn--active', isMetric);
+
+    if (isMetric) {
+      heightInput.value = data.patientHeightCm || '';
+      heightInput.placeholder = 'cm';
+      heightInput.type = 'number';
+      heightUnitEl.textContent = 'cm';
+      weightInput.value = data.patientWeightKg || '';
+      weightInput.placeholder = 'kg';
+      weightUnitEl.textContent = 'kg';
+    } else {
+      heightInput.value = formatImperialHeight(data.patientHeightFt, data.patientHeightIn);
+      heightInput.placeholder = '5\' 10"';
+      heightInput.type = 'text';
+      heightUnitEl.textContent = 'ft / in';
+      weightInput.value = data.patientWeight || '';
+      weightInput.placeholder = 'lbs';
+      weightUnitEl.textContent = 'lbs';
+    }
+    onUpdate(data);
+  };
+
+  imperialBtn.addEventListener('click', () => switchUnit(false));
+  metricBtn.addEventListener('click', () => switchUnit(true));
+
+  const bodyMeasurementsStrip = el('div', { class: 'body-measurements' }, [
+    el('div', { class: 'body-measurements__header' }, [
+      el('span', { class: 'body-measurements__label' }, 'Body Measurements'),
+      el('span', { class: 'body-measurements__toggle' }, [imperialBtn, metricBtn]),
+    ]),
+    el('div', { class: 'body-measurements__strip' }, [
+      el('div', { class: 'body-measurements__group' }, [
+        el('span', { class: 'body-measurements__group-label' }, 'Height'),
+        heightInput,
+        heightUnitEl,
+      ]),
+      el('div', { class: 'body-measurements__divider' }),
+      el('div', { class: 'body-measurements__group' }, [
+        el('span', { class: 'body-measurements__group-label' }, 'Weight'),
+        weightInput,
+        weightUnitEl,
+      ]),
+      el('div', { class: 'body-measurements__divider' }),
+      el('div', { class: 'body-measurements__bmi' }, [
+        el('span', { class: 'body-measurements__group-label' }, 'BMI'),
+        bmiValueEl,
+        bmiBadgeEl,
+      ]),
+    ]),
+  ]);
+
   const patientWorkStatusField = textAreaField({
     label: 'Work Status & Occupation',
     value: data.patientWorkStatusOccupation,
@@ -374,6 +627,7 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     el('div', { class: 'patient-profile-inline-row__cell' }, [patientLanguageField]),
     el('div', { class: 'patient-profile-inline-row__cell' }, [patientInterpreterField]),
   ]);
+
   const interviewQASection = el(
     'div',
     { id: 'interview-qa', class: 'section-anchor section-panel' },
@@ -395,9 +649,7 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
     dobAgeRow,
     sexPronounsRow,
     languageInterpreterRow,
-    patientWorkStatusField,
-    patientLivingSituationField,
-    patientSocialSupportField,
+    bodyMeasurementsStrip,
   ]);
   const hpiSection = el('div', { id: 'hpi', class: 'section-anchor section-panel' }, [
     hpiHeader,
@@ -429,6 +681,9 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
         onChange: (v) => updateField('additionalHistory', v),
         hint: 'Prior surgeries, imaging results, previous PT episodes and response, relevant co-morbidities, family history',
       }),
+      patientWorkStatusField,
+      patientLivingSituationField,
+      patientSocialSupportField,
       textAreaField({
         label: 'Current Functional Limitations',
         value: data.functionalLimitations,

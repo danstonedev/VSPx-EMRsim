@@ -168,7 +168,7 @@ export function createInitialChartNavConfig(options) {
  * @returns {Function} Case info update handler
  */
 export function createCaseInfoUpdateHandler(options) {
-  const { c, draft, save } = options;
+  const { c, draft, save, caseId, storageAdapter, onHeaderUpdate } = options;
 
   return function handleCaseInfoUpdate(updatedInfo) {
     const normalizedTitle = String(updatedInfo.title || '').trim();
@@ -190,6 +190,27 @@ export function createCaseInfoUpdateHandler(options) {
     syncDraftProfile(draft, normalizedTitle, updatedInfo, normalizedSex);
 
     emitProfileSyncFromHeader(normalizedTitle, updatedInfo, normalizedSex);
+
+    // Write demographics back to patient card metadata for blank-* cases
+    if (caseId && typeof caseId === 'string' && caseId.startsWith('blank') && storageAdapter) {
+      try {
+        const raw = storageAdapter.getItem('patient_' + caseId);
+        const meta = raw ? JSON.parse(raw) : { created: Date.now() };
+        if (normalizedTitle) meta.name = normalizedTitle;
+        if (updatedInfo.dob) {
+          // Editor stores YYYY-MM-DD, patient meta stores MM/DD/YYYY
+          const parts = String(updatedInfo.dob).split('-');
+          meta.dob = parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : updatedInfo.dob;
+        }
+        if (normalizedSex) meta.sex = normalizedSex;
+        storageAdapter.setItem('patient_' + caseId, JSON.stringify(meta));
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    // Update patient banner immediately
+    if (typeof onHeaderUpdate === 'function') onHeaderUpdate();
 
     // Save changes and refresh progress
     save();

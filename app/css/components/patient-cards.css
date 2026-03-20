@@ -1,0 +1,436 @@
+/* ========================================
+   Patient Cards — "My Patients" section
+   Collapsible cards for student blank notes
+   ======================================== */
+
+/* --- Container & toolbar --- */
+.patient-cards-section {
+  margin-bottom: var(--space-4);
+}
+
+.patient-cards-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.patient-cards-toolbar .patient-search {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.patient-cards-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.patient-cards-sort select {
+  font-size: var(--font-xs, 0.75rem);
+  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* --- Filter tabs (pill style) --- */
+.patient-filter-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+}
+
+.patient-filter-tab {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-xs, 0.75rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.patient-filter-tab:hover {
+  background: var(--surface-alt-hover, var(--neutral-200));
+  color: var(--text);
+}
+
+.patient-filter-tab.active {
+  background: var(--und-green);
+  color: var(--white);
+  border-color: var(--und-green);
+}
+
+html[data-theme='dark'] .patient-filter-tab:hover {
+  background: var(--neutral-750);
+}
+
+html[data-theme='dark'] .patient-filter-tab.active {
+  background: var(--und-green);
+  border-color: var(--und-green);
+}
+
+/* --- Card grid --- */
+.patient-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --- Individual card --- */
+.patient-card {
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.patient-card:hover {
+  box-shadow: var(--elev-2);
+}
+
+/* Collapsed header (always visible) */
+.patient-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+}
+
+.patient-card-header:focus-visible {
+  outline: 2px solid var(--und-green);
+  outline-offset: -2px;
+}
+
+.patient-card-chevron {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+
+.patient-card.is-open .patient-card-chevron {
+  transform: rotate(90deg);
+}
+
+.patient-card-title {
+  font-weight: 600;
+  font-size: 0.925rem;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.patient-card-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.patient-card-badge--soap {
+  color: var(--und-green);
+  background: var(--und-green-light);
+  border-color: rgba(0, 154, 68, 0.25);
+}
+
+.patient-card-badge--simple {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.patient-card-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.patient-card-status--not-started {
+  color: var(--text-muted);
+  border-color: var(--color-border);
+}
+
+.patient-card-status--in-progress {
+  color: var(--und-orange);
+  background: var(--und-orange-light);
+  border-color: rgba(255, 103, 31, 0.35);
+}
+
+.patient-card-status--complete {
+  color: var(--und-green);
+  background: var(--und-green-light);
+  border-color: rgba(0, 154, 68, 0.35);
+}
+
+.patient-card-timestamp {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.patient-card-progress {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* --- Expanded body --- */
+.patient-card-body {
+  display: none;
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--panel);
+}
+
+.patient-card.is-open .patient-card-body {
+  display: block;
+}
+
+/* Note row inside expanded card */
+.patient-card-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.patient-card-note-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--und-green);
+}
+
+.patient-card-note-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.patient-card-note-title {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.patient-card-note-subtitle {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-muted);
+}
+
+.patient-card-note-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* Future note type buttons (disabled) */
+.patient-card-future-btn {
+  padding: 4px 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-xs, 0.75rem);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.patient-card-future-btn:hover {
+  opacity: 0.8;
+}
+
+/* Card footer — danger zone */
+.patient-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.patient-card-danger-zone {
+  justify-content: flex-start;
+  opacity: 0.65;
+  transition: opacity 0.15s;
+}
+
+.patient-card-danger-zone:hover {
+  opacity: 1;
+}
+
+/* Text-only danger button */
+.btn-text-danger {
+  background: none;
+  border: none;
+  color: var(--danger, #dc2626);
+  font-size: var(--font-xs, 0.75rem);
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-text-danger:hover {
+  color: var(--danger-hover, #b91c1c);
+}
+
+/* --- Inline edit fields (Name, Age, Sex) --- */
+.patient-edit-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.patient-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.patient-edit-field--short {
+  flex: 0 0 80px;
+  min-width: 60px;
+}
+
+.patient-edit-field--dob {
+  flex: 0 0 175px;
+  min-width: 150px;
+}
+
+.patient-edit-input--dob {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Make the native calendar icon visible */
+.patient-edit-input--dob::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  filter: none;
+  color: var(--text-secondary);
+}
+
+html[data-theme='dark'] .patient-edit-input--dob::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+
+.patient-edit-input {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+
+.patient-edit-input:focus {
+  outline: none;
+  border-color: var(--und-green);
+  box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.15);
+}
+
+.patient-edit-input--short {
+  width: 100%;
+}
+
+/* --- Note type buttons row --- */
+.patient-card-note-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--color-border);
+}
+
+/* Empty state */
+.patient-cards-empty {
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.patient-cards-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-2);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* (dropdown styles removed — no longer used) */
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .patient-card-header {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .patient-card-meta {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .patient-cards-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .patient-edit-fields {
+    flex-direction: column;
+  }
+
+  .patient-edit-field--short {
+    flex: 1 1 auto;
+  }
+}

@@ -804,15 +804,58 @@ function handleBlankCaseRequest(caseId, isFacultyMode) {
       message: 'Blank SOAP notes are only available in student mode.',
     };
   }
+  // Merge patient metadata from card storage so banner, modal, etc. show real data
+  let patientName = 'Blank SOAP Note';
+  let patientDob = '';
+  let patientAge = '';
+  let patientSex = 'unspecified';
+  try {
+    const raw = storage.getItem('patient_' + caseId);
+    if (raw) {
+      const meta = JSON.parse(raw);
+      if (meta.name) patientName = meta.name;
+      if (meta.dob) {
+        // Card stores MM/DD/YYYY → convert to YYYY-MM-DD for editor
+        const parts = meta.dob.split('/');
+        if (parts.length === 3)
+          patientDob = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      }
+      if (meta.dob) {
+        const parts = meta.dob.split('/');
+        if (parts.length === 3) {
+          const d = new Date(+parts[2], +parts[0] - 1, +parts[1]);
+          const now = new Date();
+          let age = now.getFullYear() - d.getFullYear();
+          const md = now.getMonth() - d.getMonth();
+          if (md < 0 || (md === 0 && now.getDate() < d.getDate())) age--;
+          if (age >= 0 && age < 150) patientAge = String(age);
+        }
+      }
+      if (meta.sex) patientSex = meta.sex;
+    }
+  } catch (_) {
+    /* ignore parse errors */
+  }
   const placeholder = {
-    title: 'Blank SOAP Note',
+    title: patientName,
+    caseTitle: patientName,
+    patientName: patientName,
+    patientDOB: patientDob,
+    patientAge: patientAge,
+    patientGender: patientSex,
     meta: {
-      title: 'Blank SOAP Note',
+      title: patientName,
+      patientName: patientName,
       setting: 'Outpatient',
       diagnosis: 'N/A',
       acuity: 'unspecified',
     },
-    snapshot: { age: '', sex: 'unspecified' },
+    snapshot: {
+      name: patientName,
+      age: patientAge,
+      sex: patientSex,
+      dob: patientDob,
+    },
     editorSettings: undefined,
   };
   return { id: caseId, caseObj: placeholder, latestVersion: 0 };
