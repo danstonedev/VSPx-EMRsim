@@ -27,6 +27,74 @@ import {
 } from './GatedPanels.js';
 // CPT widget is intentionally only rendered in BillingSection to avoid duplication
 
+const VITAL_FIELDS = [
+  'bpSystolic',
+  'bpDiastolic',
+  'hr',
+  'rr',
+  'spo2',
+  'temperature',
+  'heightFt',
+  'heightIn',
+  'weight',
+  'bmi',
+];
+
+function createEmptyVitals() {
+  return {
+    bpSystolic: '',
+    bpDiastolic: '',
+    hr: '',
+    rr: '',
+    spo2: '',
+    temperature: '',
+    heightFt: '',
+    heightIn: '',
+    weight: '',
+    bmi: '',
+  };
+}
+
+function normalizeVitalsRecord(vitals = {}) {
+  const next = createEmptyVitals();
+  for (const field of VITAL_FIELDS) {
+    const raw = vitals[field];
+    next[field] = raw === undefined || raw === null ? '' : String(raw);
+  }
+  return next;
+}
+
+function generateVitalsEntryId() {
+  return `vs-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function normalizeVitalsSeries(vitals, series) {
+  const normalized = Array.isArray(series)
+    ? series
+        .map((entry, index) => {
+          if (!entry || typeof entry !== 'object') return null;
+          return {
+            id: entry.id || generateVitalsEntryId(),
+            label: (entry.label || '').trim() || `Measurement ${index + 1}`,
+            time: entry.time || '',
+            vitals: normalizeVitalsRecord(entry.vitals || {}),
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  if (normalized.length > 0) return normalized;
+
+  return [
+    {
+      id: generateVitalsEntryId(),
+      label: 'Measurement 1',
+      time: '',
+      vitals: normalizeVitalsRecord(vitals || {}),
+    },
+  ];
+}
+
 /**
  * Creates the complete objective assessment section with systematic examination approach
  * @param {Object} objectiveData - Current objective assessment data
@@ -60,7 +128,12 @@ export function createObjectiveSection(objectiveData, onUpdate) {
 
   // ── Always-visible panels ───────────────────────────────
   section.append(
-    buildVitalsSection(data.vitals, (field, value) => updateField(`vitals.${field}`, value)),
+    buildVitalsSection(data, (selectedVitals, vitalsSeries, activeId) => {
+      data.vitals = normalizeVitalsRecord(selectedVitals);
+      data.vitalsSeries = normalizeVitalsSeries(data.vitals, vitalsSeries);
+      data.vitalsActiveId = activeId;
+      onUpdate(data);
+    }),
   );
 
   // ── Systems Review (gateway triage) ─────────────────────
@@ -380,18 +453,9 @@ export function createObjectiveSection(objectiveData, onUpdate) {
 function normalizeObjectiveData(obj = {}) {
   const base = {
     text: '',
-    vitals: {
-      bpSystolic: '',
-      bpDiastolic: '',
-      hr: '',
-      rr: '',
-      spo2: '',
-      temperature: '',
-      heightFt: '',
-      heightIn: '',
-      weight: '',
-      bmi: '',
-    },
+    vitals: createEmptyVitals(),
+    vitalsSeries: [],
+    vitalsActiveId: '',
     observations: {
       generalAppearance: '',
       posture: '',
@@ -435,18 +499,18 @@ function normalizeObjectiveData(obj = {}) {
     visionPerception: { notes: '' },
   };
   const data = { ...base, ...obj };
-  data.vitals = data.vitals || {
-    bpSystolic: '',
-    bpDiastolic: '',
-    hr: '',
-    rr: '',
-    spo2: '',
-    temperature: '',
-    heightFt: '',
-    heightIn: '',
-    weight: '',
-    bmi: '',
-  };
+  data.vitals = normalizeVitalsRecord(data.vitals || {});
+  data.vitalsSeries = normalizeVitalsSeries(data.vitals, data.vitalsSeries);
+  if (
+    !data.vitalsActiveId ||
+    !data.vitalsSeries.some((entry) => entry.id === data.vitalsActiveId)
+  ) {
+    data.vitalsActiveId = data.vitalsSeries[0].id;
+  }
+  const activeVitals =
+    data.vitalsSeries.find((entry) => entry.id === data.vitalsActiveId)?.vitals ||
+    data.vitalsSeries[0].vitals;
+  data.vitals = normalizeVitalsRecord(activeVitals);
   data.observations = data.observations || {
     generalAppearance: '',
     posture: '',
@@ -560,7 +624,101 @@ function buildRegionalSection(
   return regionalSection;
 }
 
-function buildVitalsSection(vitals, onChange) {
+function buildVitalsSection(objectiveData, onChange) {
+  let vitalsSeries = normalizeVitalsSeries(objectiveData.vitals, objectiveData.vitalsSeries);
+  let activeEntryId =
+    objectiveData.vitalsActiveId &&
+    vitalsSeries.some((entry) => entry.id === objectiveData.vitalsActiveId)
+      ? objectiveData.vitalsActiveId
+      : vitalsSeries[0].id;
+  let pendingHeaderAction = null;
+
+  const getActiveEntry = () =>
+    vitalsSeries.find((entry) => entry.id === activeEntryId) || vitalsSeries[0];
+
+  const createNewMeasurement = (index, preferredLabel = null) => ({
+    id: generateVitalsEntryId(),
+    label:
+      preferredLabel === null
+        ? index === 1
+          ? 'Measurement 1'
+          : index === 2
+            ? 'Measurement 2'
+            : `Measurement ${index}`
+        : preferredLabel,
+    time: '',
+    vitals: createEmptyVitals(),
+  });
+
+  const commitVitals = () => {
+    const activeEntry = getActiveEntry();
+    onChange(activeEntry.vitals, vitalsSeries, activeEntry.id);
+  };
+
+  const addMeasurement = (preferredLabel = '') => {
+    const entry = createNewMeasurement(vitalsSeries.length + 1, preferredLabel);
+    vitalsSeries = [...vitalsSeries, entry];
+    activeEntryId = entry.id;
+    renderVitalsTable();
+    commitVitals();
+  };
+
+  const removeMeasurement = (entryId) => {
+    if (vitalsSeries.length <= 1) return;
+    vitalsSeries = vitalsSeries.filter((entry) => entry.id !== entryId);
+    if (!vitalsSeries.some((entry) => entry.id === activeEntryId)) {
+      activeEntryId = vitalsSeries[0].id;
+    }
+    renderVitalsTable();
+    commitVitals();
+  };
+
+  const updateMeasurementMeta = (entryId, key, value) => {
+    const entry = vitalsSeries.find((item) => item.id === entryId);
+    if (!entry) return;
+    entry[key] = (value || '').trim();
+    activeEntryId = entryId;
+    commitVitals();
+  };
+
+  const consumePendingHeaderAction = (entryId) => {
+    if (pendingHeaderAction === entryId) {
+      pendingHeaderAction = null;
+      return true;
+    }
+    return false;
+  };
+
+  const computeBMI = (ft, inch, lbs) => {
+    const f = parseFloat(ft);
+    const i = parseFloat(inch);
+    const w = parseFloat(lbs);
+    if (!isNaN(f) && !isNaN(w)) {
+      const totalInches = f * 12 + (isNaN(i) ? 0 : i);
+      if (totalInches > 0) {
+        return ((703 * w) / (totalInches * totalInches)).toFixed(1);
+      }
+    }
+    return '';
+  };
+
+  const updateVitalField = (entryId, field, value, recalcBmi = false) => {
+    const entry = vitalsSeries.find((item) => item.id === entryId);
+    if (!entry) return;
+    entry.vitals[field] = value || '';
+    if (recalcBmi) {
+      entry.vitals.bmi = computeBMI(
+        entry.vitals.heightFt,
+        entry.vitals.heightIn,
+        entry.vitals.weight,
+      );
+      const bmiInput = table.querySelector(`input[data-bmi-for="${entryId}"]`);
+      if (bmiInput) bmiInput.value = entry.vitals.bmi || '';
+    }
+    activeEntryId = entryId;
+    commitVitals();
+  };
+
   const header = el('div', { class: 'section-panel__header' }, [
     el('span', { class: 'section-panel__title' }, 'Vital Signs'),
   ]);
@@ -570,187 +728,259 @@ function buildVitalsSection(vitals, onChange) {
     body,
   ]);
 
+  const tableWrap = el('div', { class: 'vitals-table-scroll' });
   const table = el('table', {
-    class: 'table combined-neuroscreen-table combined-neuroscreen-table--compact',
+    class: 'table combined-neuroscreen-table combined-neuroscreen-table--compact vitals-flowsheet',
   });
 
-  // Header
-  const thead = el('thead', { class: 'combined-neuroscreen-thead' });
-  const headerRow = el('tr', {}, [
-    el(
-      'th',
-      {
-        class: 'combined-neuroscreen-th level-col',
-      },
-      'Parameter',
-    ),
-    el('th', { class: 'combined-neuroscreen-th' }, 'Measurement'),
-  ]);
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
+  const rows = [
+    {
+      label: 'Blood Pressure',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            placeholder: 'Sys',
+            value: entry.vitals.bpSystolic || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'bpSystolic', e.target.value),
+          }),
+          el('span', { class: 'text-muted fw-bold' }, '/'),
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            placeholder: 'Dia',
+            value: entry.vitals.bpDiastolic || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'bpDiastolic', e.target.value),
+          }),
+          el('span', { class: 'text-muted' }, 'mmHg'),
+        ]),
+    },
+    {
+      label: 'Heart Rate',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            value: entry.vitals.hr || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'hr', e.target.value),
+          }),
+          el('span', { class: 'text-muted' }, 'bpm'),
+        ]),
+    },
+    {
+      label: 'Respiratory Rate',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            value: entry.vitals.rr || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'rr', e.target.value),
+          }),
+          el('span', { class: 'text-muted' }, 'breaths/min'),
+        ]),
+    },
+    {
+      label: 'SpO2',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            value: entry.vitals.spo2 || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'spo2', e.target.value),
+          }),
+          el('span', { class: 'text-muted' }, '%'),
+        ]),
+    },
+    {
+      label: 'Temperature',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            value: entry.vitals.temperature || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'temperature', e.target.value),
+          }),
+          el('span', { class: 'text-muted' }, '°F'),
+        ]),
+    },
+    {
+      label: 'Height',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            placeholder: 'ft',
+            value: entry.vitals.heightFt || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'heightFt', e.target.value, true),
+          }),
+          el('span', { class: 'text-muted' }, 'ft'),
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            placeholder: 'in',
+            value: entry.vitals.heightIn || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'heightIn', e.target.value, true),
+          }),
+          el('span', { class: 'text-muted' }, 'in'),
+        ]),
+    },
+    {
+      label: 'Weight',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+            value: entry.vitals.weight || '',
+            onfocus: () => {
+              activeEntryId = entry.id;
+            },
+            onblur: (e) => updateVitalField(entry.id, 'weight', e.target.value, true),
+          }),
+          el('span', { class: 'text-muted' }, 'lbs'),
+        ]),
+    },
+    {
+      label: 'BMI',
+      render: (entry) =>
+        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
+          el('input', {
+            class:
+              'combined-neuroscreen__input combined-neuroscreen__input--sm combined-neuroscreen__input--readonly',
+            'data-bmi-for': entry.id,
+            value: entry.vitals.bmi || '',
+            readonly: true,
+            disabled: true,
+          }),
+          el('span', { class: 'text-muted' }, 'kg/m²'),
+        ]),
+    },
+  ];
 
-  // Body
-  const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
+  const renderVitalsTable = () => {
+    table.replaceChildren();
 
-  // Helper for rows
-  const createRow = (label, content) => {
-    const row = el('tr', { class: 'combined-neuroscreen-row' });
-    row.appendChild(
-      el(
-        'td',
-        {
-          class: 'combined-neuroscreen-td level-col',
-        },
-        label,
-      ),
+    const thead = el('thead', { class: 'combined-neuroscreen-thead' });
+    const headerRow = el('tr', { class: 'combined-neuroscreen-row vitals-header-row' });
+    headerRow.appendChild(
+      el('th', { class: 'combined-neuroscreen-th level-col vitals-param-col' }, 'Parameter'),
     );
-    const contentCell = el('td', { class: 'combined-neuroscreen-td' }, content);
-    row.appendChild(contentCell);
-    return row;
+
+    vitalsSeries.forEach((entry) => {
+      const measurementHeader = el(
+        'th',
+        { class: 'combined-neuroscreen-th vitals-measurement-col' },
+        [
+          el(
+            'div',
+            {
+              class: 'vitals-col-header-bar' + (vitalsSeries.length > 1 ? ' has-delete' : ''),
+            },
+            [
+              el('input', {
+                class: 'combined-neuroscreen__input vitals-col-name',
+                placeholder: 'Checkpoint name',
+                value: entry.label || '',
+                onfocus: () => {
+                  activeEntryId = entry.id;
+                },
+                onblur: (e) => {
+                  if (consumePendingHeaderAction(entry.id)) return;
+                  updateMeasurementMeta(entry.id, 'label', e.target.value);
+                },
+              }),
+              ...(vitalsSeries.length > 1
+                ? [
+                    el(
+                      'button',
+                      {
+                        type: 'button',
+                        class: 'remove-btn vitals-delete-inline-btn',
+                        'aria-label': 'Delete checkpoint column',
+                        title: 'Delete this checkpoint column',
+                        onpointerdown: (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          pendingHeaderAction = entry.id;
+                          removeMeasurement(entry.id);
+                        },
+                        onclick: (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (consumePendingHeaderAction(entry.id)) return;
+                          removeMeasurement(entry.id);
+                        },
+                      },
+                      '×',
+                    ),
+                  ]
+                : []),
+            ],
+          ),
+        ],
+      );
+      headerRow.appendChild(measurementHeader);
+    });
+
+    headerRow.appendChild(
+      el('th', { class: 'combined-neuroscreen-th vitals-add-col' }, [
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'compact-add-btn vitals-add-inline-btn',
+            'aria-label': 'Add checkpoint column',
+            title: 'Add blank checkpoint column',
+            onclick: () => addMeasurement(''),
+          },
+          '+',
+        ),
+      ]),
+    );
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = el('tbody', { class: 'combined-neuroscreen-tbody' });
+    rows.forEach((rowDef) => {
+      const row = el('tr', { class: 'combined-neuroscreen-row' });
+      row.appendChild(
+        el('td', { class: 'combined-neuroscreen-td level-col vitals-param-col' }, rowDef.label),
+      );
+      vitalsSeries.forEach((entry) => {
+        row.appendChild(
+          el('td', { class: 'combined-neuroscreen-td vitals-value-col' }, rowDef.render(entry)),
+        );
+      });
+      row.appendChild(el('td', { class: 'combined-neuroscreen-td vitals-add-col-spacer' }, ''));
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
   };
 
-  // BP Row
-  const bpContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      placeholder: 'Sys',
-      value: vitals.bpSystolic || '',
-      onblur: (e) => onChange('bpSystolic', e.target.value),
-    }),
-    el('span', { class: 'text-muted fw-bold' }, '/'),
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      placeholder: 'Dia',
-      value: vitals.bpDiastolic || '',
-      onblur: (e) => onChange('bpDiastolic', e.target.value),
-    }),
-    el('span', { class: 'text-muted' }, 'mmHg'),
-  ]);
-  tbody.appendChild(createRow('Blood Pressure', bpContent));
-
-  // HR Row
-  const hrContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      value: vitals.hr || '',
-      onblur: (e) => onChange('hr', e.target.value),
-    }),
-    el('span', { class: 'text-muted' }, 'bpm'),
-  ]);
-  tbody.appendChild(createRow('Heart Rate', hrContent));
-
-  // RR Row
-  const rrContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      value: vitals.rr || '',
-      onblur: (e) => onChange('rr', e.target.value),
-    }),
-    el('span', { class: 'text-muted' }, 'breaths/min'),
-  ]);
-  tbody.appendChild(createRow('Respiratory Rate', rrContent));
-
-  // SpO2 Row
-  const spo2Content = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      value: vitals.spo2 || '',
-      onblur: (e) => onChange('spo2', e.target.value),
-    }),
-    el('span', { class: 'text-muted' }, '%'),
-  ]);
-  tbody.appendChild(createRow('SpO2', spo2Content));
-
-  // Temperature Row
-  const tempContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      value: vitals.temperature || '',
-      onblur: (e) => onChange('temperature', e.target.value),
-    }),
-    el('span', { class: 'text-muted' }, '°F'),
-  ]);
-  tbody.appendChild(createRow('Temperature', tempContent));
-
-  // Height Row
-  const heightContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-      placeholder: 'ft',
-      value: vitals.heightFt || '',
-      onblur: (e) => {
-        onChange('heightFt', e.target.value);
-        updateBMI(e.target.value, vitals.heightIn, vitals.weight);
-      },
-    }),
-    el('span', { class: 'text-muted' }, 'ft'),
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-      placeholder: 'in',
-      value: vitals.heightIn || '',
-      onblur: (e) => {
-        onChange('heightIn', e.target.value);
-        updateBMI(vitals.heightFt, e.target.value, vitals.weight);
-      },
-    }),
-    el('span', { class: 'text-muted' }, 'in'),
-  ]);
-  tbody.appendChild(createRow('Height', heightContent));
-
-  // Weight Row
-  const weightContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    el('input', {
-      class: 'combined-neuroscreen__input combined-neuroscreen__input--md',
-      value: vitals.weight || '',
-      onblur: (e) => {
-        onChange('weight', e.target.value);
-        updateBMI(vitals.heightFt, vitals.heightIn, e.target.value);
-      },
-    }),
-    el('span', { class: 'text-muted' }, 'lbs'),
-  ]);
-  tbody.appendChild(createRow('Weight', weightContent));
-
-  // BMI Row (Read-only)
-  const bmiInput = el('input', {
-    class:
-      'combined-neuroscreen__input combined-neuroscreen__input--md combined-neuroscreen__input--readonly',
-    value: vitals.bmi || '',
-    readonly: true,
-    disabled: true,
-  });
-  const bmiContent = el('div', { class: 'combined-neuroscreen-input-group' }, [
-    bmiInput,
-    el('span', { class: 'text-muted' }, 'kg/m²'),
-  ]);
-  tbody.appendChild(createRow('BMI', bmiContent));
-
-  // Helper to calculate and update BMI
-  const updateBMI = (ft, inch, lbs) => {
-    const f = parseFloat(ft);
-    const i = parseFloat(inch);
-    const w = parseFloat(lbs);
-
-    if (!isNaN(f) && !isNaN(w)) {
-      // Convert height to inches
-      const totalInches = f * 12 + (isNaN(i) ? 0 : i);
-      if (totalInches > 0) {
-        // BMI Formula: 703 * weight (lbs) / [height (in)]^2
-        const bmiVal = (703 * w) / (totalInches * totalInches);
-        const bmiFixed = bmiVal.toFixed(1);
-        bmiInput.value = bmiFixed;
-        onChange('bmi', bmiFixed);
-        return;
-      }
-    }
-    // Clear if invalid
-    if (bmiInput.value !== '') {
-      bmiInput.value = '';
-      onChange('bmi', '');
-    }
-  };
-
-  table.appendChild(tbody);
-  body.appendChild(table);
+  tableWrap.appendChild(table);
+  body.append(tableWrap);
+  renderVitalsTable();
   return container;
 }

@@ -852,6 +852,282 @@ html:not([data-theme='dark']) .billing-row-add-btn:hover {
   border-right-width: 2px;
 }
 
+.vitals-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.vitals-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.vitals-action-btn {
+  border: 1px solid var(--color-border, #d0d5dd);
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vitals-action-btn:hover {
+  border-color: var(--color-primary, #009a44);
+  color: var(--color-primary-700, #05603a);
+}
+
+.vitals-toolbar__copy {
+  min-width: 0;
+}
+
+.vitals-toolbar__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+}
+
+.vitals-toolbar__hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.vitals-add-btn {
+  border: 1px solid var(--color-primary, #009a44);
+  background: var(--color-primary, #009a44);
+  color: #fff;
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vitals-add-btn:hover {
+  filter: brightness(1.05);
+}
+
+.vitals-measurement-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.vitals-selection-hint {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.vitals-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* ── Vitals flowsheet overrides ─────────────────────────────────
+   Scoped under .vitals-flowsheet for specificity so these beat
+   base .combined-neuroscreen__input rules AND buttons.css classes
+   (buttons.css loads after this file in the cascade).
+   ────────────────────────────────────────────────────────────── */
+
+.vitals-flowsheet {
+  min-width: 52rem;
+}
+
+.vitals-flowsheet .vitals-param-col {
+  width: 8.5rem;
+  min-width: 8.5rem;
+  max-width: 8.5rem;
+}
+
+.vitals-flowsheet .vitals-measurement-col,
+.vitals-flowsheet .vitals-value-col {
+  min-width: 15.5rem;
+}
+
+/* Force all header th cells to vertically center their content */
+.vitals-flowsheet .vitals-header-row > th {
+  vertical-align: middle;
+}
+
+/* Bar containing input + delete button */
+.vitals-flowsheet .vitals-col-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+}
+
+/* Header input — sized to leave room for delete button when present.
+   Explicit color + background so it's readable against the dark <th>. */
+.vitals-flowsheet .vitals-col-name,
+.vitals-flowsheet .vitals-col-time {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  color: #111827;
+  background: #fff;
+}
+
+.vitals-flowsheet .vitals-col-header-bar.has-delete .vitals-col-name,
+.vitals-flowsheet .vitals-col-header-bar.has-delete .vitals-col-time {
+  width: calc(100% - 2rem);
+}
+
+/* Dark theme: keep input light for contrast against dark header */
+:root[data-theme='dark'] .vitals-flowsheet .vitals-col-name,
+:root[data-theme='dark'] .vitals-flowsheet .vitals-col-time {
+  color: #111827;
+  background: #fff;
+}
+
+.vitals-flowsheet .vitals-col-name::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+/* Add-column cell — fixed width, centered content */
+.vitals-flowsheet .vitals-add-col,
+.vitals-flowsheet .vitals-add-col-spacer {
+  width: 3rem;
+  min-width: 3rem;
+  max-width: 3rem;
+}
+
+/* Add button — override buttons.css margin (margin: 8px auto var(--space-4))
+   which pushes the button down. Two-class selector wins over single-class. */
+.vitals-flowsheet .vitals-add-inline-btn {
+  margin: 0;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.vitals-flowsheet .vitals-add-inline-btn:hover {
+  filter: none;
+}
+
+/* Delete button — fixed size, no shrink */
+.vitals-flowsheet .vitals-delete-inline-btn {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.vitals-cell-group {
+  min-height: 2rem;
+}
+
+.vitals-measurement-chip {
+  border: 1px solid var(--color-border, #d0d5dd);
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  -webkit-user-select: none;
+}
+
+.vitals-measurement-chip.is-active {
+  border-color: var(--color-primary, #009a44);
+  background: color-mix(in srgb, var(--color-primary, #009a44) 14%, white);
+  color: var(--color-primary-700, #05603a);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #009a44) 20%, transparent);
+}
+
+.vitals-measurement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--color-border-soft, #dbe2ea);
+  border-radius: 0.45rem;
+  background: var(--surface-subtle, #f8fafc);
+}
+
+.vitals-measurement-meta .combined-neuroscreen__input {
+  width: min(13rem, 100%);
+}
+
+.vitals-field-label {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vitals-editing-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border-soft, #dbe2ea);
+  background: #fff;
+  color: var(--text-primary, #111827);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.vitals-meta-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.vitals-remove-btn {
+  border: 1px solid var(--color-border, #d0d5dd);
+  background: transparent;
+  color: var(--text-muted, #6b7280);
+  border-radius: 0.45rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vitals-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .vitals-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vitals-actions {
+    justify-content: flex-start;
+  }
+
+  .vitals-add-btn,
+  .vitals-action-btn {
+    align-self: flex-start;
+  }
+
+  .vitals-flowsheet {
+    min-width: 44rem;
+  }
+
+  .vitals-flowsheet .vitals-param-col {
+    width: 7.5rem;
+    min-width: 7.5rem;
+    max-width: 7.5rem;
+  }
+}
+
 /* ========================================
    Combined ROM Table - align to Vitals compact feel
    ======================================== */
@@ -990,6 +1266,7 @@ select.combined-neuroscreen__input {
   color: var(--text-muted, #9ca3af);
   font-size: 1.1rem;
   cursor: grab;
+  -webkit-user-select: none;
   user-select: none;
   line-height: 1;
   vertical-align: middle;

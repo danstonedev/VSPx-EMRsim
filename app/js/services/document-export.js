@@ -1240,28 +1240,59 @@ export function exportToWord(caseData, draft) {
       const obj = (draft && draft.objective) || {};
 
       const vitals = obj.vitals || {};
+      const vitalsSeries = Array.isArray(obj.vitalsSeries) ? obj.vitalsSeries : [];
 
-      // Vital Signs
+      // Vital Signs — export as flowsheet table
       elements.push(createSectionHeader('Vital Signs', 2));
-      const vitalsParts = [
-        vitals.bpSystolic || vitals.bpDiastolic
-          ? `BP: ${vitals.bpSystolic || '?'}/${vitals.bpDiastolic || '?'} mmHg`
-          : null,
-        vitals.hr ? `HR: ${vitals.hr} bpm` : null,
-        vitals.rr ? `RR: ${vitals.rr} breaths/min` : null,
-        vitals.spo2 ? `SpO2: ${vitals.spo2}%` : null,
-        vitals.temperature ? `Temp: ${vitals.temperature}°F` : null,
-        vitals.heightFt || vitals.heightIn
-          ? `Height: ${vitals.heightFt || 0}'${vitals.heightIn || 0}"`
-          : null,
-        vitals.weight ? `Weight: ${vitals.weight} lbs` : null,
-        vitals.bmi ? `BMI: ${vitals.bmi}` : null,
-      ].filter(Boolean);
 
-      if (vitalsParts.length > 0) {
-        elements.push(
-          createBodyParagraph(vitalsParts.join(' | '), { indentLeft: FORMAT.indent.level1 }),
-        );
+      // Build the series to render (prefer vitalsSeries, fall back to single vitals object)
+      const vitalsEntries =
+        vitalsSeries.length > 0
+          ? vitalsSeries
+          : [{ label: 'Measurement 1', time: '', vitals: vitals }];
+
+      // Column headers: "Parameter" + one per measurement entry
+      const vitalsHeaders = [
+        'Parameter',
+        ...vitalsEntries.map((entry, idx) => {
+          const label = (entry?.label || '').trim() || `Measurement ${idx + 1}`;
+          const time = (entry?.time || '').trim();
+          return time ? `${label} (${time})` : label;
+        }),
+      ];
+
+      // Row definitions matching the on-screen flowsheet
+      const vitalsRowDefs = [
+        {
+          label: 'Blood Pressure',
+          fmt: (v) =>
+            v.bpSystolic || v.bpDiastolic
+              ? `${v.bpSystolic || '?'}/${v.bpDiastolic || '?'} mmHg`
+              : '',
+        },
+        { label: 'Heart Rate', fmt: (v) => (v.hr ? `${v.hr} bpm` : '') },
+        { label: 'Respiratory Rate', fmt: (v) => (v.rr ? `${v.rr} breaths/min` : '') },
+        { label: 'SpO2', fmt: (v) => (v.spo2 ? `${v.spo2}%` : '') },
+        { label: 'Temperature', fmt: (v) => (v.temperature ? `${v.temperature}°F` : '') },
+        {
+          label: 'Height',
+          fmt: (v) => (v.heightFt || v.heightIn ? `${v.heightFt || 0}'${v.heightIn || 0}"` : ''),
+        },
+        { label: 'Weight', fmt: (v) => (v.weight ? `${v.weight} lbs` : '') },
+        { label: 'BMI', fmt: (v) => (v.bmi ? `${v.bmi} kg/m²` : '') },
+      ];
+
+      // Build table data rows (only include rows that have at least one value)
+      const vitalsTableData = vitalsRowDefs
+        .map((rowDef) => {
+          const cells = vitalsEntries.map((entry) => rowDef.fmt(entry?.vitals || {}));
+          if (cells.every((c) => !c)) return null;
+          return [rowDef.label, ...cells];
+        })
+        .filter(Boolean);
+
+      if (vitalsTableData.length > 0) {
+        elements.push(createFormattedTable(vitalsTableData, vitalsHeaders));
       } else {
         elements.push(
           createBodyParagraph('Not documented', {
