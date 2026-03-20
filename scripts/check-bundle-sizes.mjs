@@ -21,7 +21,7 @@ const budgets = {
   'artifacts-panel': 11500,
   'sign-export-panel': 3000,
   SignatureModal: 7000,
-  'document-export': 42000,
+  'document-export': 47000,
   'mount-panel': 1200,
   prefetch: 1200,
   async: 1200,

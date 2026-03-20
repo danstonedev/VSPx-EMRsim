@@ -189,6 +189,7 @@
   --z-3: var(--z-overlay); /* alias */
   --z-drawer: 1200;
   --z-6: var(--z-drawer); /* alias */
+  --z-chat-widget: 1150; /* VSPx floating chat — between overlay and drawer */
   --z-top: 10000;
   --z-2: var(--z-top); /* alias */
 
