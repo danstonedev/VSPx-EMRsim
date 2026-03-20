@@ -2,9 +2,10 @@
  * VSPx Chat Widget
  * Floating voice-chat panel embedding the VSPx patient simulator.
  *
- * States: fab | expanded | collapsed
- * Persists position/size in sessionStorage. iframe kept alive on collapse,
- * destroyed on close. Full-screen on mobile (<768px).
+ * States: idle | expanded
+ * Trigger button lives in #patient-sticky-header (patient info bar).
+ * Green dot indicates an active conversation (iframe alive).
+ * Panel is draggable/resizable. iframe kept alive on minimize.
  */
 import { el } from '../../ui/utils.js';
 
@@ -15,19 +16,17 @@ const MIN_W = 320;
 const MIN_H = 400;
 const DEFAULT_W = 400;
 const DEFAULT_H = 560;
-const EDGE_PAD = 48; // minimum visible px on each edge
+const EDGE_PAD = 48;
 
-// ─── State Machine ──────────────────────────────────────────────────────────
+// ─── State ──────────────────────────────────────────────────────────────────
 
-let state = 'fab'; // 'fab' | 'expanded' | 'collapsed'
+let state = 'idle'; // 'idle' | 'expanded'
 let isAnimating = false;
-
-// DOM refs
-let root = null; // current mounted element
+let hasActiveConversation = false;
+let root = null;
 let iframeEl = null;
 let panelBody = null;
-
-// Geometry (tracked in px)
+let headerBtn = null;
 let geo = { x: 0, y: 0, w: DEFAULT_W, h: DEFAULT_H, positioned: false };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -42,6 +41,7 @@ function saveGeo() {
     /* quota */
   }
 }
+
 function loadGeo() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -59,73 +59,112 @@ function clampToViewport() {
   geo.y = Math.max(-geo.h + EDGE_PAD, Math.min(geo.y, vh - EDGE_PAD));
 }
 
+function ensurePositioned(panel) {
+  if (geo.positioned) return;
+  const rect = panel.getBoundingClientRect();
+  geo.x = rect.left;
+  geo.y = rect.top;
+  geo.positioned = true;
+  panel.classList.add('vspx-chat--positioned');
+}
+
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
 
-function headsetIcon() {
+function svgNS(viewBox, cls, html) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.classList.add('vspx-chat__icon');
-  svg.innerHTML =
-    '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/>' +
-    '<path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5z"/>' +
-    '<path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z"/>';
+  svg.setAttribute('viewBox', viewBox);
+  if (cls) svg.classList.add(cls);
+  svg.innerHTML = html;
   return svg;
 }
+
+const micIcon = () =>
+  svgNS(
+    '0 0 24 24',
+    'vspx-chat__icon',
+    '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>' +
+      '<path d="M19 10v2a7 7 0 0 1-14 0v-2"/>' +
+      '<line x1="12" y1="19" x2="12" y2="23"/>' +
+      '<line x1="8" y1="23" x2="16" y2="23"/>',
+  );
 
 function gripDotsIcon(cls) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.classList.add(cls || 'vspx-chat__grip');
-  svg.setAttribute('fill', 'currentColor');
-  svg.innerHTML =
+  const svg = svgNS(
+    '0 0 16 16',
+    cls,
     '<circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>' +
-    '<circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>' +
-    '<circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>';
+      '<circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>' +
+      '<circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>',
+  );
+  svg.setAttribute('fill', 'currentColor');
   return svg;
 }
 
-function svgIcon(paths) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.innerHTML = paths;
-  return svg;
-}
-
+const icon24 = (paths) => svgNS('0 0 24 24', null, paths);
 const iconMinimize = () =>
-  svgIcon(
+  icon24(
     '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>',
   );
 const iconClose = () =>
-  svgIcon('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>');
+  icon24('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>');
 const iconExternal = () =>
-  svgIcon(
+  icon24(
     '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
   );
 const iconBack = () =>
-  svgIcon('<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>');
-const iconResize = () => {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 10 10');
-  svg.classList.add('vspx-chat__resize-icon');
+  icon24('<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>');
+
+function iconResize() {
+  const svg = svgNS(
+    '0 0 10 10',
+    'vspx-chat__resize-icon',
+    '<circle cx="8" cy="8" r="1.2"/><circle cx="4" cy="8" r="1.2"/><circle cx="8" cy="4" r="1.2"/>',
+  );
   svg.setAttribute('fill', 'currentColor');
-  svg.innerHTML =
-    '<circle cx="8" cy="8" r="1.2"/><circle cx="4" cy="8" r="1.2"/><circle cx="8" cy="4" r="1.2"/>';
   return svg;
-};
+}
 
-// ─── Mounting ───────────────────────────────────────────────────────────────
+// ─── Header Trigger ─────────────────────────────────────────────────────────
 
-function unmount() {
-  if (root) {
-    root.remove();
-    root = null;
+function buildHeaderButton() {
+  const text = hasActiveConversation ? 'In Call' : 'Call Patient';
+  const label = el('span', { class: 'vspx-chat-trigger__label' }, text);
+  const classes =
+    'vspx-chat-trigger no-print' + (hasActiveConversation ? ' vspx-chat-trigger--active' : '');
+  const btn = el(
+    'button',
+    {
+      class: classes,
+      'aria-label': 'Call patient voice chat',
+      title: 'Call Patient (Alt+Shift+C)',
+      onclick: () => openPanel(),
+    },
+    [micIcon(), label],
+  );
+  return btn;
+}
+
+function updateHeaderState() {
+  if (!headerBtn) return;
+  const label = headerBtn.querySelector('.vspx-chat-trigger__label');
+  if (hasActiveConversation) {
+    headerBtn.classList.add('vspx-chat-trigger--active');
+    if (label) label.textContent = 'In Call';
+  } else {
+    headerBtn.classList.remove('vspx-chat-trigger--active');
+    if (label) label.textContent = 'Call Patient';
   }
 }
 
-function mount(element) {
-  unmount();
-  root = element;
-  document.body.appendChild(root);
+function injectTrigger() {
+  const header = document.getElementById('patient-sticky-header');
+  if (!header) {
+    headerBtn = null;
+    return;
+  }
+  if (header.querySelector('.vspx-chat-trigger')) return;
+  headerBtn = buildHeaderButton();
+  header.appendChild(headerBtn);
 }
 
 // ─── iframe Lifecycle ───────────────────────────────────────────────────────
@@ -142,34 +181,14 @@ function createIframe() {
 }
 
 function destroyIframe() {
-  if (iframeEl) {
-    iframeEl.remove();
-    iframeEl = null;
-  }
-}
-
-// ─── Build: FAB ─────────────────────────────────────────────────────────────
-
-function buildFab() {
-  const btn = el(
-    'button',
-    {
-      class: 'vspx-chat vspx-chat--fab no-print',
-      'aria-label': 'Open patient voice chat',
-      'aria-expanded': 'false',
-      onclick: () => transition('expanded'),
-    },
-    [headsetIcon()],
-  );
-  return btn;
+  if (!iframeEl) return;
+  iframeEl.remove();
+  iframeEl = null;
 }
 
 // ─── Build: Panel ───────────────────────────────────────────────────────────
 
-function buildPanel() {
-  const mobile = isMobile();
-
-  // Title bar buttons
+function buildTitlebar(mobile) {
   const externalBtn = el(
     'button',
     {
@@ -184,7 +203,7 @@ function buildPanel() {
     [iconExternal()],
   );
 
-  const collapseBtn = el(
+  const minimizeBtn = el(
     'button',
     {
       class: 'vspx-chat__btn',
@@ -192,7 +211,8 @@ function buildPanel() {
       title: mobile ? 'Close' : 'Minimize',
       onclick: (e) => {
         e.stopPropagation();
-        transition(mobile ? 'fab' : 'collapsed');
+        if (mobile) closePanel();
+        else minimizePanel();
       },
     },
     [mobile ? iconBack() : iconMinimize()],
@@ -206,29 +226,42 @@ function buildPanel() {
       title: 'Close (Alt+Shift+C)',
       onclick: (e) => {
         e.stopPropagation();
-        transition('fab');
+        closePanel();
       },
     },
     [iconClose()],
   );
 
-  // Title bar
-  const titlebar = el(
-    'div',
-    {
-      class: 'vspx-chat__titlebar',
-      'aria-roledescription': 'draggable region',
-    },
-    [
-      mobile ? null : gripDotsIcon('vspx-chat__grip'),
-      el('span', { class: 'vspx-chat__title' }, 'Patient Chat'),
-      externalBtn,
-      ...(mobile ? [] : [collapseBtn]),
-      closeBtn,
-    ].filter(Boolean),
-  );
+  const children = [
+    mobile ? null : gripDotsIcon('vspx-chat__grip'),
+    el('span', { class: 'vspx-chat__title' }, 'Patient Chat'),
+    externalBtn,
+    minimizeBtn,
+    closeBtn,
+  ].filter(Boolean);
 
-  // Body  (iframe + loading)
+  return el(
+    'div',
+    { class: 'vspx-chat__titlebar', 'aria-roledescription': 'draggable region' },
+    children,
+  );
+}
+
+function wireIframeLoad(iframe, onLoaded, onError) {
+  iframe.addEventListener('load', onLoaded, { once: true });
+  iframe.addEventListener('error', onError, { once: true });
+  iframe.src = VSPX_URL;
+
+  const timer = setTimeout(() => {
+    const loading = panelBody?.querySelector('.vspx-chat__loading');
+    if (loading && loading.style.display !== 'none') onError();
+  }, IFRAME_LOAD_TIMEOUT);
+
+  iframe.addEventListener('load', () => clearTimeout(timer), { once: true });
+  iframe.addEventListener('error', () => clearTimeout(timer), { once: true });
+}
+
+function buildIframeBody() {
   const loadingEl = el('div', { class: 'vspx-chat__loading' }, [
     el('div', { class: 'vspx-chat__spinner' }),
     el('span', {}, 'Connecting to patient…'),
@@ -237,53 +270,58 @@ function buildPanel() {
   const errorEl = el('div', { class: 'vspx-chat__error', style: 'display:none' }, [
     el('span', { class: 'vspx-chat__error-msg' }, 'Unable to connect to VSPx'),
     el('div', { class: 'vspx-chat__error-actions' }, [
-      el(
-        'button',
-        {
-          class: 'vspx-chat__error-btn',
-          onclick: () => retryIframe(),
-        },
-        'Retry',
-      ),
+      el('button', { class: 'vspx-chat__error-btn', onclick: () => retryIframe() }, 'Retry'),
       el(
         'a',
-        {
-          class: 'vspx-chat__error-btn',
-          href: VSPX_URL,
-          target: '_blank',
-          rel: 'noopener',
-        },
+        { class: 'vspx-chat__error-btn', href: VSPX_URL, target: '_blank', rel: 'noopener' },
         'Open in new tab',
       ),
     ]),
   ]);
 
   panelBody = el('div', { class: 'vspx-chat__body' }, [loadingEl, errorEl]);
-
   const iframe = createIframe();
   panelBody.appendChild(iframe);
 
-  // Set src and start load timer
-  let loadTimer = null;
   const onLoaded = () => {
-    clearTimeout(loadTimer);
     loadingEl.style.display = 'none';
     errorEl.style.display = 'none';
+    hasActiveConversation = true;
+    updateHeaderState();
   };
   const onError = () => {
-    clearTimeout(loadTimer);
     loadingEl.style.display = 'none';
     errorEl.style.display = '';
   };
-  iframe.addEventListener('load', onLoaded, { once: true });
-  iframe.addEventListener('error', onError, { once: true });
-  iframe.src = VSPX_URL;
-  loadTimer = setTimeout(() => {
-    // If still loading after timeout, show error
-    if (loadingEl.style.display !== 'none') onError();
-  }, IFRAME_LOAD_TIMEOUT);
+  wireIframeLoad(iframe, onLoaded, onError);
 
-  // Resize handles (desktop only)
+  return { body: panelBody, loadingEl, errorEl, onLoaded, onError };
+}
+
+function applyPanelGeometry(panel, mobile) {
+  if (!mobile && geo.positioned) {
+    panel.classList.add('vspx-chat--positioned');
+    panel.style.setProperty('--vspx-tx', geo.x + 'px');
+    panel.style.setProperty('--vspx-ty', geo.y + 'px');
+  }
+  if (!mobile) {
+    panel.style.setProperty('--vspx-w', geo.w + 'px');
+    panel.style.setProperty('--vspx-h', geo.h + 'px');
+  }
+}
+
+function wirePanelInteractions(panel, titlebar, resizeBR, resizeBL, mobile) {
+  if (mobile) return;
+  initDrag(panel, titlebar);
+  if (resizeBR) initResize(panel, resizeBR, 'br');
+  if (resizeBL) initResize(panel, resizeBL, 'bl');
+}
+
+function buildPanel() {
+  const mobile = isMobile();
+  const titlebar = buildTitlebar(mobile);
+  const { body, loadingEl, errorEl, onLoaded, onError } = buildIframeBody();
+
   const resizeBR = mobile
     ? null
     : el('div', { class: 'vspx-chat__resize vspx-chat__resize--br' }, [iconResize()]);
@@ -298,206 +336,137 @@ function buildPanel() {
       role: 'complementary',
       'aria-label': 'Patient voice chat',
     },
-    [titlebar, panelBody, resizeBR, resizeBL].filter(Boolean),
+    [titlebar, body, resizeBR, resizeBL].filter(Boolean),
   );
 
-  // Apply stored geometry
-  if (!mobile && geo.positioned) {
-    panel.classList.add('vspx-chat--positioned');
-    panel.style.setProperty('--vspx-tx', geo.x + 'px');
-    panel.style.setProperty('--vspx-ty', geo.y + 'px');
-  }
-  if (!mobile) {
-    panel.style.setProperty('--vspx-w', geo.w + 'px');
-    panel.style.setProperty('--vspx-h', geo.h + 'px');
-  }
+  applyPanelGeometry(panel, mobile);
+  wirePanelInteractions(panel, titlebar, resizeBR, resizeBL, mobile);
 
-  // Wire drag (desktop only)
-  if (!mobile) initDrag(panel, titlebar);
-  // Wire resize (desktop only)
-  if (!mobile && resizeBR) initResize(panel, resizeBR, 'br');
-  if (!mobile && resizeBL) initResize(panel, resizeBL, 'bl');
-
-  // Store retryIframe as closure
-  panel._retryIframe = function () {
+  panel._retryIframe = () => {
     loadingEl.style.display = '';
     errorEl.style.display = 'none';
     destroyIframe();
     const newIframe = createIframe();
-    panelBody.appendChild(newIframe);
-    newIframe.addEventListener('load', onLoaded, { once: true });
-    newIframe.addEventListener('error', onError, { once: true });
-    newIframe.src = VSPX_URL;
-    loadTimer = setTimeout(() => {
-      if (loadingEl.style.display !== 'none') onError();
-    }, IFRAME_LOAD_TIMEOUT);
+    body.appendChild(newIframe);
+    wireIframeLoad(newIframe, onLoaded, onError);
   };
 
   return panel;
 }
 
-let _currentRetry = null;
 function retryIframe() {
   if (root && root._retryIframe) root._retryIframe();
 }
 
-// ─── Build: Pill ────────────────────────────────────────────────────────────
+// ─── Panel Actions ──────────────────────────────────────────────────────────
 
-function buildPill() {
-  const closeBtn = el(
-    'button',
-    {
-      class: 'vspx-chat__btn',
-      'aria-label': 'Close chat',
-      title: 'Close',
-      onclick: (e) => {
-        e.stopPropagation();
-        transition('fab');
-      },
-    },
-    [iconClose()],
-  );
-
-  const pill = el(
-    'div',
-    {
-      class: 'vspx-chat vspx-chat--pill no-print',
-      role: 'complementary',
-      'aria-label': 'Patient voice chat (minimized)',
-      tabindex: '0',
-      onclick: () => transition('expanded'),
-      onkeydown: (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          transition('expanded');
-        }
-      },
-    },
-    [
-      gripDotsIcon('vspx-chat__pill-grip'),
-      el('span', { class: 'vspx-chat__pill-label' }, 'Patient Chat'),
-      closeBtn,
-    ],
-  );
-
-  return pill;
+function animateEntry(panel) {
+  if (reducedMotion()) {
+    isAnimating = false;
+    return;
+  }
+  panel.classList.add('vspx-chat--enter');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      panel.classList.remove('vspx-chat--enter');
+      panel.classList.add('vspx-chat--enter-active');
+      const done = () => {
+        panel.classList.remove('vspx-chat--enter-active');
+        isAnimating = false;
+      };
+      panel.addEventListener('transitionend', done, { once: true });
+      setTimeout(done, 350);
+    });
+  });
 }
 
-// ─── Transitions ────────────────────────────────────────────────────────────
+function animateExit(element, callback) {
+  if (reducedMotion()) {
+    element.remove();
+    callback();
+    return;
+  }
+  element.classList.add('vspx-chat--exit');
+  requestAnimationFrame(() => {
+    element.classList.add('vspx-chat--exit-active');
+    const cleanup = () => {
+      element.remove();
+      callback();
+    };
+    element.addEventListener('transitionend', cleanup, { once: true });
+    setTimeout(cleanup, 300);
+  });
+}
 
-function transition(to) {
-  if (isAnimating || to === state) return;
+function openPanel() {
+  if (isAnimating || state === 'expanded') return;
+  isAnimating = true;
+  state = 'expanded';
 
-  const from = state;
+  // Preserve surviving iframe from a previous minimize
+  const surviving = hasActiveConversation && iframeEl;
+  const savedIframe = surviving ? iframeEl : null;
+  if (surviving) iframeEl = null;
+
+  const panel = buildPanel();
+
+  // Reattach surviving iframe instead of the fresh one
+  if (savedIframe && panelBody) {
+    destroyIframe();
+    iframeEl = savedIframe;
+    panelBody.appendChild(iframeEl);
+    const loading = panelBody.querySelector('.vspx-chat__loading');
+    if (loading) loading.style.display = 'none';
+  }
+
+  root = panel;
+  document.body.appendChild(panel);
+  animateEntry(panel);
+
+  requestAnimationFrame(() => {
+    const btn = panel.querySelector('.vspx-chat__close-btn');
+    if (btn) btn.focus();
+  });
+}
+
+function minimizePanel() {
+  if (isAnimating || state !== 'expanded') return;
   isAnimating = true;
 
-  // Leaving expanded → keep iframe alive or destroy
-  if (from === 'expanded' && to === 'collapsed') {
-    // Keep iframe alive: hide panel body off-screen-ish
-    // We'll rebuild pill but keep the iframe element detached
-    // Then on re-expand we re-attach it
-    if (iframeEl) iframeEl.remove(); // detach from current panel (stays in memory)
-  }
-  if (from === 'expanded' && to === 'fab') {
-    destroyIframe();
-  }
-  if (from === 'collapsed' && to === 'fab') {
-    destroyIframe();
-  }
+  // Detach iframe but keep reference alive (preserves WebRTC)
+  if (iframeEl) iframeEl.remove();
+  hasActiveConversation = Boolean(iframeEl);
 
-  const prevRoot = root;
+  const prev = root;
+  root = null;
+  state = 'idle';
+  updateHeaderState();
 
-  // Build new element
-  let newEl;
-  if (to === 'fab') {
-    newEl = buildFab();
-  } else if (to === 'expanded') {
-    // If we have a surviving iframe, re-attach it after build
-    const survivingIframe = iframeEl;
-    if (from === 'collapsed' && survivingIframe) {
-      // Temporarily null so buildPanel creates fresh body
-      iframeEl = null;
-    }
-    newEl = buildPanel();
-    // Re-attach surviving iframe
-    if (from === 'collapsed' && survivingIframe && panelBody) {
-      // Remove the freshly created iframe and use the surviving one
-      destroyIframe();
-      iframeEl = survivingIframe;
-      panelBody.appendChild(iframeEl);
-      // Hide loading overlay since iframe is already loaded
-      const loading = panelBody.querySelector('.vspx-chat__loading');
-      if (loading) loading.style.display = 'none';
-    }
-  } else if (to === 'collapsed') {
-    newEl = buildPill();
-  }
-
-  state = to;
-
-  const skip = reducedMotion();
-
-  // Animate out old
-  if (prevRoot && !skip) {
-    if (from === 'expanded') {
-      prevRoot.classList.add('vspx-chat--exit');
-      requestAnimationFrame(() => {
-        prevRoot.classList.add('vspx-chat--exit-active');
-        const cleanup = () => prevRoot.remove();
-        prevRoot.addEventListener('transitionend', cleanup, { once: true });
-        setTimeout(cleanup, 300);
-      });
-    } else {
-      prevRoot.remove();
-    }
-  } else if (prevRoot) {
-    prevRoot.remove();
-  }
-
-  // Mount & animate in new
-  root = newEl;
-  document.body.appendChild(newEl);
-
-  if (!skip && to === 'expanded') {
-    newEl.classList.add('vspx-chat--enter');
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        newEl.classList.remove('vspx-chat--enter');
-        newEl.classList.add('vspx-chat--enter-active');
-        const done = () => {
-          newEl.classList.remove('vspx-chat--enter-active');
-          isAnimating = false;
-        };
-        newEl.addEventListener('transitionend', done, { once: true });
-        setTimeout(done, 350);
-      });
-    });
-  } else if (!skip && to === 'collapsed') {
-    newEl.classList.add('vspx-chat--pill-enter');
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        newEl.classList.remove('vspx-chat--pill-enter');
-        newEl.classList.add('vspx-chat--pill-enter-active');
-        const done = () => {
-          newEl.classList.remove('vspx-chat--pill-enter-active');
-          isAnimating = false;
-        };
-        newEl.addEventListener('transitionend', done, { once: true });
-        setTimeout(done, 330);
-      });
-    });
-  } else {
+  animateExit(prev, () => {
     isAnimating = false;
-  }
-
-  // Focus management
+  });
   requestAnimationFrame(() => {
-    if (to === 'expanded') {
-      const closeBtn = newEl.querySelector('.vspx-chat__close-btn');
-      if (closeBtn) closeBtn.focus();
-    } else if (to === 'fab' || to === 'collapsed') {
-      if (newEl) newEl.focus();
-    }
+    if (headerBtn) headerBtn.focus();
+  });
+}
+
+function closePanel() {
+  if (isAnimating || state !== 'expanded') return;
+  isAnimating = true;
+
+  destroyIframe();
+  hasActiveConversation = false;
+
+  const prev = root;
+  root = null;
+  state = 'idle';
+  updateHeaderState();
+
+  animateExit(prev, () => {
+    isAnimating = false;
+  });
+  requestAnimationFrame(() => {
+    if (headerBtn) headerBtn.focus();
   });
 }
 
@@ -508,22 +477,13 @@ function initDrag(panel, handle) {
   let startX, startY, origTx, origTy;
 
   handle.addEventListener('pointerdown', (e) => {
-    // Ignore if clicking a button
     if (e.target.closest('button')) return;
     e.preventDefault();
     dragging = true;
     panel.classList.add('vspx-chat--dragging');
     handle.setPointerCapture(e.pointerId);
 
-    // If not yet user-positioned, compute current position from CSS
-    if (!geo.positioned) {
-      const rect = panel.getBoundingClientRect();
-      geo.x = rect.left;
-      geo.y = rect.top;
-      geo.positioned = true;
-      panel.classList.add('vspx-chat--positioned');
-    }
-
+    ensurePositioned(panel);
     startX = e.clientX;
     startY = e.clientY;
     origTx = geo.x;
@@ -532,11 +492,8 @@ function initDrag(panel, handle) {
 
   handle.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    geo.x = origTx + dx;
-    geo.y = origTy + dy;
-
+    geo.x = origTx + (e.clientX - startX);
+    geo.y = origTy + (e.clientY - startY);
     panel.style.setProperty('--vspx-tx', geo.x + 'px');
     panel.style.setProperty('--vspx-ty', geo.y + 'px');
   });
@@ -573,37 +530,25 @@ function initResize(panel, handle, corner) {
     origW = geo.w;
     origH = geo.h;
     origGeoX = geo.x;
-
-    // Ensure panel is in positioned mode
-    if (!geo.positioned) {
-      const rect = panel.getBoundingClientRect();
-      geo.x = rect.left;
-      geo.y = rect.top;
-      geo.positioned = true;
-      panel.classList.add('vspx-chat--positioned');
-    }
+    ensurePositioned(panel);
   });
 
   handle.addEventListener('pointermove', (e) => {
     if (!resizing) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-
     const maxW = window.innerWidth * 0.9;
     const maxH = window.innerHeight * 0.85;
 
     if (corner === 'br') {
       geo.w = Math.max(MIN_W, Math.min(maxW, origW + dx));
-      geo.h = Math.max(MIN_H, Math.min(maxH, origH + dy));
-    } else if (corner === 'bl') {
+    } else {
       const newW = Math.max(MIN_W, Math.min(maxW, origW - dx));
-      geo.h = Math.max(MIN_H, Math.min(maxH, origH + dy));
-      // Adjust X to keep right edge stable
       geo.x = origGeoX + (origW - newW);
       geo.w = newW;
       panel.style.setProperty('--vspx-tx', geo.x + 'px');
     }
-
+    geo.h = Math.max(MIN_H, Math.min(maxH, origH + dy));
     panel.style.setProperty('--vspx-w', geo.w + 'px');
     panel.style.setProperty('--vspx-h', geo.h + 'px');
   });
@@ -619,54 +564,60 @@ function initResize(panel, handle, corner) {
   handle.addEventListener('pointercancel', endResize);
 }
 
-// ─── Keyboard Shortcut ──────────────────────────────────────────────────────
+// ─── Keyboard ───────────────────────────────────────────────────────────────
 
 function onGlobalKeydown(e) {
-  // Alt+Shift+C toggle
   if (e.altKey && e.shiftKey && e.key === 'C') {
     e.preventDefault();
-    if (state === 'fab') transition('expanded');
-    else if (state === 'expanded') transition('collapsed');
-    else if (state === 'collapsed') transition('expanded');
+    if (state === 'expanded') minimizePanel();
+    else openPanel();
     return;
   }
-  // Escape closes
-  if (e.key === 'Escape' && state !== 'fab') {
-    // Only if focus is within our widget
-    if (root && root.contains(document.activeElement)) {
-      e.preventDefault();
-      if (state === 'expanded') transition(isMobile() ? 'fab' : 'collapsed');
-      else transition('fab');
-    }
+  if (e.key === 'Escape' && state === 'expanded') {
+    if (!root || !root.contains(document.activeElement)) return;
+    if (isMobile()) closePanel();
+    else minimizePanel();
   }
 }
 
-// ─── Window Resize Handler (debounced) ──────────────────────────────────────
+// ─── Window Resize (debounced) ──────────────────────────────────────────────
 
 let resizeTimer = null;
 function onWindowResize() {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (geo.positioned) {
-      clampToViewport();
-      if (root && state === 'expanded') {
-        root.style.setProperty('--vspx-tx', geo.x + 'px');
-        root.style.setProperty('--vspx-ty', geo.y + 'px');
-      }
-    }
+    if (!geo.positioned || state !== 'expanded' || !root) return;
+    clampToViewport();
+    root.style.setProperty('--vspx-tx', geo.x + 'px');
+    root.style.setProperty('--vspx-ty', geo.y + 'px');
   }, 150);
+}
+
+// ─── Header Observer ────────────────────────────────────────────────────────
+
+function observePatientHeader() {
+  injectTrigger();
+  let pending = false;
+  const observer = new MutationObserver(() => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      injectTrigger();
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // ─── Init ───────────────────────────────────────────────────────────────────
 
 function init() {
   loadGeo();
-  mount(buildFab());
+  observePatientHeader();
   document.addEventListener('keydown', onGlobalKeydown);
   window.addEventListener('resize', onWindowResize);
 }
 
-// Self-bootstrap
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

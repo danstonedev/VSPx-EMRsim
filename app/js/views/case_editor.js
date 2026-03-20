@@ -29,7 +29,6 @@ import {
   createPatientHeader,
   setupThemeObserver,
   createPatientHeaderUpdater,
-  createPatientHeaderActionsRenderer,
 } from './CaseEditorRenderer.js';
 import { renderAllSections, getSectionRoot, getSectionHeader } from './SectionRenderer.js';
 import {
@@ -549,13 +548,6 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   });
   const onEditorSettingsChange = createEditorSettingsHandler({ draft, c, save });
 
-  const renderPatientHeaderActions = createPatientHeaderActionsRenderer(
-    isFacultyMode,
-    caseId,
-    c,
-    onCaseInfoUpdate,
-  );
-  renderPatientHeaderActions();
   // Set up IntersectionObserver for active section tracking
   setupActiveSectionObserverWrapper();
 

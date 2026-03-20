@@ -6,18 +6,11 @@
 import { el } from '../ui/utils.js';
 import { createAuthorBadge } from '../ui/CaseBadge.js';
 import {
-  getCaseInfo,
   getPatientDisplayName,
-  canEditCase,
   getPatientDOB,
   getPatientSex,
   formatDOB,
 } from './CaseEditorUtils.js';
-// Lazy accessor to avoid statically bundling navigation API
-async function _getOpenEditCaseModal() {
-  const { getOpenEditCaseModal } = await import('../features/navigation/api.js');
-  return getOpenEditCaseModal();
-}
 
 /**
  * Create and setup patient header with avatar
@@ -82,7 +75,6 @@ export function createPatientHeader() {
       avatarEl,
       el('div', { class: 'patient-header-text' }, [patientHeaderNameEl, patientHeaderDemoEl]),
     ]),
-    el('div', { id: 'patient-header-actions' }, []),
   ]);
 
   // Initial neutral avatar
@@ -156,31 +148,6 @@ export function createPatientHeaderUpdater(c, caseWrapper, headerElements) {
     } catch {
       /* element may not exist */
     }
-  };
-}
-
-/**
- * Create patient header actions renderer
- * @param {boolean} isFacultyMode - Faculty mode flag
- * @param {string} caseId - Case ID
- * @param {Object} c - Case object
- * @param {Function} handleCaseInfoUpdate - Case info update handler
- * @returns {Function} Render function
- */
-export function createPatientHeaderActionsRenderer(isFacultyMode, caseId, c, handleCaseInfoUpdate) {
-  return function renderPatientHeaderActions() {
-    const actions = document.getElementById('patient-header-actions');
-    if (!actions) return;
-    actions.replaceChildren();
-
-    const canEdit = canEditCase(isFacultyMode, caseId);
-    if (!canEdit) return;
-
-    const getCaseInfoSnapshot = () => getCaseInfo(c);
-    const openEdit = () => {
-      _getOpenEditCaseModal().then((fn) => fn && fn(getCaseInfoSnapshot(), handleCaseInfoUpdate));
-    };
-    actions.append(el('button', { class: 'btn secondary', onclick: openEdit }, 'Edit'));
   };
 }
 
