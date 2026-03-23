@@ -1019,7 +1019,7 @@ function openViewArtifactModal(module, options = {}) {
                   alt: m.name || 'attachment',
                 });
                 thumbWrap.appendChild(img);
-                // Async load object URL and set src, then track for revocation
+                // Async load object URL and set src; fall back to embedded dataUrl
                 (async () => {
                   try {
                     const att = await getAttachmentsService();
@@ -1027,9 +1027,13 @@ function openViewArtifactModal(module, options = {}) {
                     if (o?.url) {
                       img.src = o.url;
                       urlsToRevoke.push(o.url);
+                    } else if (m.dataUrl) {
+                      img.src = m.dataUrl;
                     }
                   } catch (err) {
-                    console.warn('[ChartNav] attachment thumbnail load:', err);
+                    // Fall back to embedded dataUrl if IDB fails
+                    if (m.dataUrl) img.src = m.dataUrl;
+                    else console.warn('[ChartNav] attachment thumbnail load:', err);
                   }
                 })();
               } else {
@@ -1114,10 +1118,18 @@ function openViewArtifactModal(module, options = {}) {
                       });
 
                       try {
-                        const att = await getAttachmentsService();
-                        const o = await att.createObjectURL(m.id);
-                        if (!o?.url) throw new Error('No URL');
-                        objectUrl = o.url;
+                        let resolvedUrl = null;
+                        try {
+                          const att = await getAttachmentsService();
+                          const o = await att.createObjectURL(m.id);
+                          if (o?.url) resolvedUrl = o.url;
+                        } catch {
+                          /* IDB unavailable */
+                        }
+                        // Fall back to embedded dataUrl when IDB blob is missing
+                        if (!resolvedUrl && m.dataUrl) resolvedUrl = m.dataUrl;
+                        if (!resolvedUrl) throw new Error('No URL');
+                        objectUrl = resolvedUrl;
                         const isImg = (m.mime || '').startsWith('image/');
                         const isPdf =
                           (m.mime || '').includes('pdf') || /\.pdf$/i.test(m.name || '');
@@ -1186,22 +1198,36 @@ function openViewArtifactModal(module, options = {}) {
                 );
                 btn.addEventListener('click', async () => {
                   try {
-                    const att = await getAttachmentsService();
-                    const o = await att.createObjectURL(m.id);
-                    if (o?.url) {
+                    let dlUrl = null;
+                    let needsRevoke = false;
+                    try {
+                      const att = await getAttachmentsService();
+                      const o = await att.createObjectURL(m.id);
+                      if (o?.url) {
+                        dlUrl = o.url;
+                        needsRevoke = true;
+                      }
+                    } catch {
+                      /* IDB unavailable */
+                    }
+                    // Fall back to embedded dataUrl
+                    if (!dlUrl && m.dataUrl) dlUrl = m.dataUrl;
+                    if (dlUrl) {
                       const a = document.createElement('a');
-                      a.href = o.url;
+                      a.href = dlUrl;
                       a.download = m.name || 'attachment';
                       document.body.appendChild(a);
                       a.click();
                       a.remove();
-                      setTimeout(() => {
-                        try {
-                          URL.revokeObjectURL(o.url);
-                        } catch {
-                          /* element may not exist */
-                        }
-                      }, 5000);
+                      if (needsRevoke) {
+                        setTimeout(() => {
+                          try {
+                            URL.revokeObjectURL(dlUrl);
+                          } catch {
+                            /* safe */
+                          }
+                        }, 5000);
+                      }
                     }
                   } catch (e) {
                     console.warn('Download attachment failed:', e);
