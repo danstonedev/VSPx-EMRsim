@@ -182,9 +182,10 @@ function applyPostRenderA11y(wrapper, path) {
  * @returns {string} Route type for CSS optimization
  */
 function getRouteType(path) {
+  // Check editor paths FIRST since they contain /student/ or /instructor/ too
+  if (path.includes('/editor') || path.includes('/case/')) return 'editor';
   if (path.includes('/student/')) return 'student';
   if (path.includes('/instructor/')) return 'instructor';
-  if (path.includes('/editor/') || path.includes('/case/')) return 'editor';
   if (path === '#/' || path.includes('/home')) return 'home';
   return 'default';
 }
