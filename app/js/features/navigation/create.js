@@ -31,8 +31,9 @@ export function createChartNavigation(config) {
     // placeholder and upgrade in next microtask.
     const placeholder = document.createElement('div');
     placeholder.className = 'chart-navigation';
-    placeholder.style.minHeight = '40px';
-    placeholder.style.opacity = '0.001';
+    // Critical inline positioning to prevent CSS @import race condition
+    placeholder.style.cssText =
+      'position:fixed;left:0;top:var(--topbar-h,72px);min-height:40px;opacity:0.001;';
     // Hydrate after import resolves
     import('./ChartNavigation.js').then((m) => {
       window.__navMonolithCache = m;

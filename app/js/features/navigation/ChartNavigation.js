@@ -2508,6 +2508,9 @@ export function createChartNavigation(config) {
       role: 'complementary',
       'aria-label': 'Chart navigation',
       tabindex: '-1',
+      // Critical inline positioning to prevent CSS @import race condition
+      // where sidebar.css hasn't loaded yet and sidebar renders in normal flow
+      style: 'position:fixed;left:0;top:var(--topbar-h,72px);',
     },
     [
       // CASE FILE header row aligned with patient header
