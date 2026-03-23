@@ -187,6 +187,12 @@ function getRouteType(path) {
   if (path.includes('/student/')) return 'student';
   if (path.includes('/instructor/')) return 'instructor';
   if (path === '#/' || path.includes('/home')) return 'home';
+  // Dietetics routes map to same CSS route types
+  if (path.startsWith('#/dietetics')) {
+    if (path.includes('/editor')) return 'editor';
+    if (path.includes('/student')) return 'student';
+    if (path.includes('/instructor')) return 'instructor';
+  }
   return 'default';
 }
 
@@ -265,6 +271,8 @@ function updateNavigation(currentPath) {
       href === currentPath ||
       (currentPath.startsWith('#/student') && href === '#/student/cases') ||
       (currentPath.startsWith('#/instructor') && href === '#/instructor/cases') ||
+      (currentPath.startsWith('#/dietetics/student') && href === '#/student/cases') ||
+      (currentPath.startsWith('#/dietetics/instructor') && href === '#/instructor/cases') ||
       (currentPath === '#/' && href === '#/')
     ) {
       link.classList.add('active');
@@ -626,6 +634,24 @@ async function ensureRouteModuleLoaded(path) {
           t.startsWith('#/legal') || t.startsWith('#/terms') || t.startsWith('#/privacy'),
         key: 'legal',
         load: () => import('../views/legal.js'),
+      },
+      // Dietetics profession routes
+      {
+        test: (t) =>
+          t.startsWith('#/dietetics/student/editor') ||
+          t.startsWith('#/dietetics/instructor/editor'),
+        key: 'dietetics-editor',
+        load: () => import('../views/dietetics/case_editor.js'),
+      },
+      {
+        test: (t) => t.startsWith('#/dietetics/student/cases'),
+        key: 'dietetics-student-cases',
+        load: () => import('../views/dietetics/student/cases.js'),
+      },
+      {
+        test: (t) => t.startsWith('#/dietetics/instructor/cases'),
+        key: 'dietetics-instructor-cases',
+        load: () => import('../views/dietetics/instructor/cases.js'),
       },
     ];
     const found = matchers.find((m) => m.test(p)) || {

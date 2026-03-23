@@ -1,85 +1,82 @@
-// Home v2 (ground-up rebuild: Variant A)
+// Home — Professions Dashboard
 import { route } from '../core/router.js';
 import { navigate as urlNavigate } from '../core/url.js';
 import { el } from '../ui/utils.js';
 import { getAccessRole } from '../ui/AccessGate.js';
+import { listProfessions, setCurrentProfession } from '../core/professions.js';
 
-function Card(title, labelText, items) {
-  return el(
-    'section',
-    { class: 'homev2-card' },
-    [
-      title ? el('h2', {}, title) : null,
-      labelText ? el('div', { class: 'label' }, labelText) : null,
-      items && items.length
-        ? el(
-            'ul',
-            {},
-            items.map((t) => el('li', {}, t)),
-          )
-        : null,
-    ].filter(Boolean),
-  );
-}
-
-route('#/', async (app) => {
-  app.replaceChildren();
-  const isFaculty = getAccessRole() === 'faculty';
-
-  // Hero
-  const ctaButtons = [
-    el('button', { class: 'btn primary', onClick: () => urlNavigate('/student/cases') }, 'Student'),
+/**
+ * Build a single profession card with Student/Faculty buttons.
+ */
+function ProfessionCard(prof, isFaculty) {
+  const buttons = [
+    el(
+      'button',
+      {
+        class: 'btn primary profession-card__btn',
+        onClick: () => {
+          setCurrentProfession(prof.id);
+          urlNavigate(prof.studentCases.replace('#/', '/'));
+        },
+      },
+      'Student',
+    ),
   ];
   if (isFaculty) {
-    ctaButtons.push(
+    buttons.push(
       el(
         'button',
-        { class: 'btn primary', onClick: () => urlNavigate('/instructor/cases') },
+        {
+          class: 'btn primary profession-card__btn',
+          onClick: () => {
+            setCurrentProfession(prof.id);
+            urlNavigate(prof.instructorCases.replace('#/', '/'));
+          },
+        },
         'Faculty',
       ),
     );
   }
 
-  const hero = el('header', { class: 'homev2-hero' }, [
-    el('h1', {}, 'UND PT EMR Simulator'),
+  return el('div', { class: 'profession-card', 'data-profession': prof.id }, [
+    el('div', { class: 'profession-card__icon' }, prof.icon),
+    el('h2', { class: 'profession-card__title' }, prof.name),
+    el('p', { class: 'profession-card__desc' }, prof.description),
+    el('div', { class: 'profession-card__actions' }, buttons),
+  ]);
+}
+
+/**
+ * "Coming soon" placeholder card.
+ */
+function ComingSoonCard() {
+  return el('div', { class: 'profession-card profession-card--coming-soon' }, [
+    el('div', { class: 'profession-card__icon' }, '➕'),
+    el('h2', { class: 'profession-card__title' }, 'More Professions'),
+    el('p', { class: 'profession-card__desc' }, 'Additional disciplines coming soon…'),
+  ]);
+}
+
+route('#/', async (app) => {
+  app.replaceChildren();
+  const isFaculty = getAccessRole() === 'faculty';
+  const professions = listProfessions();
+
+  // Hero
+  const hero = el('header', { class: 'professions-hero' }, [
+    el('h1', {}, 'UND EMR Simulator'),
     el(
       'p',
       {},
-      'Practice professional SOAP documentation and assessments in a modern, browser-only EMR—no backend required.',
+      'Practice professional clinical documentation across disciplines in a modern, browser-based EMR—no backend required.',
     ),
-    el('div', { class: 'homev2-cta' }, ctaButtons),
   ]);
 
-  // Content grid
-  const studentCard = Card('Student', 'Experience Highlights', [
-    'View assigned/available cases',
-    'Guided SOAP, Goals, Billing tabs',
-    'Auto-save drafts to your browser',
-    'Export Word reports with structured tables',
-  ]);
+  // Profession cards grid
+  const cards = professions.map((p) => ProfessionCard(p, isFaculty));
+  cards.push(ComingSoonCard());
 
-  const cards = [studentCard];
-
-  if (isFaculty) {
-    cards.push(
-      Card('Faculty', 'Program Tools', [
-        'Manage and distribute cases',
-        'Author demographics with DOB age helper',
-        'Share deep links with cohorts',
-        'Review exports that mirror the app structure',
-      ]),
-    );
-    cards.push(
-      Card('Overview', 'Executive Summary', [
-        'Pure frontend: deploy to GitHub Pages',
-        'Central router with shareable deep links',
-        'Schema validation and migrations for cases',
-        'Modular features: SOAP, Goals, Billing, Export',
-      ]),
-    );
-  }
-
-  const grid = el('div', { class: 'homev2-grid' }, cards);
-  const container = el('main', { class: 'homev2' }, [hero, grid]);
+  const grid = el('div', { class: 'professions-grid' }, cards);
+  const container = el('main', { class: 'professions-dashboard' }, [hero, grid]);
   app.append(container);
 });

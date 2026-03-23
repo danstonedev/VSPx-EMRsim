@@ -1,0 +1,147 @@
+/* ── Professions Dashboard ── */
+
+.professions-dashboard {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* Hero */
+.professions-hero {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.professions-hero h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text, #1a1a1a);
+  margin: 0 0 0.5rem;
+}
+
+.professions-hero p {
+  font-size: 1.05rem;
+  color: var(--text-secondary, #555);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Grid */
+.professions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  justify-items: center;
+}
+
+/* Card */
+.profession-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 14px;
+  padding: 2rem 1.75rem 1.75rem;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profession-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-400, #4ade80);
+}
+
+.profession-card--coming-soon {
+  opacity: 0.55;
+  border-style: dashed;
+  cursor: default;
+}
+
+.profession-card--coming-soon:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border, #e0e0e0);
+}
+
+/* Icon */
+.profession-card__icon {
+  font-size: 2.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+/* Title */
+.profession-card__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text, #1a1a1a);
+  margin: 0 0 0.5rem;
+}
+
+/* Description */
+.profession-card__desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+  flex-grow: 1;
+}
+
+/* Action buttons row */
+.profession-card__actions {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.profession-card__btn {
+  min-width: 100px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+}
+
+/* ── Dark theme overrides ── */
+html[data-theme='dark'] .profession-card {
+  background: var(--surface, #2a2a2a);
+  border-color: var(--border, #444);
+}
+
+html[data-theme='dark'] .profession-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary-500, #22c55e);
+}
+
+html[data-theme='dark'] .profession-card--coming-soon:hover {
+  box-shadow: none;
+  border-color: var(--border, #444);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .professions-dashboard {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .professions-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .professions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profession-card {
+    max-width: 100%;
+  }
+}

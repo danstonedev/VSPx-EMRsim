@@ -102,7 +102,7 @@ export function showAccessGate() {
         <p class="access-gate-status" aria-live="polite" role="status"></p>
         <h2 class="access-gate-title">University of North Dakota</h2>
         <p class="access-gate-line2">School of Medicine &amp; Health Sciences</p>
-        <p class="access-gate-line3">Department of Physical Therapy</p>
+        <p class="access-gate-line3">Clinical Simulation Platform</p>
       </div>
     `;
 
