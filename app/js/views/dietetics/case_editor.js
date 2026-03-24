@@ -337,7 +337,7 @@ function renderDiagnosisSection(draft, onDraftChange) {
         data.pes_statements.push({ problem: '', etiology: '', signs_symptoms: '' });
         onDraftChange(draft);
         // Re-render needed — handled by parent renderContent()
-        const contentPane = addBtn.closest('.dietetics-content');
+        const contentPane = addBtn.closest('.note-editor__content');
         if (contentPane) {
           contentPane.replaceChildren();
           contentPane.append(renderDiagnosisSection(draft, onDraftChange));
@@ -555,7 +555,7 @@ function renderEditor(wrapper, caseId) {
   const onDraftChange = (d) => {
     draft = d;
     saveDraft(caseId, draft);
-    const indicator = wrapper.querySelector('.dietetics-save-indicator');
+    const indicator = wrapper.querySelector('.note-editor__save-indicator');
     if (indicator) {
       indicator.textContent = 'Saved';
       indicator.classList.add('saved');
@@ -565,13 +565,13 @@ function renderEditor(wrapper, caseId) {
 
   // --- Patient Header ---
   const meta = caseObj.meta || {};
-  const patientHeader = el('div', { class: 'dietetics-patient-header' }, [
+  const patientHeader = el('div', { class: 'note-editor__patient-header' }, [
     el(
       'div',
-      { class: 'dietetics-patient-header__name' },
+      { class: 'note-editor__patient-name' },
       meta.title || caseData?.title || 'Untitled Case',
     ),
-    el('div', { class: 'dietetics-patient-header__details' }, [
+    el('div', { class: 'note-editor__patient-details' }, [
       meta.dob ? el('span', {}, `DOB: ${meta.dob}`) : null,
       meta.sex ? el('span', {}, meta.sex) : null,
       meta.dietOrder ? el('span', {}, `Diet: ${meta.dietOrder}`) : null,
@@ -582,31 +582,34 @@ function renderEditor(wrapper, caseId) {
           ])
         : null,
     ]),
-    el('span', { class: 'dietetics-save-indicator' }, ''),
+    el('span', { class: 'note-editor__save-indicator' }, ''),
   ]);
 
   // --- Sidebar ---
   function buildSidebar() {
-    return el('nav', { class: 'dietetics-sidebar', 'aria-label': 'NCP Sections' }, [
-      el('div', { class: 'dietetics-sidebar__title' }, 'Chart Sections'),
+    return el('nav', { class: 'note-editor__sidebar', 'aria-label': 'NCP Sections' }, [
+      el('div', { class: 'note-editor__sidebar-title' }, 'Chart Sections'),
       ...NCP_SECTIONS.map((s) => {
         const btn = el(
           'button',
           {
-            class: `dietetics-sidebar__item ${s.id === activeSection ? 'dietetics-sidebar__item--active' : ''}`,
+            class: `note-editor__sidebar-item ${s.id === activeSection ? 'note-editor__sidebar-item--active' : ''}`,
             'data-section': s.id,
             onclick: () => {
               activeSection = s.id;
               renderContent();
               wrapper
-                .querySelectorAll('.dietetics-sidebar__item')
+                .querySelectorAll('.note-editor__sidebar-item')
                 .forEach((b) =>
-                  b.classList.toggle('dietetics-sidebar__item--active', b.dataset.section === s.id),
+                  b.classList.toggle(
+                    'note-editor__sidebar-item--active',
+                    b.dataset.section === s.id,
+                  ),
                 );
             },
           },
           [
-            el('span', { class: 'dietetics-sidebar__icon' }, [materialIcon(s.icon)]),
+            el('span', { class: 'note-editor__sidebar-icon' }, [materialIcon(s.icon)]),
             el('span', {}, s.label),
           ],
         );
@@ -616,7 +619,7 @@ function renderEditor(wrapper, caseId) {
   }
 
   // --- Content pane ---
-  const contentPane = el('div', { class: 'dietetics-content' });
+  const contentPane = el('div', { class: 'note-editor__content' });
 
   function renderContent() {
     contentPane.replaceChildren();
@@ -628,7 +631,7 @@ function renderEditor(wrapper, caseId) {
 
   // --- Layout ---
   const sidebar = buildSidebar();
-  const layout = el('div', { class: 'dietetics-editor-layout' }, [sidebar, contentPane]);
+  const layout = el('div', { class: 'note-editor' }, [sidebar, contentPane]);
 
   wrapper.replaceChildren();
   wrapper.append(patientHeader, layout);

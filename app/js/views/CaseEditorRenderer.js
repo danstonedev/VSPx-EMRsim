@@ -70,13 +70,17 @@ export function createPatientHeader() {
   patientHeaderNameEl.className = 'patient-name-line';
   patientHeaderDemoEl.className = 'patient-demo-line';
 
-  const patientHeader = el('div', { id: 'patient-sticky-header' }, [
-    el('div', { class: 'patient-header-left' }, [
-      avatarEl,
-      el('div', { class: 'patient-header-text' }, [patientHeaderNameEl, patientHeaderDemoEl]),
-    ]),
-    el('div', { id: 'patient-header-actions', class: 'patient-header-actions' }, []),
-  ]);
+  const patientHeader = el(
+    'div',
+    { id: 'patient-sticky-header', class: 'note-editor__patient-header' },
+    [
+      el('div', { class: 'patient-header-left' }, [
+        avatarEl,
+        el('div', { class: 'patient-header-text' }, [patientHeaderNameEl, patientHeaderDemoEl]),
+      ]),
+      el('div', { id: 'patient-header-actions', class: 'patient-header-actions' }, []),
+    ],
+  );
 
   // Initial neutral avatar
   updatePatientAvatar();

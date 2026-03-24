@@ -19,6 +19,7 @@
 @import url('./components/combined-rom.css');
 @import url('./components/combined-neuroscreen.css');
 @import url('./components/section-panel.css');
+@import url('./components/note-editor.css');
 @import url('./components/subjective-qa.css');
 @import url('./components/red-flag-screening.css');
 @import url('./components/medication-panel.css');
@@ -2110,12 +2111,6 @@ html[data-theme='dark'] .theme-toggle .icon.moon {
 }
 /* Removed legacy .nav-collapsed adjustments */
 
-/* Section container */
-.main-container {
-  background: var(--surface);
-  margin: var(--space-3) 0;
-  overflow: visible;
-}
 .section-content {
   /* horizontal padding token used to align inner content and allow headers to be full-bleed */
   --pad-x: clamp(16px, 3vw, 48px);
@@ -2137,30 +2132,6 @@ body[data-route='instructor-editor'] .section-content {
     padding-right: var(--pad-x);
   }
 }
-
-/* Section pager: UND-styled modern buttons */
-.section-content .section-pager {
-  display: block; /* spacing handled inline; keep block for specificity */
-}
-.section-content .pager-btn {
-  border-radius: 9999px;
-  padding: 10px 16px;
-  min-height: 40px;
-  box-shadow: var(--elev-neutral-depth);
-  font-weight: 700;
-}
-.section-content .pager-btn.pager-next.btn.primary,
-.section-content .pager-btn.pager-prev.btn.primary,
-.section-content .pager-btn.pager-home.btn.primary {
-  background: linear-gradient(90deg, var(--und-green-dark) 0%, var(--und-green) 100%);
-  border-color: var(--und-green-dark);
-}
-.section-content .pager-btn.pager-next.btn.primary:hover {
-  filter: brightness(1.05);
-}
-/* Remove secondary variant usage for pager; all are primary */
-
-/* Clean pill buttons (no clip-path arrows) */
 
 /* Button system moved to buttons.css to avoid duplication/conflicts */
 

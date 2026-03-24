@@ -1,0 +1,167 @@
+/* ── Note Editor — Shared layout for all discipline editors ──
+ *
+ *  Provides the sidebar + content pane layout used by PT, Dietetics, OT,
+ *  SLP, and any future profession.  Discipline-specific content styles
+ *  (PES rows, red-flag panels, etc.) live in their own CSS files.
+ *
+ *  Classes:
+ *    .note-editor                  – flex wrapper (sidebar + content)
+ *    .note-editor__patient-header  – patient info bar above the editor
+ *    .note-editor__patient-name    – patient name text
+ *    .note-editor__patient-details – demographic/status badges row
+ *    .note-editor__save-indicator  – auto-save status label
+ *    .note-editor__sidebar         – left navigation rail
+ *    .note-editor__sidebar-title   – "CHART SECTIONS" heading
+ *    .note-editor__sidebar-item    – nav button (icon + label)
+ *    .note-editor__sidebar-item--active
+ *    .note-editor__sidebar-icon    – icon wrapper inside a sidebar item
+ *    .note-editor__content         – scrollable main content pane
+ */
+
+/* ── Editor layout ── */
+.note-editor {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 140px);
+}
+
+/* ── Patient Header ── */
+.note-editor__patient-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface, #fff);
+  border-bottom: 1px solid var(--border, #e0e0e0);
+  flex-wrap: wrap;
+}
+
+.note-editor__patient-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text, #1a1a1a);
+}
+
+.note-editor__patient-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  flex-wrap: wrap;
+}
+
+.note-editor__save-indicator {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #888);
+  transition: color 0.3s ease;
+}
+
+.note-editor__save-indicator.saved {
+  color: var(--primary-600, #16a34a);
+}
+
+/* ── Sidebar ── */
+.note-editor__sidebar {
+  width: 220px;
+  min-width: 200px;
+  background: var(--surface, #fff);
+  border-right: 1px solid var(--border, #e0e0e0);
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.note-editor__sidebar-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #888);
+  padding: 0 1rem 0.5rem;
+}
+
+.note-editor__sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text, #333);
+  width: 100%;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.note-editor__sidebar-item:hover {
+  background: var(--primary-50, #f0fdf4);
+}
+
+.note-editor__sidebar-item--active {
+  background: var(--primary-50, #f0fdf4);
+  color: var(--primary-700, #15803d);
+  font-weight: 600;
+  border-left-color: var(--primary-600, #16a34a);
+}
+
+.note-editor__sidebar-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Content pane ── */
+.note-editor__content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: var(--bg, #f9fafb);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .note-editor {
+    flex-direction: column;
+  }
+
+  .note-editor__sidebar {
+    width: 100%;
+    min-width: unset;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border, #e0e0e0);
+    padding: 0;
+    gap: 0;
+  }
+
+  .note-editor__sidebar-title {
+    display: none;
+  }
+
+  .note-editor__sidebar-item {
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .note-editor__sidebar-item--active {
+    border-bottom-color: var(--primary-600, #16a34a);
+    border-left-color: transparent;
+  }
+
+  .note-editor__content {
+    padding: 1rem;
+  }
+}
