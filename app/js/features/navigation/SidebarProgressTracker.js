@@ -105,8 +105,9 @@ export function getSubsectionStatus(
  * @returns {'empty'|'partial'|'complete'}
  */
 export function calculateSectionStatus(sectionId, draftData, disciplineConfig) {
-  const { subsections, dataResolvers, requirements } = disciplineConfig;
-  const sectionData = draftData?.[sectionId];
+  const { subsections, dataResolvers, requirements, sectionKeyMap } = disciplineConfig;
+  const dataKey = sectionKeyMap?.[sectionId] ?? sectionId;
+  const sectionData = draftData?.[dataKey];
   const subIds = subsections[sectionId] || [];
   if (subIds.length === 0) return 'empty';
 
@@ -190,7 +191,8 @@ export function createProgressTracker(disciplineConfig) {
      * @returns {'empty'|'partial'|'complete'}
      */
     getSubsectionStatus(subId, sectionId, draftData) {
-      const sectionData = draftData?.[sectionId];
+      const dataKey = disciplineConfig.sectionKeyMap?.[sectionId] ?? sectionId;
+      const sectionData = draftData?.[dataKey];
       const resolver = dataResolvers[subId];
       const subData = resolver ? resolver(sectionData) : sectionData?.[subId];
       return getSubsectionStatus(subData, subId, sectionData, requirements);

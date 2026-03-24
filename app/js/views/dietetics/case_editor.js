@@ -10,6 +10,8 @@ import { storage } from '../../core/index.js';
 import { inputField, textAreaField, selectField } from '../../ui/form-components.js';
 import { renderSchedulingPanel } from '../../features/scheduling/SchedulingPanel.js';
 import { createDefaultSchedulingData } from '../../features/scheduling/scheduling-data.js';
+import { createProgressTracker } from '../../features/navigation/SidebarProgressTracker.js';
+import { dieteticsDisciplineConfig } from '../../features/navigation/dietetics-discipline-config.js';
 
 /** Create a Material Symbols Outlined icon element */
 function materialIcon(name) {
@@ -555,6 +557,7 @@ function renderEditor(wrapper, caseId) {
   const onDraftChange = (d) => {
     draft = d;
     saveDraft(caseId, draft);
+    updateSidebarStatus();
     const indicator = wrapper.querySelector('.note-editor__save-indicator');
     if (indicator) {
       indicator.textContent = 'Saved';
@@ -586,10 +589,13 @@ function renderEditor(wrapper, caseId) {
   ]);
 
   // --- Sidebar ---
+  const tracker = createProgressTracker(dieteticsDisciplineConfig);
+
   function buildSidebar() {
     return el('nav', { class: 'note-editor__sidebar', 'aria-label': 'NCP Sections' }, [
       el('div', { class: 'note-editor__sidebar-title' }, 'Chart Sections'),
       ...NCP_SECTIONS.map((s) => {
+        const status = tracker.getSectionStatus(s.id, draft);
         const btn = el(
           'button',
           {
@@ -598,6 +604,7 @@ function renderEditor(wrapper, caseId) {
             onclick: () => {
               activeSection = s.id;
               renderContent();
+              updateSidebarStatus();
               wrapper
                 .querySelectorAll('.note-editor__sidebar-item')
                 .forEach((b) =>
@@ -609,6 +616,7 @@ function renderEditor(wrapper, caseId) {
             },
           },
           [
+            tracker.createIndicator(status),
             el('span', { class: 'note-editor__sidebar-icon' }, [materialIcon(s.icon)]),
             el('span', {}, s.label),
           ],
@@ -616,6 +624,27 @@ function renderEditor(wrapper, caseId) {
         return btn;
       }),
     ]);
+  }
+
+  /** Refresh progress dots in the sidebar without full rebuild */
+  function updateSidebarStatus() {
+    sidebar?.querySelectorAll('.note-editor__sidebar-item').forEach((btn) => {
+      const sectionId = btn.dataset.section;
+      const status = tracker.getSectionStatus(sectionId, draft);
+      const dot = btn.querySelector('.progress-indicator');
+      if (dot) {
+        const colors = {
+          empty: 'var(--border)',
+          partial: 'var(--und-orange)',
+          complete: 'var(--und-green)',
+        };
+        const color = colors[status] || colors.empty;
+        dot.style.background = status === 'empty' ? 'var(--bg)' : color;
+        dot.style.borderColor = color;
+        dot.dataset.status = status;
+        dot.setAttribute('aria-label', `Status: ${status}`);
+      }
+    });
   }
 
   // --- Content pane ---
