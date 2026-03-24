@@ -78,21 +78,22 @@ const STATUS_CLASSES = {
   complete: 'status--complete',
 };
 
-function createNewCase() {
+function createNewCase(metaFields = {}) {
   const cases = loadCases();
   const id = `diet_case_${Date.now()}`;
+  const title = metaFields.title || 'New Dietetics Case';
   cases[id] = {
     id,
-    title: 'New Dietetics Case',
+    title,
     caseObj: {
       meta: {
-        title: 'New Dietetics Case',
-        patientName: '',
-        dob: '',
-        sex: '',
-        setting: 'Inpatient',
-        dietOrder: '',
-        allergies: '',
+        title,
+        patientName: metaFields.patientName || '',
+        dob: metaFields.dob || '',
+        sex: metaFields.sex || '',
+        setting: metaFields.setting || 'Inpatient',
+        dietOrder: metaFields.dietOrder || '',
+        allergies: metaFields.allergies || '',
       },
       nutritionAssessment: '',
       nutritionDiagnosis: '',
@@ -112,25 +113,72 @@ route('#/dietetics/student/cases', (wrapper) => {
   const cases = loadCases();
   const caseList = Object.values(cases);
 
+  const field = (placeholder, style = '') =>
+    el('input', {
+      type: 'text',
+      class: 'form-input-standard',
+      placeholder,
+      style: style || 'max-width:200px;',
+    });
+
+  const titleInput = field('Case title...', 'max-width:300px;');
+  const nameInput = field('Patient name...');
+  const dobInput = el('input', {
+    type: 'date',
+    class: 'form-input-standard',
+    style: 'max-width:160px;',
+  });
+  const sexInput = field('Sex...');
+  const dietInput = field('Diet order...');
+  const allergyInput = field('Allergies...');
+
   const hero = el('div', { class: 'panel' }, [
-    el('div', { class: 'flex-between mb-16 ai-center' }, [
-      el('h1', {}, 'Dietetics — Student Cases'),
-      el(
-        'button',
-        {
-          class: 'btn primary',
-          onclick: () => {
-            const id = createNewCase();
-            urlNavigate('/dietetics/student/editor', { case: id });
-          },
-        },
-        '+ New Case',
-      ),
-    ]),
+    el('h1', {}, 'Dietetics — Student Cases'),
     el(
       'p',
-      { class: 'text-secondary' },
+      { class: 'text-secondary mb-16' },
       'Select a case to begin practicing Nutrition Care Process documentation and scheduling.',
+    ),
+    el('div', { class: 'note-editor__patient-edit-grid', style: 'margin-bottom:0.75rem;' }, [
+      el('div', { class: 'form-field' }, [
+        el('label', { class: 'form-label' }, 'Case Title'),
+        titleInput,
+      ]),
+      el('div', { class: 'form-field' }, [
+        el('label', { class: 'form-label' }, 'Patient Name'),
+        nameInput,
+      ]),
+      el('div', { class: 'form-field' }, [
+        el('label', { class: 'form-label' }, 'Date of Birth'),
+        dobInput,
+      ]),
+      el('div', { class: 'form-field' }, [el('label', { class: 'form-label' }, 'Sex'), sexInput]),
+      el('div', { class: 'form-field' }, [
+        el('label', { class: 'form-label' }, 'Diet Order'),
+        dietInput,
+      ]),
+      el('div', { class: 'form-field' }, [
+        el('label', { class: 'form-label' }, 'Allergies'),
+        allergyInput,
+      ]),
+    ]),
+    el(
+      'button',
+      {
+        class: 'btn primary',
+        onclick: () => {
+          const id = createNewCase({
+            title: titleInput.value.trim() || 'New Dietetics Case',
+            patientName: nameInput.value.trim(),
+            dob: dobInput.value,
+            sex: sexInput.value.trim(),
+            dietOrder: dietInput.value.trim(),
+            allergies: allergyInput.value.trim(),
+          });
+          urlNavigate('/dietetics/student/editor', { case: id });
+        },
+      },
+      '+ New Case',
     ),
   ]);
 

@@ -21,22 +21,23 @@ function saveCases(cases) {
   storage.setItem(STORE_KEY, JSON.stringify(cases));
 }
 
-function createNewCase(title = 'New Dietetics Case') {
+function createNewCase(metaFields = {}) {
   const cases = loadCases();
   const id = `diet_case_${Date.now()}`;
+  const title = metaFields.title || 'New Dietetics Case';
   cases[id] = {
     id,
     title,
     caseObj: {
       meta: {
         title,
-        patientName: '',
-        dob: '',
-        sex: '',
-        setting: 'Inpatient',
-        acuity: 'Routine',
-        dietOrder: '',
-        allergies: '',
+        patientName: metaFields.patientName || '',
+        dob: metaFields.dob || '',
+        sex: metaFields.sex || '',
+        setting: metaFields.setting || 'Inpatient',
+        acuity: metaFields.acuity || 'Routine',
+        dietOrder: metaFields.dietOrder || '',
+        allergies: metaFields.allergies || '',
       },
       nutritionAssessment: '',
       nutritionDiagnosis: '',
@@ -66,12 +67,24 @@ route('#/dietetics/instructor/cases', (wrapper) => {
     const cases = loadCases();
     const caseList = Object.values(cases);
 
-    const titleInput = el('input', {
-      type: 'text',
+    const field = (placeholder, style = '') =>
+      el('input', {
+        type: 'text',
+        class: 'form-input-standard',
+        placeholder,
+        style: style || 'max-width:200px;',
+      });
+
+    const titleInput = field('Case title...', 'max-width:300px;');
+    const nameInput = field('Patient name...');
+    const dobInput = el('input', {
+      type: 'date',
       class: 'form-input-standard',
-      placeholder: 'Case title...',
-      style: 'max-width: 300px;',
+      style: 'max-width:160px;',
     });
+    const sexInput = field('Sex...');
+    const dietInput = field('Diet order...');
+    const allergyInput = field('Allergies...');
 
     const hero = el('div', { class: 'panel' }, [
       el('h1', {}, 'Dietetics — Faculty Dashboard'),
@@ -80,21 +93,47 @@ route('#/dietetics/instructor/cases', (wrapper) => {
         { class: 'text-secondary mb-16' },
         'Create and manage dietetics cases for your students.',
       ),
-      el('div', { class: 'flex-between ai-center', style: 'gap: 0.75rem; flex-wrap: wrap;' }, [
-        titleInput,
-        el(
-          'button',
-          {
-            class: 'btn primary',
-            onclick: () => {
-              const title = titleInput.value.trim() || 'New Dietetics Case';
-              const id = createNewCase(title);
-              urlNavigate('/dietetics/instructor/editor', { case: id });
-            },
-          },
-          '+ Create Case',
-        ),
+      el('div', { class: 'note-editor__patient-edit-grid', style: 'margin-bottom:0.75rem;' }, [
+        el('div', { class: 'form-field' }, [
+          el('label', { class: 'form-label' }, 'Case Title'),
+          titleInput,
+        ]),
+        el('div', { class: 'form-field' }, [
+          el('label', { class: 'form-label' }, 'Patient Name'),
+          nameInput,
+        ]),
+        el('div', { class: 'form-field' }, [
+          el('label', { class: 'form-label' }, 'Date of Birth'),
+          dobInput,
+        ]),
+        el('div', { class: 'form-field' }, [el('label', { class: 'form-label' }, 'Sex'), sexInput]),
+        el('div', { class: 'form-field' }, [
+          el('label', { class: 'form-label' }, 'Diet Order'),
+          dietInput,
+        ]),
+        el('div', { class: 'form-field' }, [
+          el('label', { class: 'form-label' }, 'Allergies'),
+          allergyInput,
+        ]),
       ]),
+      el(
+        'button',
+        {
+          class: 'btn primary',
+          onclick: () => {
+            const id = createNewCase({
+              title: titleInput.value.trim() || 'New Dietetics Case',
+              patientName: nameInput.value.trim(),
+              dob: dobInput.value,
+              sex: sexInput.value.trim(),
+              dietOrder: dietInput.value.trim(),
+              allergies: allergyInput.value.trim(),
+            });
+            urlNavigate('/dietetics/instructor/editor', { case: id });
+          },
+        },
+        '+ Create Case',
+      ),
     ]);
 
     if (caseList.length === 0) {
