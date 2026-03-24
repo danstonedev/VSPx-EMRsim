@@ -12,6 +12,7 @@ import { renderSchedulingPanel } from '../../features/scheduling/SchedulingPanel
 import { createDefaultSchedulingData } from '../../features/scheduling/scheduling-data.js';
 import { createProgressTracker } from '../../features/navigation/SidebarProgressTracker.js';
 import { dieteticsDisciplineConfig } from '../../features/navigation/dietetics-discipline-config.js';
+import { getPatientDisplayName, formatDOB } from '../CaseEditorUtils.js';
 
 /** Create a Material Symbols Outlined icon element */
 function materialIcon(name) {
@@ -35,6 +36,21 @@ function saveDraft(caseId, draftData) {
     storage.setItem(`${DRAFT_PREFIX}${caseId}`, JSON.stringify(draftData));
   } catch (e) {
     console.warn('[Dietetics] saveDraft failed:', e);
+  }
+}
+
+/** Persist case meta back to the cases store */
+function saveCaseMeta(caseId, meta) {
+  try {
+    const cases = JSON.parse(storage.getItem(STORE_KEY) || '{}');
+    if (cases[caseId]) {
+      cases[caseId].caseObj = cases[caseId].caseObj || {};
+      cases[caseId].caseObj.meta = meta;
+      cases[caseId].title = meta.title || cases[caseId].title;
+      storage.setItem(STORE_KEY, JSON.stringify(cases));
+    }
+  } catch (e) {
+    console.warn('[Dietetics] saveCaseMeta failed:', e);
   }
 }
 
@@ -566,27 +582,102 @@ function renderEditor(wrapper, caseId) {
     }
   };
 
-  // --- Patient Header ---
-  const meta = caseObj.meta || {};
-  const patientHeader = el('div', { class: 'note-editor__patient-header' }, [
-    el(
-      'div',
-      { class: 'note-editor__patient-name' },
-      meta.title || caseData?.title || 'Untitled Case',
-    ),
-    el('div', { class: 'note-editor__patient-details' }, [
-      meta.dob ? el('span', {}, `DOB: ${meta.dob}`) : null,
-      meta.sex ? el('span', {}, meta.sex) : null,
-      meta.dietOrder ? el('span', {}, `Diet: ${meta.dietOrder}`) : null,
-      meta.allergies
-        ? el('span', { class: 'dietetics-allergy-badge' }, [
-            materialIcon('warning'),
-            ` ${meta.allergies}`,
-          ])
-        : null,
-    ]),
-    el('span', { class: 'note-editor__save-indicator' }, ''),
-  ]);
+  // --- Patient Header (display + inline edit) ---
+  if (!caseObj.meta) caseObj.meta = {};
+  const meta = caseObj.meta;
+
+  function buildPatientDisplay() {
+    const name = getPatientDisplayName(caseObj);
+    const dob = formatDOB(meta.dob || '');
+    return el('div', { class: 'note-editor__patient-header' }, [
+      el('div', { class: 'note-editor__patient-name' }, name),
+      el('div', { class: 'note-editor__patient-details' }, [
+        dob ? el('span', {}, `DOB: ${dob}`) : null,
+        meta.sex ? el('span', {}, meta.sex) : null,
+        meta.dietOrder ? el('span', {}, `Diet: ${meta.dietOrder}`) : null,
+        meta.allergies
+          ? el('span', { class: 'dietetics-allergy-badge' }, [
+              materialIcon('warning'),
+              ` ${meta.allergies}`,
+            ])
+          : null,
+      ]),
+      el(
+        'button',
+        {
+          class: 'btn btn--sm btn--ghost',
+          title: 'Edit patient info',
+          'aria-label': 'Edit patient info',
+          onclick: () => showEditForm(),
+        },
+        [materialIcon('edit')],
+      ),
+      el('span', { class: 'note-editor__save-indicator' }, ''),
+    ]);
+  }
+
+  function buildPatientEditForm() {
+    const fields = [
+      { key: 'patientName', label: 'Patient Name', value: meta.patientName || '' },
+      { key: 'dob', label: 'Date of Birth', value: meta.dob || '', type: 'date' },
+      { key: 'sex', label: 'Sex', value: meta.sex || '' },
+      { key: 'dietOrder', label: 'Diet Order', value: meta.dietOrder || '' },
+      { key: 'allergies', label: 'Allergies', value: meta.allergies || '' },
+    ];
+    const staged = {};
+    fields.forEach((f) => {
+      staged[f.key] = f.value;
+    });
+
+    const fieldEls = fields.map((f) =>
+      inputField({
+        label: f.label,
+        value: f.value,
+        type: f.type || 'text',
+        onChange: (v) => {
+          staged[f.key] = v;
+        },
+      }),
+    );
+
+    return el('div', { class: 'note-editor__patient-header note-editor__patient-edit' }, [
+      el('div', { class: 'note-editor__patient-edit-title' }, 'Patient Information'),
+      el('div', { class: 'note-editor__patient-edit-grid' }, fieldEls),
+      el('div', { class: 'note-editor__patient-edit-actions' }, [
+        el(
+          'button',
+          {
+            class: 'btn btn--sm btn--primary',
+            onclick: () => {
+              Object.assign(meta, staged);
+              saveCaseMeta(caseId, meta);
+              refreshPatientHeader();
+            },
+          },
+          'Save',
+        ),
+        el(
+          'button',
+          {
+            class: 'btn btn--sm btn--ghost',
+            onclick: () => refreshPatientHeader(),
+          },
+          'Cancel',
+        ),
+      ]),
+    ]);
+  }
+
+  const patientHeaderSlot = el('div', {});
+  function refreshPatientHeader() {
+    patientHeaderSlot.replaceChildren(buildPatientDisplay());
+  }
+  function showEditForm() {
+    patientHeaderSlot.replaceChildren(buildPatientEditForm());
+  }
+  refreshPatientHeader();
+
+  const patientHeader = patientHeaderSlot;
 
   // --- Sidebar ---
   const tracker = createProgressTracker(dieteticsDisciplineConfig);

@@ -87,6 +87,7 @@ function createNewCase() {
     caseObj: {
       meta: {
         title: 'New Dietetics Case',
+        patientName: '',
         dob: '',
         sex: '',
         setting: 'Inpatient',

@@ -30,6 +30,7 @@ function createNewCase(title = 'New Dietetics Case') {
     caseObj: {
       meta: {
         title,
+        patientName: '',
         dob: '',
         sex: '',
         setting: 'Inpatient',
