@@ -1,6 +1,11 @@
-// ChartNavigation.js - Professional EMR-style navigation with progress tracking
+﻿// ChartNavigation.js - Professional EMR-style navigation with progress tracking
 import { el } from '../../ui/utils.js';
 import { openEditCaseModal } from './modal.js';
+import {
+  getSubsectionStatus as _getSubsectionStatusGeneric,
+  createProgressIndicator as createProgressIndicatorShared,
+} from './SidebarProgressTracker.js';
+import { ptRequirements } from './pt-discipline-config.js';
 // Note: icon utilities are used in other submodules; not needed directly here now
 // Lazy-load attachments service on demand
 let __attPromise;
@@ -50,26 +55,6 @@ function saveSectionCollapseState(state) {
   }
 }
 let sectionCollapseState = loadSectionCollapseState();
-
-function getPlanInterventionRows(data, section) {
-  return (
-    section?.inClinicInterventions ||
-    data?.inClinicInterventions ||
-    section?.exerciseTable ||
-    data?.exerciseTable
-  );
-}
-
-function getPlanGoalRows(data, section) {
-  return section?.goals || data?.goals || section?.goalsTable || data?.goalsTable;
-}
-
-function getPlanScheduleCompletion(data, section, isFieldComplete) {
-  return {
-    hasFreq: isFieldComplete(section?.frequency || data?.frequency),
-    hasDur: isFieldComplete(section?.duration || data?.duration),
-  };
-}
 
 // Heuristic normalization for artifact type across legacy/new cases
 function normalizeArtifactType(mod) {
@@ -154,7 +139,7 @@ function createSVGElement(tag, attrs = {}, children = []) {
 function createSubsectionIndicator(status) {
   switch (status) {
     case 'complete':
-      return el('span', { class: 'subsection-indicator subsection-indicator-complete' }, '✓');
+      return el('span', { class: 'subsection-indicator subsection-indicator-complete' }, 'âœ“');
 
     case 'partial':
       return el('div', { class: 'subsection-indicator subsection-indicator-partial' });
@@ -173,250 +158,16 @@ function createSubsectionIndicator(status) {
 // removed unused calculateSectionProgress
 
 /**
- * Determines subsection completion status with stricter validation
- * @param {any} subsectionData - Data for the subsection
- * @param {string} subsectionType - Type of subsection
- * @param {Object} fullSectionData - Full section data for context
- * @returns {string} Status: 'complete', 'partial', or 'empty'
+ * Determines subsection completion status with stricter validation.
+ * Delegates to the generic SidebarProgressTracker engine using PT-specific requirements.
  */
 function getSubsectionStatus(subsectionData, subsectionType, fullSectionData = {}) {
-  if (!subsectionData) return 'empty';
-
-  /** Check whether the core patient profile fields are filled */
-  function isPatientProfileComplete(section) {
-    return (
-      isFieldComplete(section?.patientName) &&
-      isFieldComplete(section?.patientBirthday) &&
-      isFieldComplete(section?.patientAge) &&
-      isFieldComplete(section?.patientGender)
-    );
-  }
-
-  // Define required fields for each subsection type
-  const subsectionRequirements = {
-    // Subjective subsections
-    hpi: (data, section) => {
-      return isPatientProfileComplete(section);
-    },
-    history: (data, section) => {
-      const chiefComplaint = section?.chiefComplaint || section?.chiefConcern;
-      const hpiText =
-        section?.historyOfPresentIllness ??
-        section?.detailedHistoryOfCurrentCondition ??
-        section?.hpi ??
-        '';
-      return (
-        isFieldComplete(chiefComplaint) &&
-        isFieldComplete(hpiText) &&
-        isFieldComplete(section?.functionalLimitations) &&
-        isFieldComplete(section?.additionalHistory) &&
-        isFieldComplete(section?.priorLevel) &&
-        isFieldComplete(section?.patientGoals)
-      );
-    },
-    'current-medications': (data, section) => {
-      const medsComplete = Array.isArray(section?.medications)
-        ? section.medications.length > 0
-        : isFieldComplete(section?.medicationsCurrent);
-      return medsComplete;
-    },
-    /* eslint-disable-next-line complexity */
-    'pain-assessment': (data, section) => {
-      const painData =
-        section &&
-        (section.painLocation ||
-          section.painScale ||
-          section.painQuality ||
-          section.painPattern ||
-          section.aggravatingFactors ||
-          section.easingFactors)
-          ? section
-          : data;
-      if (typeof painData !== 'object' || Array.isArray(painData)) return false;
-
-      // Require all six inputs to mark complete
-      const painLocation = painData.painLocation || painData.location;
-      const painScale = painData.painScale || painData.scale;
-      const painQuality = painData.painQuality || painData.quality;
-      const painPattern = painData.painPattern || painData.pattern;
-      const aggravatingFactors = painData.aggravatingFactors;
-      const easingFactors = painData.easingFactors;
-      return (
-        isFieldComplete(painLocation) &&
-        isFieldComplete(painScale) &&
-        isFieldComplete(painQuality) &&
-        isFieldComplete(painPattern) &&
-        isFieldComplete(aggravatingFactors) &&
-        isFieldComplete(easingFactors)
-      );
-    },
-    'red-flag-screening': (data, section) => {
-      return Array.isArray(section?.redFlagScreening)
-        ? section.redFlagScreening.some((i) => i.status !== 'not-screened')
-        : isFieldComplete(section?.redFlags);
-    },
-    'functional-status': undefined,
-    'interview-qa': (data, section) => {
-      const hasInterview = Array.isArray(section?.qaItems)
-        ? section.qaItems.some((q) => isFieldComplete(q?.question) && isFieldComplete(q?.response))
-        : false;
-      return hasInterview;
-    },
-
-    // Objective subsections
-    'regional-assessment': (data, section) => {
-      const ra = section?.regionalAssessments || data?.regionalAssessments || data;
-      if (!ra || typeof ra !== 'object') return false;
-      // Tables store values as nested objects; count content if any non-empty value exists
-      const hasRom = ra.rom && isFieldComplete(ra.rom);
-      const hasMmt = ra.mmt && isFieldComplete(ra.mmt);
-      const hasTests = ra.specialTests && isFieldComplete(ra.specialTests);
-      // Mark complete if any of the three sub-areas has entries
-      return Boolean(hasRom || hasMmt || hasTests);
-    },
-    neuro: (data, section) => {
-      const neuro = section?.neuro?.screening || data;
-      return isFieldComplete(neuro);
-    },
-    functional: (data, section) => {
-      const functional = section?.functional?.assessment || data;
-      return isFieldComplete(functional);
-    },
-
-    // Assessment subsections
-    'primary-impairments': (data, section) => isFieldComplete(section?.primaryImpairments || data),
-    'icf-classification': (data, section) => {
-      const s = section || {};
-      return (
-        isFieldComplete(s.bodyFunctions) &&
-        isFieldComplete(s.activityLimitations) &&
-        isFieldComplete(s.participationRestrictions)
-      );
-    },
-    'pt-diagnosis': (data, section) => isFieldComplete(section?.ptDiagnosis || data),
-    'clinical-reasoning': (data, section) => isFieldComplete(section?.clinicalReasoning || data),
-
-    // Plan subsections
-    'treatment-plan': (data, section) =>
-      isFieldComplete(section?.treatmentPlan || data?.treatmentPlan) &&
-      isFieldComplete(section?.patientEducation || data?.patientEducation),
-    'in-clinic-treatment-plan': (data, section) => {
-      const hasRows = isFieldComplete(getPlanInterventionRows(data, section));
-      const { hasFreq, hasDur } = getPlanScheduleCompletion(data, section, isFieldComplete);
-      // consider complete when at least one row plus schedule are provided
-      return hasRows && hasFreq && hasDur;
-    },
-    'goal-setting': (data, section) => {
-      // Consider complete when at least one goal entry exists
-      return isFieldComplete(getPlanGoalRows(data, section));
-    },
-
-    // Billing subsections
-    'diagnosis-codes': (data, section) => {
-      const arr = section?.diagnosisCodes || section?.icdCodes || data;
-      if (!Array.isArray(arr) || arr.length === 0) return false;
-      return arr.every((code) => isFieldComplete(code.code));
-    },
-    'cpt-codes': (data, section) => {
-      const arr = section?.billingCodes || section?.cptCodes || data;
-      if (!Array.isArray(arr) || arr.length === 0) return false;
-      // Require all visible inputs per CPT row: code, units (>0), and timeSpent (non-empty)
-      return arr.every((item) => {
-        const hasCode = isFieldComplete(item.code);
-        const units = parseInt(item.units, 10);
-        const hasValidUnits = !isNaN(units) && units > 0;
-        const hasTime = isFieldComplete(item.timeSpent);
-        return hasCode && hasValidUnits && hasTime;
-      });
-    },
-    'orders-referrals': (data, section) => {
-      const arr = section?.ordersReferrals || data;
-      if (!Array.isArray(arr) || arr.length === 0) return false;
-      // Require both Type and Details for each row
-      return arr.every((item) => isFieldComplete(item.type) && isFieldComplete(item.details));
-    },
-    'billing-notes': (data, section) => {
-      const notes = section?.skilledJustification || section?.treatmentNotes || data;
-      return isFieldComplete(notes);
-    },
-  };
-
-  // Helper function to check if a field is complete
-  function isFieldComplete(value) {
-    if (value === null || value === undefined) return false;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return !isNaN(value);
-    if (Array.isArray(value))
-      return value.length > 0 && value.some((item) => isFieldComplete(item));
-    if (typeof value === 'object') {
-      return Object.values(value).some((val) => isFieldComplete(val));
-    }
-    return Boolean(value);
-  }
-
-  // Check if we have a specific requirement for this subsection type
-  const requirement = subsectionRequirements[subsectionType];
-  if (requirement) {
-    const isComplete = requirement(subsectionData, fullSectionData);
-    return isComplete ? 'complete' : hasAnyContent(subsectionData) ? 'partial' : 'empty';
-  }
-
-  // Fallback to generic checking for unknown subsection types
-  return genericSubsectionCheck(subsectionData);
-}
-
-/**
- * Helper function to check if there's any content in the subsection
- */
-function hasAnyContent(subsectionData) {
-  // Check if there's any non-empty content
-  function hasContent(value) {
-    if (value === null || value === undefined) return false;
-    if (typeof value === 'boolean') return false; // booleans (e.g., flags) don’t count as content
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'number') return !isNaN(value);
-    if (Array.isArray(value)) return value.some((item) => hasContent(item));
-    if (typeof value === 'object') {
-      return Object.values(value).some((val) => hasContent(val));
-    }
-    return Boolean(value);
-  }
-
-  return hasContent(subsectionData);
-}
-
-/**
- * Generic subsection checking for unknown types
- */
-function genericSubsectionCheck(subsectionData) {
-  if (Array.isArray(subsectionData)) {
-    const completedItems = subsectionData.filter((item) => {
-      if (typeof item === 'string') return item.trim();
-      if (typeof item === 'object') {
-        return Object.values(item).some((value) => value && value.toString().trim());
-      }
-      return false;
-    });
-
-    if (completedItems.length === 0) return 'empty';
-    if (completedItems.length === subsectionData.length) return 'complete';
-    return 'partial';
-  }
-
-  if (typeof subsectionData === 'string') {
-    return subsectionData.trim() ? 'complete' : 'empty';
-  }
-
-  if (typeof subsectionData === 'object') {
-    const values = Object.values(subsectionData);
-    const completedValues = values.filter((value) => value && value.toString().trim());
-
-    if (completedValues.length === 0) return 'empty';
-    if (completedValues.length === values.length) return 'complete';
-    return 'partial';
-  }
-
-  return 'empty';
+  return _getSubsectionStatusGeneric(
+    subsectionData,
+    subsectionType,
+    fullSectionData,
+    ptRequirements,
+  );
 }
 
 // Compute age from a YYYY-MM-DD date string
@@ -590,7 +341,7 @@ function createEditableCaseHeader(caseInfo, onUpdate, options = {}) {
         }
       },
     },
-    ['✎'],
+    ['âœŽ'],
   );
 
   const titleDisplay = el('div', { class: 'case-title' }, [
@@ -688,7 +439,7 @@ function openCaseDetailsModal(caseInfo) {
       el(
         'button',
         { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-        '✕',
+        'âœ•',
       ),
     ]),
     el('div', { class: 'modal-body case-details-body' }, [
@@ -748,7 +499,7 @@ function openViewArtifactModal(module, options = {}) {
       el(
         'button',
         { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-        '✕',
+        'âœ•',
       ),
     ]),
     el('div', { class: 'modal-body case-details-body' }, [
@@ -1037,7 +788,7 @@ function openViewArtifactModal(module, options = {}) {
                   }
                 })();
               } else {
-                thumbWrap.appendChild(el('span', { style: 'font-size:18px;' }, '📄'));
+                thumbWrap.appendChild(el('span', { style: 'font-size:18px;' }, 'ðŸ“„'));
               }
               const nameSpan = el(
                 'span',
@@ -1155,7 +906,7 @@ function openViewArtifactModal(module, options = {}) {
                             'display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; color:var(--text-secondary);';
                           const icon = document.createElement('div');
                           icon.style.cssText = 'font-size:42px;';
-                          icon.textContent = '📄';
+                          icon.textContent = 'ðŸ“„';
                           const msg = document.createElement('div');
                           msg.style.cssText = 'font-size:14px;';
                           msg.textContent =
@@ -1551,7 +1302,7 @@ export function openAddArtifactModal(onAdd) {
       el(
         'button',
         { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-        '✕',
+        'âœ•',
       ),
     ]),
     el('div', { class: 'modal-body case-details-body' }, [
@@ -1841,7 +1592,7 @@ function openEditArtifactModal(module, onSave) {
       el(
         'button',
         { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-        '✕',
+        'âœ•',
       ),
     ]),
     el('div', { class: 'modal-body case-details-body' }, [
@@ -1975,11 +1726,11 @@ export function createChartNavigation(config) {
 
   // Define top-level sections only; subsections will be derived from DOM anchors to keep sidebar in sync with editor content
   const allSections = [
-    { id: 'subjective', label: 'Subjective', icon: '◉' },
-    { id: 'objective', label: 'Objective', icon: '⚬' },
-    { id: 'assessment', label: 'Assessment', icon: '⬢' },
-    { id: 'plan', label: 'Plan', icon: '▪' },
-    { id: 'billing', label: 'Billing', icon: '⬟' },
+    { id: 'subjective', label: 'Subjective', icon: 'â—‰' },
+    { id: 'objective', label: 'Objective', icon: 'âš¬' },
+    { id: 'assessment', label: 'Assessment', icon: 'â¬¢' },
+    { id: 'plan', label: 'Plan', icon: 'â–ª' },
+    { id: 'billing', label: 'Billing', icon: 'â¬Ÿ' },
   ];
   // Simple SOAP notes: only S/O/A/P (no Billing)
   const sections = isSimpleSOAP ? allSections.filter((s) => s.id !== 'billing') : allSections;
@@ -2241,18 +1992,8 @@ export function createChartNavigation(config) {
     return { status };
   };
 
-  // Simple tri-state dot indicator
-  const createProgressIndicator = (status) => {
-    const colors = {
-      empty: 'var(--border)',
-      partial: 'var(--und-orange)',
-      complete: 'var(--und-green)',
-    };
-    const color = colors[status] || 'var(--border)';
-    return el('div', {
-      style: `width: 12px; height: 12px; border-radius: 50%; background: ${status === 'empty' ? 'var(--bg)' : color}; border: 2px solid ${color}; margin-right: 10px; flex-shrink:0;`,
-    });
-  };
+  // Simple tri-state dot indicator — delegated to SidebarProgressTracker
+  const createProgressIndicator = createProgressIndicatorShared;
 
   // Create section header (collapsible card toggle)
   const createSectionNav = (section, isCollapsed, rebuild) => {
@@ -2364,7 +2105,7 @@ export function createChartNavigation(config) {
             style:
               'width:14px; display:inline-block; color:var(--text-secondary); margin-left:auto; text-align:right;',
           },
-          isCollapsed ? '▶' : '▼',
+          isCollapsed ? 'â–¶' : 'â–¼',
         ),
       ],
     );
@@ -2753,7 +2494,7 @@ export function createChartNavigation(config) {
             wrapper.appendChild(sectionsContainer);
             return wrapper;
           })(),
-          // Footer actions: Sign & Export (Word) — lazy-loaded panel
+          // Footer actions: Sign & Export (Word) â€” lazy-loaded panel
           (() => {
             const mountNode = el('div', { class: 'nav-panel nav-sign-export' });
             // Lazy mount using standard panel contract
