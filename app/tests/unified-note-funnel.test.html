@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unified Note Funnel Test</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body {
+        padding: 16px;
+        font:
+          14px/1.4 system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+      .result {
+        margin-top: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+      .pass {
+        background: #e6ffed;
+        color: #046b1c;
+        border: 1px solid #a6f4c5;
+      }
+      .fail {
+        background: #ffeff0;
+        color: #8a041a;
+        border: 1px solid #ffd0d4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Unified Note Funnel Test</h1>
+    <div id="results" class="result">Running...</div>
+
+    <script type="module">
+      import { launchUnifiedNote } from '../js/core/unified-note-funnel.js';
+
+      const errors = [];
+      const assert = (condition, message) => {
+        if (!condition) errors.push(message);
+      };
+
+      function createMemoryStorage() {
+        const map = new Map();
+        return {
+          getItem(key) {
+            return map.has(key) ? map.get(key) : null;
+          },
+          setItem(key, value) {
+            map.set(key, value);
+            return true;
+          },
+          removeItem(key) {
+            map.delete(key);
+            return true;
+          },
+          keys() {
+            return Array.from(map.keys());
+          },
+        };
+      }
+
+      const patient = {
+        id: 'vsp_001',
+        mrn: 'MRN-1001',
+        firstName: 'Pat',
+        lastName: 'Example',
+        dob: '1988-07-12',
+        sex: 'female',
+        pronouns: 'she/her',
+        preferredLanguage: 'English',
+        interpreterNeeded: false,
+        heightFt: '5',
+        heightIn: '6',
+        weightLbs: '142',
+        allergies: [{ name: 'Peanuts' }],
+      };
+
+      const storage = createMemoryStorage();
+      const now = () => 1711468800000;
+      let tokenIndex = 0;
+      const tokenValues = ['aa01', 'bb02', 'cc03', 'dd04', 'ee05', 'ff06'];
+      const randomToken = () => tokenValues[tokenIndex++] || 'zz99';
+
+      const studentPt = await launchUnifiedNote(
+        {
+          patientRecord: patient,
+          professionId: 'pt',
+          templateId: 'pt-simple-soap',
+          isFacultyMode: false,
+        },
+        { storage, now, randomToken },
+      );
+
+      assert(
+        studentPt.compatibility.routeHash.includes('#/student/editor?case=blank-'),
+        'PT student launch should route into student PT editor',
+      );
+      assert(
+        JSON.parse(storage.getItem(studentPt.compatibility.storageKeys[0]))?.vspId === 'vsp_001',
+        'PT student compatibility patient should retain canonical vspId',
+      );
+      assert(
+        JSON.parse(storage.getItem(studentPt.compatibility.storageKeys[1]))?.noteType ===
+          'simple-soap',
+        'PT student simple SOAP launch should seed a simple-soap draft',
+      );
+
+      const instructorPtStorage = createMemoryStorage();
+      let createdPtCase = null;
+      const instructorPt = await launchUnifiedNote(
+        {
+          patientRecord: patient,
+          professionId: 'pt',
+          templateId: 'pt-eval',
+          isFacultyMode: true,
+          setting: 'Outpatient',
+          acuity: 'acute',
+        },
+        {
+          storage: instructorPtStorage,
+          now,
+          randomToken,
+          createPtCase: async (caseData) => {
+            createdPtCase = caseData;
+            return { id: 'case_901', caseObj: caseData };
+          },
+        },
+      );
+
+      assert(
+        instructorPt.compatibility.routeHash ===
+          '#/instructor/editor?case=case_901&v=0&encounter=eval',
+        'PT instructor launch should route into instructor PT editor',
+      );
+      assert(
+        createdPtCase?.meta?.patientId === 'vsp_001',
+        'PT instructor case should preserve canonical patientId',
+      );
+      assert(
+        JSON.parse(instructorPtStorage.getItem('draft_case_901_eval'))?.meta?.templateId ===
+          'pt-eval',
+        'PT instructor launch should save a compatible PT draft',
+      );
+
+      const dietStorage = createMemoryStorage();
+      const dietLaunch = await launchUnifiedNote(
+        {
+          patientRecord: patient,
+          professionId: 'dietetics',
+          templateId: 'dietetics-ncp',
+          isFacultyMode: false,
+          dietOrder: 'Regular diet',
+        },
+        { storage: dietStorage, now, randomToken },
+      );
+
+      const dietCases = JSON.parse(dietStorage.getItem('dietetics_emr_cases') || '{}');
+      const dietCase = dietCases[dietLaunch.compatibility.routeCaseId];
+
+      assert(
+        dietLaunch.compatibility.routeHash.includes('#/dietetics/student/editor?case=diet_case-'),
+        'Dietetics launch should route into the dietetics editor',
+      );
+      assert(
+        dietCase?.caseObj?.meta?.patientId === 'vsp_001',
+        'Dietetics case should preserve canonical patientId',
+      );
+      assert(
+        dietCase?.caseObj?.meta?.dietOrder === 'Regular diet',
+        'Dietetics launch should preserve diet order context',
+      );
+
+      const result = document.getElementById('results');
+      result.textContent = errors.length ? `FAIL: ${errors.join('; ')}` : 'PASS';
+      result.className = `result ${errors.length ? 'fail' : 'pass'}`;
+      console.log('Unified Note Funnel Test:', errors.length ? 'FAIL' : 'PASS', errors);
+    </script>
+  </body>
+</html>

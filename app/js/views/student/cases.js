@@ -19,7 +19,9 @@ async function _listCaseSummaries(opts) {
   throw new Error('Store API not available');
 }
 import { storage } from '../../core/index.js';
+import { buildBrandedModal, openBrandedModal, closeBrandedModal } from '../../ui/ModalShell.js';
 import { el } from '../../ui/utils.js';
+import { buildPatientPicker } from '../../ui/vsp-patient-picker.js';
 
 // Shared icon helper (inline SVG sprite)
 function spriteIcon(name, { className = 'icon', size } = {}) {
@@ -1004,6 +1006,10 @@ function buildPatientCard(item, onRefresh) {
       patientGenderIdentityPronouns: meta.genderIdentityPronouns || '',
       patientPreferredLanguage: meta.preferredLanguage || '',
       patientInterpreterNeeded: meta.interpreterNeeded || '',
+      patientHeightFt: meta.heightFt || '',
+      patientHeightIn: meta.heightIn || '',
+      patientWeight: meta.weightLbs || '',
+      __vspId: meta.vspId || '',
     };
     const draft = isSimple
       ? {
@@ -1175,10 +1181,63 @@ function renderMyPatientsPanel(app) {
     [spriteIcon('plus'), '+ New Patient'],
   );
 
+  // Import from VSP Registry button
+  const importRegistryBtn = el(
+    'button',
+    {
+      class: 'btn secondary d-flex ai-center gap-8',
+      onClick: () => showRegistryImportModal(),
+    },
+    'Import from Registry',
+  );
+
+  function showRegistryImportModal() {
+    let closeModal;
+    const picker = buildPatientPicker({
+      onSelect: (vspId, data) => {
+        if (!vspId || !data) return;
+        const patientId = `blank-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        savePatientMeta(patientId, {
+          name: [data.firstName, data.lastName].filter(Boolean).join(' ') || '',
+          dob: data.dob ? isoToDob(data.dob) : '',
+          sex: normalizeSex(data.sex),
+          genderIdentityPronouns: data.pronouns || '',
+          preferredLanguage: data.preferredLanguage || '',
+          interpreterNeeded: data.interpreterNeeded ? 'yes' : '',
+          heightFt: data.heightFt || '',
+          heightIn: data.heightIn || '',
+          weightLbs: data.weightLbs || '',
+          vspId,
+          created: Date.now(),
+        });
+        items = getPatientItems();
+        renderCards();
+        if (closeModal) closeModal();
+        requestAnimationFrame(() => {
+          const newCard = cardList.querySelector(`[data-patient-id="${patientId}"]`);
+          if (newCard) {
+            newCard.classList.add('is-open');
+            const hdr = newCard.querySelector('.patient-card-header');
+            if (hdr) hdr.setAttribute('aria-expanded', 'true');
+          }
+        });
+      },
+    });
+    const modal = buildBrandedModal({
+      title: 'Import Patient from Registry',
+      overlayClass: 'fixed inset-0 overlay-50 d-flex ai-center jc-center z-modal',
+      contentClass: 'popup-card-base',
+      bodyChildren: [picker.element],
+      onRequestClose: () => closeModal(),
+    });
+    closeModal = () => closeBrandedModal(modal);
+    openBrandedModal(modal);
+  }
+
   section.append(
     el('div', { class: 'flex-between mb-16 ai-center' }, [
       el('h2', { class: 'm-0' }, 'My Patients'),
-      newPatientBtn,
+      el('div', { class: 'd-flex gap-8' }, [importRegistryBtn, newPatientBtn]),
     ]),
   );
 

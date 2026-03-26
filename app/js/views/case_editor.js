@@ -2,6 +2,7 @@
 import { route, storage } from '../core/index.js';
 import { onRouteChange } from '../core/url.js';
 import { el } from '../ui/utils.js';
+import { createChartSidebar } from '../features/navigation/ChartSidebarOrchestrator.js';
 // SOAP sections now loaded dynamically for better code splitting
 import {
   initializeCase,
@@ -25,11 +26,7 @@ import {
   getSectionScrollPercent,
   scrollToPercentExact,
 } from './ScrollUtils.js';
-import {
-  createPatientHeader,
-  setupThemeObserver,
-  createPatientHeaderUpdater,
-} from './CaseEditorRenderer.js';
+import { createPatientHeader, createPatientHeaderUpdater } from './CaseEditorRenderer.js';
 import { renderAllSections, getSectionRoot, getSectionHeader } from './SectionRenderer.js';
 import {
   setupActiveSectionObserver,
@@ -214,6 +211,10 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
           sub.patientPreferredLanguage = meta.preferredLanguage;
         if (!sub.patientInterpreterNeeded && meta.interpreterNeeded)
           sub.patientInterpreterNeeded = meta.interpreterNeeded;
+        if (!sub.patientHeightFt && meta.heightFt) sub.patientHeightFt = meta.heightFt;
+        if (!sub.patientHeightIn && meta.heightIn) sub.patientHeightIn = meta.heightIn;
+        if (!sub.patientWeight && meta.weightLbs) sub.patientWeight = meta.weightLbs;
+        if (!sub.__vspId && meta.vspId) sub.__vspId = meta.vspId;
       }
     } catch (_) {
       /* ignore parse errors */
@@ -442,9 +443,6 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   // Make chart refresh available globally for components
   window.refreshChartProgress = refreshChartProgress;
 
-  // Setup theme observer for avatar updates
-  const themeObserver = setupThemeObserver(avatarEl, updatePatientAvatar);
-
   // Setup resize observer for header height tracking
   try {
     if ('ResizeObserver' in window) {
@@ -532,8 +530,31 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
     });
   };
 
-  // Initialize the editor with sidebar navigation only
-  app.append(chartNav, mainContainer);
+  // Initialize the editor with hybrid chart rail + detail panel
+  const chartSidebar = createChartSidebar({
+    notesSidebar: chartNav,
+    caseObj: c,
+    caseId,
+    maxPhase: 1,
+    defaultTab: 'current-note',
+    embedStrategy: {
+      embed(sidebar, container) {
+        sidebar.classList.add('chart-navigation--embedded');
+        sidebar.style.removeProperty('position');
+        sidebar.style.removeProperty('left');
+        sidebar.style.removeProperty('top');
+        container.appendChild(sidebar);
+      },
+      restore(sidebar) {
+        sidebar.classList.remove('chart-navigation--embedded');
+        sidebar.style.position = 'fixed';
+        sidebar.style.left = '0';
+        sidebar.style.top = 'var(--topbar-h,72px)';
+      },
+    },
+  });
+  document.body.classList.add('has-chart-rail');
+  app.append(chartSidebar.wrapper, mainContainer);
   // Initialize header immediately so CSS var is ready before sections mount
   updatePatientHeader();
 
@@ -583,9 +604,9 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
   // Return teardown so the router can clean this view on navigation
   return () => {
     offRoute?.();
-    themeObserver?.disconnect?.();
     activeObserver?.disconnect?.();
     headerRO?.disconnect?.();
+    document.body.classList.remove('has-chart-rail', 'chart-panel-open');
     ac.abort();
   };
 }

@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Patient and Note Creation Flow Map</title>
+    <style>
+      :root {
+        --bg: #f5f1e8;
+        --panel: #fffdf8;
+        --ink: #1f2933;
+        --muted: #5b6670;
+        --line: #d9cdb6;
+        --accent: #005f73;
+        --accent-2: #bb3e03;
+        --accent-3: #6b8e23;
+        --vsp: #0a6c74;
+        --pt: #22577a;
+        --diet: #8f4e00;
+        --shared: #7a1f4d;
+        --shadow: 0 18px 40px rgba(31, 41, 51, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "Segoe UI", "Aptos", "Helvetica Neue", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(0, 95, 115, 0.08), transparent 28%),
+          radial-gradient(circle at top right, rgba(187, 62, 3, 0.08), transparent 24%),
+          linear-gradient(180deg, #fbf8f1 0%, var(--bg) 100%);
+      }
+
+      .page {
+        max-width: 1460px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        border: 1px solid rgba(31, 41, 51, 0.08);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        padding: 28px;
+        margin-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0 0 10px;
+        line-height: 1.1;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.2rem);
+      }
+
+      h2 {
+        font-size: 1.35rem;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.55;
+      }
+
+      .lede {
+        max-width: 920px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .link-row {
+        margin-top: 16px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .link-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(0, 95, 115, 0.08);
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .section {
+        margin-top: 24px;
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .subtle {
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+
+      .flow-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(320px, 1fr));
+        gap: 18px;
+      }
+
+      .lane {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 245, 237, 0.96));
+      }
+
+      .lane h3 {
+        margin-bottom: 12px;
+      }
+
+      .lane.vsp h3 {
+        color: var(--vsp);
+      }
+
+      .lane.pt h3 {
+        color: var(--pt);
+      }
+
+      .lane.diet h3 {
+        color: var(--diet);
+      }
+
+      .lane.shared h3 {
+        color: var(--shared);
+      }
+
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .step {
+        flex: 1 1 180px;
+        min-height: 104px;
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid rgba(31, 41, 51, 0.09);
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.98rem;
+      }
+
+      .step small {
+        display: block;
+        color: var(--muted);
+        line-height: 1.45;
+        font-size: 0.83rem;
+      }
+
+      .arrow {
+        flex: 0 0 auto;
+        color: var(--accent);
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+
+      .store-row {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .store {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(31, 41, 51, 0.06);
+        border: 1px solid rgba(31, 41, 51, 0.08);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.84rem;
+      }
+
+      .hub {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .hub-center,
+      .hub-branch {
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .hub-center {
+        background: linear-gradient(180deg, rgba(0, 95, 115, 0.08), rgba(255, 255, 255, 0.98));
+      }
+
+      .hub-center h3 {
+        color: var(--accent);
+      }
+
+      .hub-branch h3 {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      .hub-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .hub-connector {
+        margin: 10px 0;
+        padding: 9px 12px;
+        border-radius: 12px;
+        background: rgba(187, 62, 3, 0.08);
+        color: var(--accent-2);
+        font-weight: 600;
+        font-size: 0.88rem;
+      }
+
+      .target-flow {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(140px, 1fr));
+        gap: 12px;
+      }
+
+      .target-step {
+        position: relative;
+        min-height: 144px;
+        padding: 16px;
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid rgba(31, 41, 51, 0.08);
+      }
+
+      .target-step::after {
+        content: "→";
+        position: absolute;
+        top: 50%;
+        right: -12px;
+        transform: translateY(-50%);
+        color: var(--accent);
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+
+      .target-step:last-child::after {
+        content: "";
+      }
+
+      .target-step span {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(107, 142, 35, 0.12);
+        color: var(--accent-3);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .target-step strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .target-step p {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .takeaways {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+        gap: 14px;
+      }
+
+      .takeaway {
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(31, 41, 51, 0.08);
+        background: #fff;
+      }
+
+      .takeaway strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .foot {
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.92em;
+      }
+
+      @media (max-width: 1160px) {
+        .flow-grid,
+        .hub,
+        .takeaways {
+          grid-template-columns: 1fr;
+        }
+
+        .target-flow {
+          grid-template-columns: repeat(2, minmax(220px, 1fr));
+        }
+
+        .target-step::after {
+          content: "";
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 18px 12px 40px;
+        }
+
+        .hero,
+        .panel {
+          border-radius: 16px;
+        }
+
+        .target-flow {
+          grid-template-columns: 1fr;
+        }
+
+        .steps {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .arrow {
+          align-self: center;
+          transform: rotate(90deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <h1>Patient and Note Creation Flow Map</h1>
+        <p class="lede">
+          Browser-ready visual map of the current patient and note creation experience across VSP
+          Registry, PT, Dietetics, and the multidisciplinary workspace, plus the cleanest target
+          funnel for unifying them.
+        </p>
+        <div class="link-row">
+          <a class="link-chip" href="./patient-note-creation-flow.md">Open source Markdown</a>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <h2>Current-State Flow</h2>
+        <p class="subtle">
+          Each lane shows the inputs users provide, the path the app takes, and the storage or route
+          outputs produced today.
+        </p>
+
+        <div class="flow-grid">
+          <article class="lane vsp">
+            <h3>VSP Registry</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small><code>#/vsp/registry</code> faculty registry screen</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>
+                  Full patient chart intake: identity, demographics, language, anthropometrics,
+                  contact, insurance, allergies, meds, history, directives, PCP
+                </small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small><code>createPatient(fields)</code> or <code>updatePatient(vspId)</code></small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>Canonical VSP patient record used by downstream pickers</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">local registry store</div>
+              <div class="store">optional /api/patients sync</div>
+            </div>
+          </article>
+
+          <article class="lane pt">
+            <h3>PT Student</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small>My Patients panel</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>Blank local patient or imported VSP demographics, then inline name/DOB/sex edits</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small>Start PT Eval or Simple SOAP and seed subjective from patient meta</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>Local patient plus PT draft, then navigate to student editor</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">patient_&lt;blankId&gt;</div>
+              <div class="store">draft_&lt;patientId&gt;_eval</div>
+              <div class="store">#/student/editor?case=&lt;patientId&gt;&amp;encounter=eval</div>
+            </div>
+          </article>
+
+          <article class="lane pt">
+            <h3>PT Instructor</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small>Create Case modal or Generate Case modal</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>
+                  Manual: title, optional VSP patient, DOB/age, sex, setting, acuity. Generated:
+                  prompt, region, condition, setting, acuity, age, sex, pain, goal
+                </small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small>Build case object with <code>meta</code>, <code>snapshot</code>, <code>encounters.eval</code></small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>PT store-backed case, then instructor editor route</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">PT case store</div>
+              <div class="store">#/instructor/editor?case=&lt;newCase.id&gt;</div>
+            </div>
+          </article>
+
+          <article class="lane diet">
+            <h3>Dietetics Student / Faculty</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small>Dietetics cases dashboard</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>Case title, diet order, selected VSP patient</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small>Copy patient fields into case <code>meta</code></small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>Dietetics case map plus editor route</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">dietetics_emr_cases</div>
+              <div class="store">caseObj.meta.patientName / dob / sex / allergies / vspId</div>
+            </div>
+          </article>
+
+          <article class="lane shared">
+            <h3>Multidisciplinary Workspace</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small>Dietetics editor with patient switcher and template selector</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>Select profession and template: dietetics NCP, PT eval, PT simple SOAP</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small>If PT is chosen, create a linked blank PT patient and PT pilot draft behind the scenes</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>Shared active session plus dietetics or PT draft for the current shell</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">dietetics_draft_&lt;caseId&gt;</div>
+              <div class="store">patient_&lt;blankPtId&gt;</div>
+              <div class="store">draft_&lt;blankPtId&gt;_&lt;encounter&gt;</div>
+            </div>
+          </article>
+
+          <article class="lane shared">
+            <h3>Shared Outputs</h3>
+            <div class="steps">
+              <div class="step">
+                <strong>Entry</strong>
+                <small>Preview modal before sign/export</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Inputs</strong>
+                <small>Preview edits plus clinician name and title</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Path</strong>
+                <small>Apply signature, persist signed draft, optionally amend later</small>
+              </div>
+              <div class="arrow">→</div>
+              <div class="step">
+                <strong>Outputs</strong>
+                <small>Word export, Case File entry, amendment chain, signed metadata</small>
+              </div>
+            </div>
+            <div class="store-row">
+              <div class="store">meta.signature</div>
+              <div class="store">meta.amendingFrom</div>
+              <div class="store">Case File note entry</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <h2>Where Patient Data Gets Duplicated</h2>
+        <p class="subtle">
+          The central issue is not just multiple screens. It is that patient identity is copied into
+          several stores instead of referenced from one canonical record.
+        </p>
+
+        <div class="hub">
+          <div class="hub-center">
+            <h3>Canonical VSP Patient</h3>
+            <p>
+              Best current source of truth. Downstream flows reuse it through pickers, but most of
+              them copy fields forward into local case or draft data instead of keeping a single
+              patient reference.
+            </p>
+            <div class="store-row">
+              <div class="store">id / mrn</div>
+              <div class="store">demographics</div>
+              <div class="store">history / meds / allergies</div>
+            </div>
+          </div>
+
+          <div class="hub-branch">
+            <h3>PT Student Copies</h3>
+            <div class="hub-connector">picker copy -> local patient -> note seed</div>
+            <ul class="hub-list">
+              <li><code>patient_&lt;id&gt;</code></li>
+              <li><code>draft_&lt;id&gt;_eval</code> subjective</li>
+              <li>name, DOB, sex, pronouns, language, height, weight, <code>__vspId</code></li>
+            </ul>
+          </div>
+
+          <div class="hub-branch">
+            <h3>PT Instructor Copies</h3>
+            <div class="hub-connector">optional autofill -> case meta -> case snapshot</div>
+            <ul class="hub-list">
+              <li>case <code>meta</code></li>
+              <li>case <code>snapshot</code></li>
+              <li>linked VSP id plus copied demographics</li>
+            </ul>
+          </div>
+
+          <div class="hub-branch">
+            <h3>Dietetics Copies</h3>
+            <div class="hub-connector">picker copy -> case meta</div>
+            <ul class="hub-list">
+              <li><code>dietetics_emr_cases</code></li>
+              <li><code>caseObj.meta.patientName</code></li>
+              <li><code>dob</code>, <code>sex</code>, <code>allergies</code>, <code>vspId</code></li>
+            </ul>
+          </div>
+
+          <div class="hub-branch">
+            <h3>Multidiscipline PT Copies</h3>
+            <div class="hub-connector">dietetics case meta -> linked PT patient -> PT pilot draft</div>
+            <ul class="hub-list">
+              <li><code>patient_&lt;blankPtId&gt;</code></li>
+              <li><code>draft_&lt;blankPtId&gt;_&lt;encounter&gt;</code></li>
+              <li>same patient represented under a new local PT id</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <h2>Unified Target Funnel</h2>
+        <p class="subtle">
+          This is the simplest streamlined experience that still preserves profession-specific note
+          forms and shared outputs.
+        </p>
+
+        <div class="target-flow">
+          <div class="target-step">
+            <span>Step 1</span>
+            <strong>Select patient</strong>
+            <p>Choose an existing patient or create one patient record once.</p>
+          </div>
+          <div class="target-step">
+            <span>Step 2</span>
+            <strong>Keep one patient ID</strong>
+            <p>Carry a single canonical <code>patientId</code> through every downstream flow.</p>
+          </div>
+          <div class="target-step">
+            <span>Step 3</span>
+            <strong>Select note type</strong>
+            <p>Pick PT Evaluation, PT SOAP, Dietetics NCP, or future note templates.</p>
+          </div>
+          <div class="target-step">
+            <span>Step 4</span>
+            <strong>Create note envelope</strong>
+            <p><code>{ patientId, encounterId, professionId, templateId, status }</code></p>
+          </div>
+          <div class="target-step">
+            <span>Step 5</span>
+            <strong>Open shared shell</strong>
+            <p>Use one workspace shell with profession-specific content inside it.</p>
+          </div>
+          <div class="target-step">
+            <span>Step 6</span>
+            <strong>Use shared outputs</strong>
+            <p>Save, sign, export, amend, and Case File all operate on the same note contract.</p>
+          </div>
+          <div class="target-step">
+            <span>Step 7</span>
+            <strong>Show chart timeline</strong>
+            <p>Patient workspace index becomes a true cross-discipline timeline, not an aggregator of copies.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel">
+        <h2>Top Unification Moves</h2>
+        <div class="takeaways">
+          <div class="takeaway">
+            <strong>Make patient creation singular</strong>
+            Every funnel should begin with select/create patient, not by synthesizing local copies in
+            each discipline.
+          </div>
+          <div class="takeaway">
+            <strong>Adopt one note storage contract</strong>
+            Replace split keys like <code>draft_&lt;caseId&gt;_&lt;encounter&gt;</code> and
+            <code>dietetics_draft_&lt;caseId&gt;</code> with one envelope abstraction.
+          </div>
+          <div class="takeaway">
+            <strong>Separate patient, encounter, and note concerns</strong>
+            Setting, acuity, diet order, and case context should attach to encounter or workflow
+            context instead of becoming alternate patient stores.
+          </div>
+          <div class="takeaway">
+            <strong>Stop hidden PT patient synthesis</strong>
+            The multidisciplinary shell should create a PT encounter for the same patient, not a new
+            blank PT patient id.
+          </div>
+        </div>
+        <p class="foot">
+          Source map basis: <code>app/js/views/vsp/registry.js</code>,
+          <code>app/js/core/vsp-registry.js</code>, <code>app/js/views/student/cases.js</code>,
+          <code>app/js/views/instructor/cases.js</code>,
+          <code>app/js/views/dietetics/student/cases.js</code>,
+          <code>app/js/views/dietetics/instructor/cases.js</code>,
+          <code>app/js/views/dietetics/note_session_controller.js</code>,
+          <code>app/js/core/patientWorkspaceIndex.js</code>,
+          <code>app/js/core/noteCatalog.js</code>,
+          <code>app/js/features/navigation/sign-export-panel.js</code>,
+          <code>app/js/features/navigation/panels/MyNotesPanel.js</code>, and
+          <code>app/js/views/dietetics/case_editor.js</code>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

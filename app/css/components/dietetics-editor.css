@@ -31,6 +31,374 @@
   font-size: 1.25rem;
 }
 
+.note-editor__pilot-selector,
+.note-editor__pilot-handoff,
+.note-editor__pilot-panel {
+  border: 1px solid var(--border, #d9dee8);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm, 0 4px 14px rgba(15, 23, 42, 0.06));
+}
+
+.note-editor__pilot-selector,
+.note-editor__pilot-handoff {
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.note-editor__pilot-panel {
+  padding: 1.1rem 1.15rem;
+}
+
+.note-editor__pilot-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.note-editor__pilot-helper {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.note-editor__pilot-launch {
+  width: 100%;
+}
+
+.note-editor__pilot-handoff-title,
+.note-editor__pilot-panel-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.note-editor__pilot-handoff-status,
+.note-editor__pilot-panel-status {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--und-green, #009a44);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.patient-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.patient-switch-action {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-shell__back-action {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.workspace-shell__back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.16);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
+  transition:
+    transform 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.workspace-shell__back-btn:hover,
+.workspace-shell__back-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateX(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+}
+
+.workspace-shell__back-btn:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+.workspace-shell__back-btn-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.note-editor__switch-patient-btn {
+  border-radius: 999px;
+  border-color: var(--und-green, #009a44);
+  color: var(--und-green, #009a44);
+  background: #ffffff;
+  font-weight: 700;
+}
+
+.note-editor__switch-patient-btn:hover,
+.note-editor__switch-patient-btn:focus-visible {
+  background: var(--primary-50, #f0fdf4);
+}
+
+.note-editor__header-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 1px solid var(--und-green, #009a44);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.note-editor__header-select {
+  min-width: 188px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+}
+
+.note-editor__header-select--profession {
+  min-width: 188px;
+}
+
+.note-editor__header-select--note-type {
+  min-width: 232px;
+}
+
+.note-editor__header-select .custom-select__button {
+  min-width: 188px;
+  min-height: 0;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.83rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.note-editor__header-select--note-type .custom-select__button {
+  min-width: 232px;
+}
+
+.note-editor__header-select .custom-select__button:hover,
+.note-editor__header-select:focus .custom-select__button {
+  background: #f8fafc;
+}
+
+.note-editor__header-select .custom-select__button-text {
+  text-align: left;
+}
+
+.note-editor__header-select .custom-select__arrow {
+  color: #111827;
+  font-size: 0.7rem;
+}
+
+.note-editor__header-select .custom-select__dropdown {
+  border-color: var(--und-green, #009a44);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.note-editor__header-select .custom-select__option {
+  font-size: 0.83rem;
+}
+
+.note-editor__header-select:focus-visible {
+  outline: 3px solid rgba(0, 154, 68, 0.28);
+  outline-offset: 2px;
+}
+
+.note-editor__pt-note-header {
+  width: calc(100% - 1.6rem);
+  margin: 0 0.8rem 0.65rem;
+  padding: 0 0 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  border-bottom: 2px solid var(--border, #d9dee8);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text, #1f2937);
+}
+
+.note-editor__pt-note-header[data-status='partial'] {
+  border-bottom-color: var(--und-orange, #f59e0b);
+}
+
+.note-editor__pt-note-header[data-status='complete'] {
+  border-bottom-color: var(--und-green, #009a44);
+}
+
+.note-editor__pt-note-header-title {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.74rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.note-editor__pt-note-header-twisty,
+.note-editor__pt-section-toggle {
+  position: relative;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.note-editor__pt-note-header-twisty::before,
+.note-editor__pt-section-toggle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translate(-50%, -65%) rotate(45deg);
+  transition: transform 0.18s ease;
+}
+
+.note-editor__pt-note-header[aria-expanded='true'] .note-editor__pt-note-header-twisty::before,
+.note-editor__pt-section-toggle[aria-expanded='true']::before {
+  transform: translate(-50%, -35%) rotate(225deg);
+}
+
+.note-editor__pt-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.note-editor__pt-sections.is-collapsed {
+  display: none;
+}
+
+.note-editor__pt-section-card {
+  border: 1px solid var(--border, #d9dee8);
+  border-left: 4px solid var(--border, #d9dee8);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm, 0 4px 14px rgba(15, 23, 42, 0.06));
+  overflow: hidden;
+}
+
+.note-editor__pt-section-card[data-status='partial'] {
+  border-left-color: var(--und-orange, #f59e0b);
+}
+
+.note-editor__pt-section-card[data-status='complete'] {
+  border-left-color: var(--und-green, #009a44);
+}
+
+.note-editor__pt-section-card.is-active {
+  border-color: color-mix(in srgb, rgba(255, 255, 255, 0.5) 35%, var(--border, #d9dee8));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.note-editor__pt-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.25rem 0.2rem 0.15rem;
+}
+
+.note-editor__pt-section-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.72rem 0.7rem;
+  border: none;
+  background: none;
+  text-align: left;
+  color: var(--text, #1f2937);
+  cursor: pointer;
+}
+
+.note-editor__pt-section-button.is-active {
+  color: var(--primary-700, #166534);
+  font-weight: 700;
+}
+
+.note-editor__pt-section-label {
+  min-width: 0;
+}
+
+.note-editor__pt-subsections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0 0.55rem 0.6rem 1rem;
+}
+
+.note-editor__pt-subsections.is-collapsed {
+  display: none;
+}
+
+.note-editor__pt-subsection-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+}
+
+.note-editor__pt-subsection-item:hover,
+.note-editor__pt-subsection-item.is-active {
+  background: var(--primary-50, #f4f5f7);
+  color: var(--primary-700, #166534);
+}
+
+.note-editor__pt-subsection-label {
+  min-width: 0;
+  line-height: 1.35;
+}
+
 /* ── Section content ── */
 .dietetics-section-title {
   font-size: 1.15rem;
@@ -111,4 +479,511 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+/* Dietetics patient header text: keep shared PT header shell, preserve Dietetics line formatting */
+#patient-sticky-header.note-editor__patient-header--dietetics {
+  align-items: center;
+  justify-content: space-between;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .workspace-shell__header-patient {
+  flex: 1 1 360px;
+  min-width: min(100%, 320px);
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .workspace-shell__header-note {
+  flex: 1 1 520px;
+  min-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics
+  .workspace-shell__header-note[hidden] {
+  display: none !important;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-left,
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-text {
+  align-items: center;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-left {
+  gap: 1rem;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-center {
+  align-self: center;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-actions {
+  margin-left: 0;
+  flex-wrap: wrap;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-header-text {
+  align-items: flex-start;
+  text-align: left;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .patient-name-line {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .dietetics-patient-name-primary {
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#patient-sticky-header.note-editor__patient-header--dietetics .dietetics-patient-name-dob {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.patient-switcher-modal {
+  width: min(920px, 96vw);
+  max-height: min(84vh, 760px);
+}
+
+.patient-switcher__search {
+  margin-bottom: 0.55rem;
+}
+
+.patient-switcher__helper {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.patient-switcher__list {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 56vh;
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.patient-switcher__patient-card {
+  border: 1px solid var(--border, #d9dee8);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 0.75rem;
+}
+
+.patient-switcher__patient-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  align-items: baseline;
+  margin-bottom: 0.55rem;
+}
+
+.patient-switcher__patient-name {
+  font-weight: 700;
+  color: var(--text, #1f2937);
+}
+
+.patient-switcher__patient-meta {
+  font-size: 0.82rem;
+}
+
+.patient-switcher__workspace-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.patient-switcher__workspace-btn {
+  border-radius: 999px;
+}
+
+.patient-switcher__workspace-btn--active {
+  background: var(--und-green, #009a44);
+  color: var(--white, #fff);
+  border: 1px solid var(--und-green, #009a44);
+}
+
+.patient-switcher__workspace-btn--active:hover,
+.patient-switcher__workspace-btn--active:focus-visible {
+  background: #007a36;
+  color: var(--white, #fff);
+}
+
+.patient-switcher__empty {
+  margin: 0;
+  padding: 0.7rem 0.35rem;
+}
+
+@media (max-width: 980px) {
+  #patient-sticky-header.note-editor__patient-header--dietetics .patient-header-center {
+    justify-content: flex-start;
+    padding-left: 0;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .workspace-shell__header-note {
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .note-editor__header-select,
+  #patient-sticky-header.note-editor__patient-header--dietetics
+    .note-editor__header-select
+    .custom-select__button {
+    min-width: 172px;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics
+    .note-editor__header-select--note-type,
+  #patient-sticky-header.note-editor__patient-header--dietetics
+    .note-editor__header-select--note-type
+    .custom-select__button {
+    min-width: 216px;
+  }
+}
+
+@media (max-width: 640px) {
+  #patient-sticky-header.note-editor__patient-header--dietetics .patient-header-center {
+    padding-left: 0;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .workspace-shell__header-note {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .patient-header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .note-editor__header-pill {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .note-editor__header-select,
+  #patient-sticky-header.note-editor__patient-header--dietetics
+    .note-editor__header-select
+    .custom-select__button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .patient-switch-action {
+    margin-left: auto;
+  }
+
+  #patient-sticky-header.note-editor__patient-header--dietetics .patient-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.workspace-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--topbar-h, 72px));
+}
+
+.workspace-shell__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: calc(
+    100dvh - var(--topbar-h, 72px) - var(--patient-sticky-h, 0px) - var(--edu-ribbon-h, 28px)
+  );
+}
+
+.workspace-shell--pt .workspace-shell__main-stage,
+body[data-route='dietetics-student-editor'] .workspace-shell__main-stage,
+body[data-route='dietetics-instructor-editor'] .workspace-shell__main-stage {
+  min-height: calc(
+    100dvh - var(--topbar-h, 72px) - var(--patient-sticky-h, 0px) - var(--edu-ribbon-h, 28px)
+  );
+  background: var(--editor-bg);
+}
+
+.workspace-shell__context-pane {
+  min-height: calc(
+    100dvh - var(--topbar-h, 72px) - var(--patient-sticky-h, 0px) - var(--edu-ribbon-h, 28px)
+  );
+  padding: 1.5rem;
+  background: var(--surface-secondary, #f5f5f5);
+}
+
+.workspace-shell__stage-placeholder {
+  max-width: 720px;
+  padding: 1.5rem;
+  border: 1px solid var(--border, #d9dee8);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm, 0 4px 14px rgba(15, 23, 42, 0.06));
+}
+
+.workspace-shell__stage-eyebrow {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #6b7280);
+}
+
+.workspace-shell__stage-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: var(--text, #1f2937);
+}
+
+.workspace-shell__stage-copy {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-secondary, #4b5563);
+  line-height: 1.55;
+}
+
+/* Dietetics editor routes should use full-bleed app canvas like PT editor routes */
+body[data-route='dietetics-student-editor'],
+body[data-route='dietetics-instructor-editor'] {
+  background: var(--editor-bg);
+}
+
+body.pt-workspace-shell-route #app,
+body[data-route='dietetics-student-editor'] #app,
+body[data-route='dietetics-instructor-editor'] #app {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--editor-bg);
+}
+
+/* Dietetics editor layout behavior:
+   - Sidebar remains pinned under headers
+   - Content uses page scroll (not an inner scrolling pane)
+   - Sidebar width is user-resizable on desktop */
+body[data-route='dietetics-student-editor'] .note-editor,
+body[data-route='dietetics-instructor-editor'] .note-editor {
+  --dietetics-sidebar-w: 272px;
+  align-items: flex-start;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar {
+  width: var(--dietetics-sidebar-w);
+  min-width: var(--dietetics-sidebar-w);
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--patient-sticky-h, 0px));
+  max-height: calc(100vh - (var(--topbar-h) + var(--patient-sticky-h, 0px)));
+  overflow: auto;
+}
+
+/* When reparented into the chart rail detail panel */
+.note-editor__sidebar--embedded {
+  position: static !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-height: none !important;
+  top: auto !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__content,
+body[data-route='dietetics-instructor-editor'] .note-editor__content,
+body.pt-workspace-shell-route .note-editor__content {
+  overflow: visible;
+  min-width: 0;
+}
+
+/* Workspace routes: ensure anchor jumps always clear sticky app + patient headers. */
+body[data-route='dietetics-student-editor'] .note-editor__content .section-panel,
+body[data-route='dietetics-instructor-editor'] .note-editor__content .section-panel,
+body.pt-workspace-shell-route .note-editor__content .section-panel,
+body[data-route='dietetics-student-editor'] .note-editor__content .subsection-panel,
+body[data-route='dietetics-instructor-editor'] .note-editor__content .subsection-panel,
+body.pt-workspace-shell-route .note-editor__content .subsection-panel,
+body[data-route='dietetics-student-editor'] .note-editor__content .section-anchor,
+body[data-route='dietetics-instructor-editor'] .note-editor__content .section-anchor,
+body.pt-workspace-shell-route .note-editor__content .section-anchor,
+body[data-route='dietetics-student-editor'] .note-editor__content .subsection-title,
+body[data-route='dietetics-instructor-editor'] .note-editor__content .subsection-title,
+body.pt-workspace-shell-route .note-editor__content .subsection-title {
+  scroll-margin-top: calc(var(--topbar-h, 72px) + var(--patient-sticky-h, 0px) + 24px);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-resizer,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-resizer {
+  width: 10px;
+  cursor: col-resize;
+  align-self: stretch;
+  position: relative;
+  flex: 0 0 10px;
+  background: transparent;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-resizer::before,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--border);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-resizer:hover::before,
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-resizer:focus-visible::before,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-resizer:hover::before,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-resizer:focus-visible::before {
+  background: var(--und-green);
+}
+
+body.is-resizing-sidebar {
+  cursor: col-resize;
+  user-select: none;
+}
+
+@media (max-width: 900px) {
+  body[data-route='dietetics-student-editor'] .note-editor__sidebar,
+  body[data-route='dietetics-instructor-editor'] .note-editor__sidebar {
+    width: 100%;
+    min-width: 100%;
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body[data-route='dietetics-student-editor'] .note-editor__sidebar-resizer,
+  body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-resizer {
+    display: none;
+  }
+}
+
+/* Case File + Sign/Export shell for dietetics sidebar */
+body[data-route='dietetics-student-editor'] .note-editor__sections-list,
+body[data-route='dietetics-instructor-editor'] .note-editor__sections-list {
+  flex: 1 1 auto;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-body,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border-bottom: 1px solid var(--border);
+  max-height: none;
+  overflow: auto;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-group,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-group-title,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-group-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-group-list,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-item,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-item {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  cursor: pointer;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-item-title,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-item-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-item-type,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-item-type {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-item-meta,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-item-meta {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-empty,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-empty {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.2rem 0.15rem;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__casefile-add,
+body[data-route='dietetics-instructor-editor'] .note-editor__casefile-add {
+  align-self: flex-start;
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-signexport,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-signexport {
+  margin-top: auto;
+  padding: 0.6rem 0.7rem 0.4rem;
+  border-top: 1px solid var(--border);
+}
+
+body[data-route='dietetics-student-editor'] .note-editor__sidebar-signexport .sign-export-panel,
+body[data-route='dietetics-instructor-editor'] .note-editor__sidebar-signexport .sign-export-panel {
+  margin: 0;
+}
+
+body[data-route='dietetics-student-editor'] .dietetics-casefile-view-meta,
+body[data-route='dietetics-instructor-editor'] .dietetics-casefile-view-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+body[data-route='dietetics-student-editor'] .dietetics-casefile-view-row,
+body[data-route='dietetics-instructor-editor'] .dietetics-casefile-view-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+body[data-route='dietetics-student-editor'] .dietetics-casefile-view-row .label,
+body[data-route='dietetics-instructor-editor'] .dietetics-casefile-view-row .label {
+  color: var(--text-secondary);
 }

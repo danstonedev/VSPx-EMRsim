@@ -5,6 +5,7 @@ import { route } from '../../../core/router.js';
 import { navigate as urlNavigate } from '../../../core/url.js';
 import { el } from '../../../ui/utils.js';
 import { storage } from '../../../core/index.js';
+import { buildPatientPicker } from '../../../ui/vsp-patient-picker.js';
 
 const STORE_KEY = 'dietetics_emr_cases';
 const DRAFT_PREFIX = 'dietetics_draft_';
@@ -94,6 +95,7 @@ function createNewCase(metaFields = {}) {
         setting: metaFields.setting || 'Inpatient',
         dietOrder: metaFields.dietOrder || '',
         allergies: metaFields.allergies || '',
+        vspId: metaFields.vspId || null,
       },
       nutritionAssessment: '',
       nutritionDiagnosis: '',
@@ -113,24 +115,32 @@ route('#/dietetics/student/cases', (wrapper) => {
   const cases = loadCases();
   const caseList = Object.values(cases);
 
-  const field = (placeholder, style = '') =>
-    el('input', {
-      type: 'text',
-      class: 'form-input-standard',
-      placeholder,
-      style: style || 'max-width:200px;',
-    });
-
-  const titleInput = field('Case title...', 'max-width:300px;');
-  const nameInput = field('Patient name...');
-  const dobInput = el('input', {
-    type: 'date',
+  const titleInput = el('input', {
+    type: 'text',
     class: 'form-input-standard',
-    style: 'max-width:160px;',
+    placeholder: 'Case title...',
+    style: 'max-width:300px;',
   });
-  const sexInput = field('Sex...');
-  const dietInput = field('Diet order...');
-  const allergyInput = field('Allergies...');
+  const dietInput = el('input', {
+    type: 'text',
+    class: 'form-input-standard',
+    placeholder: 'Diet order...',
+    style: 'max-width:200px;',
+  });
+
+  let pickedPatient = {
+    vspId: null,
+    firstName: '',
+    lastName: '',
+    dob: '',
+    sex: 'unspecified',
+    allergies: [],
+  };
+  const picker = buildPatientPicker({
+    onSelect: (vspId, demographics) => {
+      pickedPatient = { vspId, ...demographics };
+    },
+  });
 
   const hero = el('div', { class: 'panel' }, [
     el('h1', {}, 'Dietetics — Student Cases'),
@@ -145,22 +155,17 @@ route('#/dietetics/student/cases', (wrapper) => {
         titleInput,
       ]),
       el('div', { class: 'form-field' }, [
-        el('label', { class: 'form-label' }, 'Patient Name'),
-        nameInput,
-      ]),
-      el('div', { class: 'form-field' }, [
-        el('label', { class: 'form-label' }, 'Date of Birth'),
-        dobInput,
-      ]),
-      el('div', { class: 'form-field' }, [el('label', { class: 'form-label' }, 'Sex'), sexInput]),
-      el('div', { class: 'form-field' }, [
         el('label', { class: 'form-label' }, 'Diet Order'),
         dietInput,
       ]),
-      el('div', { class: 'form-field' }, [
-        el('label', { class: 'form-label' }, 'Allergies'),
-        allergyInput,
-      ]),
+    ]),
+    el('div', { style: 'margin-bottom:0.75rem;' }, [
+      el(
+        'label',
+        { class: 'form-label', style: 'margin-bottom:0.35rem;display:block;' },
+        'Patient',
+      ),
+      picker.element,
     ]),
     el(
       'button',
@@ -169,11 +174,19 @@ route('#/dietetics/student/cases', (wrapper) => {
         onclick: () => {
           const id = createNewCase({
             title: titleInput.value.trim() || 'New Dietetics Case',
-            patientName: nameInput.value.trim(),
-            dob: dobInput.value,
-            sex: sexInput.value.trim(),
+            patientName: [pickedPatient.firstName, pickedPatient.lastName]
+              .filter(Boolean)
+              .join(' '),
+            dob: pickedPatient.dob,
+            sex: pickedPatient.sex,
             dietOrder: dietInput.value.trim(),
-            allergies: allergyInput.value.trim(),
+            allergies: Array.isArray(pickedPatient.allergies)
+              ? pickedPatient.allergies
+                  .map((a) => a.name)
+                  .filter(Boolean)
+                  .join(', ')
+              : pickedPatient.allergies || '',
+            vspId: pickedPatient.vspId,
           });
           urlNavigate('/dietetics/student/editor', { case: id });
         },

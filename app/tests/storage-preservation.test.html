@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Storage Preservation Test</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body {
+        padding: 16px;
+        font:
+          14px/1.4 system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+      .result {
+        margin-top: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+      .pass {
+        background: #e6ffed;
+        color: #046b1c;
+        border: 1px solid #a6f4c5;
+      }
+      .fail {
+        background: #ffeff0;
+        color: #8a041a;
+        border: 1px solid #ffd0d4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Storage Preservation Test</h1>
+    <div id="results" class="result">Running...</div>
+
+    <script type="module">
+      import { ensureStoragePreservation } from '../js/core/storage-preservation.js';
+
+      const errors = [];
+      const assert = (condition, message) => {
+        if (!condition) errors.push(message);
+      };
+
+      function createMemoryStorage() {
+        const map = new Map();
+        return {
+          getItem(key) {
+            return map.has(key) ? map.get(key) : null;
+          },
+          setItem(key, value) {
+            map.set(key, value);
+            return true;
+          },
+          removeItem(key) {
+            map.delete(key);
+            return true;
+          },
+          keys() {
+            return Array.from(map.keys());
+          },
+        };
+      }
+
+      const storage = createMemoryStorage();
+      storage.setItem(
+        'draft_blank-abc_eval',
+        JSON.stringify({
+          noteType: 'simple-soap',
+          noteTitle: 'Student Note',
+          subjective: { patientName: 'Pat Example', __vspId: 'vsp_001' },
+        }),
+      );
+      storage.setItem(
+        'patient_blank-abc',
+        JSON.stringify({
+          name: 'Pat Example',
+          vspId: 'vsp_001',
+        }),
+      );
+      storage.setItem(
+        'dietetics_emr_cases',
+        JSON.stringify({
+          diet_case_1: {
+            id: 'diet_case_1',
+            title: 'Nutrition Note',
+            caseObj: {
+              meta: {
+                patientName: 'Pat Example',
+                patientId: 'vsp_001',
+                vspId: 'vsp_001',
+              },
+            },
+          },
+        }),
+      );
+      storage.setItem(
+        'dietetics_draft_diet_case_1',
+        JSON.stringify({
+          nutrition_assessment: { food_nutrition_history: 'Eating poorly' },
+        }),
+      );
+
+      const state = ensureStoragePreservation(storage);
+      const envelopes = JSON.parse(storage.getItem('unified_note_envelopes') || '{}');
+
+      assert(
+        storage.getItem('draft_blank-abc_eval') !== null,
+        'legacy PT draft should remain untouched',
+      );
+      assert(
+        storage.getItem('dietetics_draft_diet_case_1') !== null,
+        'legacy dietetics draft should remain untouched',
+      );
+      assert(
+        envelopes['legacy-pt:draft_blank-abc_eval']?.patientId === 'vsp_001',
+        'PT legacy draft should be mirrored into unified envelopes',
+      );
+      assert(
+        envelopes['legacy-diet:dietetics_draft_diet_case_1']?.patientId === 'vsp_001',
+        'Dietetics legacy draft should be mirrored into unified envelopes',
+      );
+      assert(
+        state.destructiveChangesApplied === false,
+        'preservation run must stay non-destructive',
+      );
+
+      const result = document.getElementById('results');
+      result.textContent = errors.length ? `FAIL: ${errors.join('; ')}` : 'PASS';
+      result.className = `result ${errors.length ? 'fail' : 'pass'}`;
+      console.log('Storage Preservation Test:', errors.length ? 'FAIL' : 'PASS', errors);
+    </script>
+  </body>
+</html>

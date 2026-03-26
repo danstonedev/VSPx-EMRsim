@@ -32,12 +32,6 @@ function createStyleOnce() {
   .signature-actions .btn.primary { background: var(--primary,#009a44); color:#fff; border:1px solid var(--primary,#009a44); font-weight:600; }
   .signature-actions .btn.primary:hover { filter:brightness(1.05); }
   .signature-error { color: var(--danger,#b00020); font-size:0.7rem; min-height:14px; letter-spacing:.3px; }
-  :root[data-theme='dark'] .signature-modal { background: var(--panel,#2c2c2c); border-color: var(--border,#444); }
-  :root[data-theme='dark'] .signature-field input[type=text] { background: var(--input-bg,#424242); color: var(--input-text,#fafafa); }
-  :root[data-theme='dark'] .signature-field label { color: var(--text-secondary,#bdbdbd); }
-  :root[data-theme='dark'] .signature-actions .btn { background: var(--btn-bg,#424242); color: var(--text,#fafafa); border-color: var(--border,#555); }
-  :root[data-theme='dark'] .signature-actions .btn:hover { background: var(--btn-hover,#525252); }
-  :root[data-theme='dark'] .signature-actions .btn.primary { background: var(--primary,#009a44); }
   `;
   document.head.appendChild(style);
 }
@@ -127,7 +121,7 @@ export function openSignatureDialog({ onSigned, existingSignature } = {}) {
   function cancel() {
     close();
   }
-  function submit() {
+  async function submit() {
     errorBox.textContent = '';
     const name = nameInput.value.trim();
     const title = titleInput.value.trim();
@@ -146,12 +140,24 @@ export function openSignatureDialog({ onSigned, existingSignature } = {}) {
       signedAt: new Date().toISOString(),
       version: 1,
     };
+
+    // UI Loading state
+    const submitBtn = formEl.querySelector('.primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Generating...';
+
     try {
-      onSigned && onSigned(signature);
+      if (onSigned) {
+        await onSigned(signature);
+      }
+      close();
     } catch (e) {
       console.error('Signature handler failed', e);
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      errorBox.textContent = 'Failed to generate document. Please try again.';
     }
-    close();
   }
 
   overlay.addEventListener('click', (e) => {
@@ -183,10 +189,7 @@ export function openSignatureDialog({ onSigned, existingSignature } = {}) {
     ],
   );
 
-  dialog.append(
-    el('h2', { id: 'signature_modal_title', style: 'margin-top:0;' }, 'Sign Evaluation'),
-    form,
-  );
+  dialog.append(el('h2', { id: 'signature_modal_title' }, 'Sign Evaluation'), form);
   overlay.append(dialog);
   document.body.appendChild(overlay);
   // Next frame -> add open classes

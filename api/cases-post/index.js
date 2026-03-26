@@ -1,8 +1,12 @@
 const { getContainer } = require('../shared/cosmos.js');
 const { validateCase, ensureDataIntegrity } = require('../shared/schema.js');
+const { requireAuthenticatedPrincipal, stampAuditFields } = require('../shared/auth');
 
 module.exports = async function (context, req) {
   try {
+    const principal = requireAuthenticatedPrincipal(context, req);
+    if (!principal) return;
+
     const caseData = req.body;
 
     if (!caseData || !caseData.id) {
@@ -46,6 +50,8 @@ module.exports = async function (context, req) {
     const container = await getContainer();
 
     // Upsert (create or replace)
+    stampAuditFields(caseData, principal);
+
     const { resource: savedItem } = await container.items.upsert(caseData);
 
     context.res = {

@@ -518,6 +518,14 @@ async function initializeApp() {
     console.warn('Failed to initialize user menu:', e);
   }
 
+  // Sync VSP patient registry from cloud (non-blocking)
+  try {
+    const { initRegistry } = await import('./vsp-registry.js');
+    initRegistry();
+  } catch (e) {
+    console.warn('VSP registry sync skipped:', e);
+  }
+
   // Start the router; route modules will be loaded on demand
   startRouter();
 }
@@ -652,6 +660,21 @@ async function ensureRouteModuleLoaded(path) {
         test: (t) => t.startsWith('#/dietetics/instructor/cases'),
         key: 'dietetics-instructor-cases',
         load: () => import('../views/dietetics/instructor/cases.js'),
+      },
+      // Unified Workspace launcher
+      {
+        test: (t) =>
+          t.startsWith('#/workspace') ||
+          t.startsWith('#/student/launch-note') ||
+          t.startsWith('#/instructor/launch-note'),
+        key: 'unified-workspace',
+        load: () => import('../views/unified_note_launcher.js'),
+      },
+      // VSP Registry
+      {
+        test: (t) => t.startsWith('#/vsp/registry'),
+        key: 'vsp-registry',
+        load: () => import('../views/vsp/registry.js'),
       },
     ];
     const found = matchers.find((m) => m.test(p)) || {

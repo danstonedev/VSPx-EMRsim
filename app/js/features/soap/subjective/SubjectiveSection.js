@@ -308,22 +308,38 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
 
   const pickControl = (fieldNode) => fieldNode.querySelector('input, select, textarea');
 
+  // Detect if this patient came from the VSP registry (demographics are canonical)
+  const isFromRegistry = !!data.__vspId;
+
   // Patient profile section with anchor
-  const hpiHeader = el('div', { class: 'section-panel__header' }, [
-    el('span', { class: 'section-panel__title' }, 'Patient Profile'),
-  ]);
+  const registryBadge = isFromRegistry
+    ? el('span', { class: 'patient-profile--readonly-badge' }, '\u{1F512} From Registry')
+    : null;
+  const hpiHeader = el(
+    'div',
+    { class: 'section-panel__header' },
+    [el('span', { class: 'section-panel__title' }, 'Patient Profile'), registryBadge].filter(
+      Boolean,
+    ),
+  );
   const patientNameField = inputField({
     label: 'Full Name',
     value: data.patientName,
-    onChange: (v) => updateField('patientName', v),
-    hint: 'Full patient name as documented for this case',
+    onChange: isFromRegistry ? undefined : (v) => updateField('patientName', v),
+    disabled: isFromRegistry,
+    hint: isFromRegistry
+      ? 'Sourced from patient registry'
+      : 'Full patient name as documented for this case',
   });
   const patientBirthdayField = inputField({
     label: 'Date of Birth',
     type: 'date',
     value: data.patientBirthday,
-    onChange: (v) => updateField('patientBirthday', v),
-    hint: "Use the date picker to select the patient's birth date",
+    onChange: isFromRegistry ? undefined : (v) => updateField('patientBirthday', v),
+    disabled: isFromRegistry,
+    hint: isFromRegistry
+      ? 'Sourced from patient registry'
+      : "Use the date picker to select the patient's birth date",
     autocomplete: 'bday',
     min: '1900-01-01',
     max: new Date().toISOString().slice(0, 10),
@@ -345,7 +361,8 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       { value: 'other', label: 'Other' },
       { value: 'unspecified', label: 'Prefer not to say' },
     ],
-    onChange: (v) => updateField('patientGender', v),
+    onChange: isFromRegistry ? undefined : (v) => updateField('patientGender', v),
+    disabled: isFromRegistry,
   });
   const patientPronounsField = selectField({
     label: 'Gender Identity / Pronouns',
@@ -360,7 +377,8 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       { value: 'Prefer not to say', label: 'Prefer not to say' },
       { value: 'Use name only', label: 'Use name only' },
     ],
-    onChange: (v) => updateField('patientGenderIdentityPronouns', v),
+    onChange: isFromRegistry ? undefined : (v) => updateField('patientGenderIdentityPronouns', v),
+    disabled: isFromRegistry,
   });
   const patientLanguageField = selectField({
     label: 'Preferred Language',
@@ -380,7 +398,8 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       { value: 'yes', label: 'Yes' },
       { value: 'no', label: 'No' },
     ],
-    onChange: (v) => updateField('patientInterpreterNeeded', v),
+    onChange: isFromRegistry ? undefined : (v) => updateField('patientInterpreterNeeded', v),
+    disabled: isFromRegistry,
   });
   const getBmiCategory = (bmi) => {
     const v = parseFloat(bmi);
@@ -643,19 +662,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       ]),
     ],
   );
-
-  const hpiBody = el('div', { class: 'section-panel__body' }, [
-    patientNameField,
-    dobAgeRow,
-    sexPronounsRow,
-    languageInterpreterRow,
-    bodyMeasurementsStrip,
-  ]);
-  const hpiSection = el('div', { id: 'hpi', class: 'section-anchor section-panel' }, [
-    hpiHeader,
-    hpiBody,
-  ]);
-  section.append(hpiSection);
 
   // History section — Chief Concern, HPI, Functional Limitations
   const historySection = el('div', { id: 'history', class: 'section-anchor section-panel' }, [

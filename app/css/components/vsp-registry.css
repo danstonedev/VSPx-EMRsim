@@ -1,0 +1,198 @@
+/* VSP Registry & Patient Picker */
+
+/* ── Picker card — selectable patient row ─────────────────────── */
+
+.vsp-picker__card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.vsp-picker__card:hover {
+  border-color: var(--primary);
+}
+
+.vsp-picker__card--selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.vsp-picker__card-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.vsp-picker__card-main strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.vsp-picker__card-nickname {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-left: 0.4rem;
+}
+
+.vsp-picker__card-details {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  margin-top: 0.15rem;
+}
+
+.vsp-picker__card-allergy {
+  font-size: 0.82rem;
+  margin-top: 0.1rem;
+  color: var(--text-secondary);
+}
+
+.vsp-picker__card-allergy--alert {
+  color: var(--error, #e53e3e);
+  font-weight: 600;
+}
+
+.vsp-picker__card-allergy-label {
+  font-weight: 500;
+}
+
+/* ── Registry form ────────────────────────────────────────────── */
+
+.vsp-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.6rem 1rem;
+}
+
+.vsp-form__inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.vsp-form__mrn {
+  font-family: monospace;
+  font-size: 0.9rem;
+  padding-top: 0.25rem;
+}
+
+.vsp-form__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Collapsible sections */
+.vsp-form__section {
+  margin-bottom: 0.25rem;
+}
+
+.vsp-form__section-toggle {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.45rem 0;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.vsp-form__section-toggle:hover {
+  color: var(--primary);
+}
+
+.vsp-form__section-arrow {
+  font-size: 0.8rem;
+  width: 1em;
+  text-align: center;
+}
+
+.vsp-form__section-body {
+  padding-bottom: 0.5rem;
+}
+
+/* ── Allergy / med / list editors ─────────────────────────────── */
+
+.vsp-allergy-editor__row,
+.vsp-med-editor__row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+  align-items: center;
+}
+
+.vsp-allergy-editor__row .form-input-standard,
+.vsp-med-editor__row .form-input-standard {
+  flex: 1;
+  min-width: 0;
+}
+
+.vsp-list-editor__row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+  align-items: center;
+}
+
+.vsp-list-editor__row .form-input-standard {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Patient profile read-only state (registry-sourced) ───────── */
+
+.patient-profile--readonly .form-field {
+  opacity: 1;
+}
+
+.patient-profile--readonly .form-input,
+.patient-profile--readonly .form-select,
+.patient-profile--readonly .form-textarea {
+  background: var(--surface-secondary, #f8fafc);
+  color: var(--text);
+  border-color: var(--color-border-muted, #e0e0e0);
+  cursor: default;
+}
+
+.patient-profile--readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--surface-secondary, #f8fafc);
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  margin-left: 0.5rem;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+/* ── Responsive: stack allergy columns on small screens ───────── */
+@media (max-width: 600px) {
+  .vsp-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vsp-allergy-editor__row,
+  .vsp-med-editor__row {
+    flex-wrap: wrap;
+  }
+}

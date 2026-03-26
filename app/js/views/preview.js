@@ -4,6 +4,11 @@ async function _getCase(id) {
   return getCase(id);
 }
 import { el, printPage } from '../ui/utils.js';
+import { resolvePatientProfile, hasPatientProfileContent } from '../core/patient-profile.js';
+import {
+  formatAssessmentScoreSummary,
+  normalizeStandardizedAssessments,
+} from '../features/soap/objective/standardized-assessment-definitions.js';
 
 /* ── tiny helpers ─────────────────────────────────────────── */
 const dash = (v) => v || '—';
@@ -130,6 +135,33 @@ function buildEncounterSubjective(subj) {
   return kids;
 }
 
+function buildPatientProfile(profile) {
+  if (!hasPatientProfileContent(profile)) return [];
+
+  const kids = [heading('Patient Profile')];
+  const groups = [
+    ...profile.identityRows,
+    ...profile.encounterRows,
+    ['Allergies', profile.allergies],
+    ...profile.contactRows,
+    ...profile.coverageRows,
+    ...profile.anthropometricRows,
+  ];
+
+  groups
+    .filter(([, value]) => value)
+    .forEach(([label, value]) => {
+      kids.push(row(label, value));
+    });
+
+  if (profile.clinicalBackground.length) {
+    kids.push(el('h4', {}, 'Clinical Background'));
+    profile.clinicalBackground.forEach((item) => kids.push(el('p', {}, item)));
+  }
+
+  return kids;
+}
+
 function buildVitals(vitals) {
   if (!vitals || !Object.values(vitals).some(Boolean)) return [];
   return [
@@ -159,6 +191,20 @@ function appendRegionalAssessmentSummary(kids, regionalAssessments) {
       simpleTable(['Test / Notes', 'Left', 'Right'], testRows),
     );
   }
+}
+
+function appendStandardizedAssessmentSummary(kids, assessments) {
+  const normalized = normalizeStandardizedAssessments(assessments);
+  if (!normalized.length) return;
+  kids.push(el('h4', {}, 'Standardized Functional Assessments'));
+  normalized.forEach((assessment, index) => {
+    const title = assessment.title || assessment.instrumentKey || `Assessment ${index + 1}`;
+    const score = formatAssessmentScoreSummary(assessment);
+    kids.push(row(title, score || assessment.status || 'In progress'));
+    if (assessment.assessor) kids.push(row(`${title} - Assessor`, assessment.assessor));
+    if (assessment.performedAt) kids.push(row(`${title} - Date`, assessment.performedAt));
+    if (assessment.notes) kids.push(row(`${title} - Notes`, assessment.notes));
+  });
 }
 
 function appendGaitSummary(kids, gait, includeDistance = true) {
@@ -223,6 +269,7 @@ function buildObjective(obj) {
   if (obj.neuro?.screening) kids.push(row('Neuro Screening', obj.neuro.screening));
   if (obj.functional?.assessment)
     kids.push(row('Functional Assessment', obj.functional.assessment));
+  appendStandardizedAssessmentSummary(kids, obj.standardizedAssessments);
   appendRegionalAssessmentSummary(kids, obj.regionalAssessments);
   appendGaitSummary(kids, obj.gait, true);
   return kids;
@@ -383,6 +430,7 @@ route('#/preview', async (app, qs) => {
 
   // Resolve the eval encounter (richest data source)
   const enc = c.encounters?.eval || {};
+  const profile = resolvePatientProfile(c, enc);
 
   // Collect all section children
   const sections = [
@@ -404,6 +452,9 @@ route('#/preview', async (app, qs) => {
 
     // ── Snapshot
     ...buildSnapshot(c.snapshot),
+
+    // ── Canonical patient face sheet
+    ...buildPatientProfile(profile),
 
     // ── Subjective (case-level history + encounter-level detail)
     ...buildHistory(c.history),

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import legacy from '@vitejs/plugin-legacy';
 import { visualizer } from 'rollup-plugin-visualizer';
+import cosmosPatientProxy from './scripts/vite-cosmos-proxy.mjs';
 
 export default defineConfig({
   // Root directory is app/ to match your structure
@@ -89,6 +90,9 @@ export default defineConfig({
       targets: ['defaults', 'not IE 11'],
       additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
     }),
+
+    // Local dev: serve /api/patients from Cosmos DB directly
+    cosmosPatientProxy(),
 
     // Bundle analyzer - generates stats.html
     visualizer({

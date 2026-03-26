@@ -8,7 +8,7 @@ import {
   getNeuroscreenRegions,
 } from './CombinedNeuroscreenSection.js';
 import { el } from '../../../ui/utils.js';
-import { buildSystemsReview, isSubcatImpaired } from './SystemsReview.js';
+import { buildSystemsReview, isSubcatImpaired, isGateOpen } from './SystemsReview.js';
 import {
   buildTonePanel,
   buildCoordinationPanel,
@@ -25,6 +25,8 @@ import {
   buildVisionPerceptionPanel,
   subsectionPanel,
 } from './GatedPanels.js';
+import { createStandardizedAssessmentsPanel } from './StandardizedAssessmentsPanel.js';
+import { normalizeStandardizedAssessments } from './standardized-assessment-definitions.js';
 // CPT widget is intentionally only rendered in BillingSection to avoid duplication
 
 const VITAL_FIELDS = [
@@ -398,6 +400,23 @@ export function createObjectiveSection(objectiveData, onUpdate) {
         },
       ],
     },
+    {
+      id: 'standardized-functional',
+      title: 'Standardized Functional Assessment',
+      children: [
+        {
+          gateId: 'sfa-assessments',
+          check: () =>
+            isGateOpen(data.systemsReview, 'standardizedFunctional') ||
+            (Array.isArray(data.standardizedAssessments) &&
+              data.standardizedAssessments.length > 0),
+          build: () =>
+            createStandardizedAssessmentsPanel(data.standardizedAssessments || [], (u) =>
+              updateField('standardizedAssessments', u),
+            ),
+        },
+      ],
+    },
   ];
 
   // ── Generic category builder ────────────────────────────
@@ -472,6 +491,7 @@ function normalizeObjectiveData(obj = {}) {
     },
     systemsReview: { systems: {} },
     functional: { assessment: '' },
+    standardizedAssessments: [],
     regionalAssessments: {
       selectedRegions: [],
       rom: {},
@@ -527,6 +547,7 @@ function normalizeObjectiveData(obj = {}) {
   };
   data.systemsReview = data.systemsReview || { systems: {} };
   data.functional = data.functional || { assessment: '' };
+  data.standardizedAssessments = normalizeStandardizedAssessments(data.standardizedAssessments);
   data.treatmentPerformed = data.treatmentPerformed || { description: '' };
   // Migrate legacy 4-field format into single description
   if (!data.treatmentPerformed.description) {

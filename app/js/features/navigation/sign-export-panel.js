@@ -45,6 +45,11 @@ export function render(container, options = {}) {
     const caseId = coalesce(out?.meta?.caseId, draft?.meta?.caseId, out?.id, draft?.id);
     const encounterId = coalesce(out?.meta?.encounterId, draft?.meta?.encounterId);
     emit('export:completed', { caseId, encounterId, format: 'docx' });
+
+    // Also broadcast globally on window so legacy/vanilla components can close
+    window.dispatchEvent(
+      new CustomEvent('app:export:completed', { detail: { caseId, encounterId } }),
+    );
   }
 
   async function exportAfterSignature(out, draft) {
@@ -52,28 +57,23 @@ export function render(container, options = {}) {
       const { ensureExportLibsLoaded } = await import('../../services/export-loader.js');
       await ensureExportLibsLoaded();
       const { exportToWord } = await import('../../services/document-export.js');
-      exportToWord(out, draft);
+      await exportToWord(out, draft);
       emitExportCompleted(out, draft);
     } catch (e) {
       console.error('Export to Word failed after signing:', e);
       alert('Unable to complete export.');
+      throw e;
     }
   }
 
-  async function openSignature(out, draft) {
-    try {
-      const { openSignatureDialog, getPersistedSignatureMeta } =
-        await import('../signature/SignatureModal.js');
-      openSignatureDialog({
-        existingSignature: (out.meta && out.meta.signature) || getPersistedSignatureMeta(),
-        onSigned: async (signature) => {
-          out.meta = { ...(out.meta || {}), signature };
-          await exportAfterSignature(out, draft);
-        },
-      });
-    } catch (e) {
-      console.error('Failed to open signature dialog:', e);
-      alert('Unable to open signature dialog.');
+  function applyPreviewEdits(target, updates) {
+    for (const key of Object.keys(updates)) {
+      const val = updates[key];
+      if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+        target[key] = { ...(target[key] || {}), ...val };
+      } else {
+        target[key] = val;
+      }
     }
   }
 
@@ -81,7 +81,67 @@ export function render(container, options = {}) {
     const out = caseData || {};
     const draft = (typeof window !== 'undefined' && window.currentDraft) || out || {};
     mergeDraftOverlays(out, draft);
-    await openSignature(out, draft);
+
+    // Open the preview modal for last-minute review / edits
+    const { openNotePreviewModal } = await import('./panels/NotePreviewModal.js');
+    openNotePreviewModal({
+      caseData: out,
+      draft,
+      mode: 'sign',
+      async onConfirmSign(updates, signature) {
+        // Apply preview edits to the live draft
+        applyPreviewEdits(draft, updates);
+        // Re-merge so `out` reflects changes
+        mergeDraftOverlays(out, draft);
+
+        // Handle Signature Integration
+        if (signature) {
+          out.meta = { ...(out.meta || {}), signature };
+          // Persist signature to the in-memory draft so My Notes reflects it
+          if (draft && draft !== out) {
+            draft.meta = { ...(draft.meta || {}), signature };
+          }
+        }
+
+        // Clear amendingFrom marker if present (note is now freshly signed)
+        if (draft?.meta?.amendingFrom) delete draft.meta.amendingFrom;
+        if (out?.meta?.amendingFrom) delete out.meta.amendingFrom;
+
+        // Persist updated draft
+        if (typeof window.saveDraft === 'function') {
+          try {
+            window.saveDraft();
+          } catch (_) {
+            /* best-effort */
+          }
+        }
+
+        // Update the status badge to reflect the signed state
+        if (typeof window !== 'undefined' && typeof window.updateNoteStatusBadge === 'function') {
+          window.updateNoteStatusBadge('signed');
+        }
+        if (
+          typeof window !== 'undefined' &&
+          typeof window.saveSignedNoteToCasefile === 'function'
+        ) {
+          try {
+            window.saveSignedNoteToCasefile({
+              draft,
+              context: {
+                caseId: draft?.meta?.caseId || out?.meta?.caseId || out?.id || '',
+                encounterId: draft?.meta?.encounterId || out?.meta?.encounterId || '',
+                professionId: window.currentEditorContext?.professionId || '',
+                templateId: window.currentEditorContext?.templateId || '',
+              },
+            });
+          } catch (err) {
+            console.warn('[SignExport] Failed to file signed note to Case File:', err);
+          }
+        }
+
+        await exportAfterSignature(out, draft);
+      },
+    });
   });
 
   const root = el('div', { class: 'sign-export-panel', style: 'margin: 24px 0 8px 0;' }, [

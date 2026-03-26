@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Note Lifecycle Test</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body {
+        padding: 16px;
+        font:
+          14px/1.4 system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+      .result {
+        margin-top: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+      .pass {
+        background: #e6ffed;
+        color: #046b1c;
+        border: 1px solid #a6f4c5;
+      }
+      .fail {
+        background: #ffeff0;
+        color: #8a041a;
+        border: 1px solid #ffd0d4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Note Lifecycle Test</h1>
+    <div id="results" class="result">Running…</div>
+
+    <script type="module">
+      import {
+        applyEncounterLifecycleToDraft,
+        copyDraftLifecycleToEncounter,
+        finalizeDraftSignature,
+      } from '../js/core/noteLifecycle.js';
+
+      const errors = [];
+      const assert = (condition, message) => {
+        if (!condition) errors.push(message);
+      };
+
+      const encounterData = {};
+      copyDraftLifecycleToEncounter(encounterData, {
+        noteType: 'simple-soap',
+        simpleSOAP: { subjective: 'S', objective: 'O', assessment: 'A', plan: 'P' },
+        noteTitle: 'Simple SOAP',
+        meta: { signature: { name: 'Original Signer', signedAt: '2026-03-25T10:00:00Z' } },
+        amendments: [{ text: 'Prior amendment', timestamp: '2026-03-24T10:00:00Z' }],
+        goals: 'Improve gait',
+      });
+
+      const hydratedDraft = applyEncounterLifecycleToDraft({}, encounterData);
+      assert(hydratedDraft.noteType === 'simple-soap', 'noteType should round-trip');
+      assert(hydratedDraft.simpleSOAP?.plan === 'P', 'simpleSOAP should round-trip');
+      assert(hydratedDraft.noteTitle === 'Simple SOAP', 'noteTitle should round-trip');
+      assert(
+        hydratedDraft.meta?.signature?.name === 'Original Signer',
+        'signature should round-trip',
+      );
+      assert(hydratedDraft.amendments?.length === 1, 'amendments should round-trip');
+      assert(hydratedDraft.goals === 'Improve gait', 'goals should round-trip');
+
+      const amendedDraft = {
+        meta: {
+          amendingFrom: {
+            signedAt: '2026-03-25T10:00:00Z',
+            signedBy: 'Original Signer',
+          },
+        },
+      };
+
+      finalizeDraftSignature(amendedDraft, {
+        name: 'Updated Signer',
+        signedAt: '2026-03-25T11:00:00Z',
+      });
+
+      assert(
+        amendedDraft.meta?.signature?.name === 'Updated Signer',
+        'new signature should be applied',
+      );
+      assert(!amendedDraft.meta?.amendingFrom, 'amendingFrom should be cleared after signing');
+      assert(Array.isArray(amendedDraft.amendments), 'amendments array should be created');
+      assert(amendedDraft.amendments.length === 1, 'amendment entry should be recorded');
+      assert(
+        String(amendedDraft.amendments[0].text || '').includes('Updated Signer'),
+        'amendment text should include signer name',
+      );
+
+      const result = document.getElementById('results');
+      result.textContent = errors.length ? `FAIL: ${errors.join('; ')}` : 'PASS';
+      result.className = `result ${errors.length ? 'fail' : 'pass'}`;
+      console.log('Note Lifecycle Test:', errors.length ? 'FAIL' : 'PASS', errors);
+    </script>
+  </body>
+</html>

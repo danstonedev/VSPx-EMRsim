@@ -11,6 +11,11 @@ import { el } from '../../ui/utils.js';
 import { showToast } from '../../ui/toast.js';
 import { mapFrequencyToEnum, mapDurationToEnum } from '../../services/case-generator.js';
 import { IS_LOCAL_DEV } from '../../core/constants.js';
+import {
+  applyEncounterLifecycleToDraft,
+  copyDraftLifecycleToEncounter,
+} from '../../core/noteLifecycle.js';
+import { normalizeStandardizedAssessments } from '../soap/objective/standardized-assessment-definitions.js';
 
 // Extracted micro-helpers (pure, no side effects) to reduce complexity in populateDraftFromCaseData
 function _mergeArrayToCsv(target, arr) {
@@ -301,6 +306,11 @@ function mergeObjectiveFromFindings(draft, findings, meta) {
 function mergeEvalObjective(draft, evalObj) {
   if (!evalObj) return;
   if (evalObj.text) draft.objective.text = evalObj.text;
+  if (Array.isArray(evalObj.standardizedAssessments)) {
+    draft.objective.standardizedAssessments = normalizeStandardizedAssessments(
+      evalObj.standardizedAssessments,
+    );
+  }
   if (evalObj.regionalAssessments) {
     draft.objective.regionalAssessments = {
       ...draft.objective.regionalAssessments,
@@ -625,6 +635,7 @@ function createDefaultDraft() {
       palpation: { findings: '' },
       neuro: { screening: '' },
       functional: { assessment: '' },
+      standardizedAssessments: [],
       regionalAssessments: {
         selectedRegions: [],
         rom: {},
@@ -705,7 +716,7 @@ function createDefaultDraft() {
  * @param {Object} caseData - The case data to load from
  * @returns {Object} Populated draft
  */
-function populateDraftFromCaseData(draft, caseData) {
+function populateDraftFromCaseData(draft, caseData, encounter = 'eval') {
   // This function converts case data structure to draft structure
   // Faculty members edit the "answer key" by populating the draft with case data
 
@@ -715,6 +726,7 @@ function populateDraftFromCaseData(draft, caseData) {
   populatePlanSection(draft, caseData);
   populateBillingSection(draft, caseData);
   populateMetaAndPrognosis(draft, caseData, evalAssess);
+  applyEncounterLifecycleToDraft(draft, caseData?.encounters?.[encounter] || {});
 
   // For now, return the original draft - this can be expanded as needed
   return draft;
@@ -962,7 +974,7 @@ export function initializeDraft(
 function initDraftByMode({ draft, isFacultyMode, isKeyMode, caseData, caseId }) {
   if (isFacultyMode || isKeyMode) {
     if (caseData && caseId !== 'new') {
-      draft = populateDraftFromCaseData(draft, caseData);
+      draft = populateDraftFromCaseData(draft, caseData, 'eval');
       if (caseData.editorSettings && !isKeyMode) draft.editorSettings = caseData.editorSettings;
     }
     return draft;
@@ -1020,6 +1032,7 @@ function attachDraftToCaseObject(caseData, encounter, draft) {
   if (draft.assessment) caseData.encounters[encounter].assessment = draft.assessment;
   if (draft.plan) caseData.encounters[encounter].plan = draft.plan;
   if (draft.billing) caseData.encounters[encounter].billing = draft.billing;
+  copyDraftLifecycleToEncounter(caseData.encounters[encounter], draft);
 }
 
 async function persistExistingCase(caseId, caseData) {
@@ -1094,6 +1107,9 @@ function mergeParsedObjective(parsed, draft) {
     palpation: parsed.objective.palpation || { findings: '' },
     neuro: parsed.objective.neuro || { screening: '' },
     functional: parsed.objective.functional || { assessment: '' },
+    standardizedAssessments: normalizeStandardizedAssessments(
+      parsed.objective.standardizedAssessments ?? draft.objective.standardizedAssessments,
+    ),
     regionalAssessments: normalizeParsedRegionalAssessments(parsed.objective.regionalAssessments),
   };
 }

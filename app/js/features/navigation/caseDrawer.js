@@ -267,6 +267,9 @@ export function initCaseDrawer() {
     // Right-side handle is deprecated/hidden; skip attaching events to it
     overlay.addEventListener('click', close, sig);
 
+    // Auto-close when export is completed across the entire app
+    window.addEventListener('app:export:completed', close, sig);
+
     document.addEventListener(
       'keydown',
       (e) => {

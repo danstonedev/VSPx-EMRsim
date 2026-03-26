@@ -55,7 +55,6 @@ export const ptSections = [
 
 export const ptSubsections = {
   subjective: [
-    'hpi',
     'history',
     'interview-qa',
     'pain-assessment',
@@ -80,7 +79,6 @@ export const ptSubsections = {
 // ── Human-readable labels ──────────────────────────────────────────
 
 export const ptSubsectionLabels = {
-  hpi: 'Patient Profile',
   history: 'History',
   'interview-qa': 'Interview Q&A',
   'pain-assessment': 'Symptoms',
@@ -111,13 +109,6 @@ export const ptSubsectionLabels = {
 
 export const ptDataResolvers = {
   // Subjective
-  hpi: (section) => ({
-    patientName: section?.patientName,
-    patientBirthday: section?.patientBirthday,
-    patientAge: section?.patientAge,
-    patientGender: section?.patientGender,
-    patientDemographics: section?.patientDemographics,
-  }),
   history: (section) => ({
     chiefComplaint: section?.chiefComplaint,
     historyOfPresentIllness: section?.historyOfPresentIllness,
@@ -159,6 +150,7 @@ export const ptDataResolvers = {
   'tone-assessment': (section) => section?.tone,
   'coordination-assessment': (section) => section?.coordination,
   'balance-assessment': (section) => section?.balance,
+  'standardized-assessments': (section) => section?.standardizedAssessments,
   'cranial-nerves': (section) => section?.cranialNerves,
   'endurance-assessment': (section) => section?.endurance,
   'edema-assessment': (section) => section?.edema,
@@ -198,6 +190,7 @@ export const ptDataResolvers = {
     cranialNerves: section?.cranialNerves,
     coordination: section?.coordination,
     balance: section?.balance,
+    standardizedAssessments: section?.standardizedAssessments,
     functional: section?.functional,
   }),
   // Assessment
@@ -235,7 +228,6 @@ export const ptDataResolvers = {
 /* eslint-disable complexity */
 export const ptRequirements = {
   // Subjective
-  hpi: (_data, section) => isPatientProfileComplete(section),
   history: (_data, section) => {
     const chiefComplaint = section?.chiefComplaint || section?.chiefConcern;
     const hpiText =

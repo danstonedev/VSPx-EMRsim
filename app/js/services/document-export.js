@@ -7,6 +7,12 @@
 import { regionalAssessments } from '../features/soap/objective/RegionalAssessments.js';
 import { getRimsLabel } from '../features/soap/objective/RimsSection.js';
 import { getPTCPTCodes, getPTICD10Codes } from '../features/soap/billing/BillingSection.js';
+import { resolvePatientProfile, getPatientProfileExportRows } from '../core/patient-profile.js';
+import {
+  formatAssessmentScoreSummary,
+  getAssessmentDefinition,
+  normalizeStandardizedAssessments,
+} from '../features/soap/objective/standardized-assessment-definitions.js';
 
 // Define NEUROSCREEN_REGIONS inline to avoid dynamic import issues
 const NEUROSCREEN_REGIONS = {
@@ -56,7 +62,7 @@ const NEUROSCREEN_REGIONS = {
 };
 
 /* eslint-disable complexity */
-export function exportToWord(caseData, draft) {
+export async function exportToWord(caseData, draft) {
   try {
     // Check if docx library is available
     if (typeof docx === 'undefined') {
@@ -153,41 +159,9 @@ export function exportToWord(caseData, draft) {
       },
     };
 
-    // Web-like dark header bar with UND-green underline
+    // Bold black text with UND-green underline
     const createWebSectionHeader = (text) => {
-      return new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        borders: {
-          top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          bottom: { style: BorderStyle.SINGLE, size: 16, color: FORMAT.colors.green },
-          left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        },
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [
-                  new Paragraph({
-                    children: [
-                      createTextRun(text, {
-                        size: FORMAT.sizes.heading2,
-                        color: 'FFFFFF',
-                        bold: true,
-                      }),
-                    ],
-                    spacing: { before: 0, after: 0 },
-                  }),
-                ],
-                shading: { fill: '1E1E1E' },
-                margins: { top: 40, bottom: 40, left: 240, right: 240 },
-              }),
-            ],
-          }),
-        ],
-      });
+      return createSectionHeader(text, 2, { indentLeft: 0 });
     };
 
     // Helper function to create a UND-themed section divider
@@ -353,13 +327,12 @@ export function exportToWord(caseData, draft) {
         (line) =>
           new Paragraph({
             children: [createTextRun(`• ${line}`, { size: FORMAT.sizes.body })],
-            spacing: { before: 0, after: 20, line: FORMAT.spacing.lineSpacing },
             indent: indentLeft ? { left: indentLeft } : undefined,
           }),
       );
     };
 
-    // Helper: labeled line with bold label and normal value; optional bullet
+    // Helper: create a single label: value line (bold label, normal value)
     const createLabelValueLine = (
       label,
       value,
@@ -396,12 +369,12 @@ export function exportToWord(caseData, draft) {
                     createTextRun(header, {
                       bold: true,
                       size: FORMAT.sizes.small,
-                      color: 'FFFFFF', // White text on UND green background
+                      color: 'FFFFFF',
                     }),
                   ],
                 }),
               ],
-              shading: { fill: FORMAT.colors.blue }, // UND Green header background
+              shading: { fill: FORMAT.colors.blue },
               verticalAlign:
                 typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
               margins: {
@@ -475,12 +448,14 @@ export function exportToWord(caseData, draft) {
       };
       if (Array.isArray(columnWidths) && columnWidths.length) {
         tableOptions.columnWidths = columnWidths;
-        // Switch to fixed layout and use exact DXA width (sum of columns) so columns align across tables
         const total = columnWidths.reduce((a, b) => a + b, 0);
         tableOptions.width = { size: total, type: WidthType.DXA };
         if (typeof TableLayoutType !== 'undefined') {
           tableOptions.layout = TableLayoutType.FIXED;
         }
+      }
+      if (opts.indent) {
+        tableOptions.indent = { size: opts.indent, type: WidthType.DXA };
       }
       return new Table(tableOptions);
     };
@@ -495,12 +470,11 @@ export function exportToWord(caseData, draft) {
     // Specialized builder for Combined ROM table with grouped headers (Left/Right)
     // Header layout:
     // [ REGION ] [    Left (colspan 3)     ] [    Right (colspan 3)    ]
-    //             [ AROM | PROM | RIM ]       [ AROM | PROM | RIM ]
+    //             [   AROM  |  PROM | RIM  ] [   AROM  |  PROM | RIM  ]
     function createCombinedRomDocxTable(regionLabel, rowsData, columnWidths, alignments = []) {
       const headerFill = FORMAT.colors.neutralHeader;
       const headerTextColor = FORMAT.colors.white;
 
-      // Row 1: REGION (rowSpan=2), Left (colSpan=3), Right (colSpan=3)
       const row1Cells = [
         new TableCell({
           rowSpan: 2,
@@ -517,6 +491,7 @@ export function exportToWord(caseData, draft) {
                 }),
               ],
               spacing: { before: 0, after: 0 },
+              alignment: AlignmentType.CENTER,
             }),
           ],
           width:
@@ -564,17 +539,9 @@ export function exportToWord(caseData, draft) {
         }),
       ];
 
-      // Row 2: AROM, PROM, RIM, AROM, PROM, RIM
-      const headerLabels = [
-        'Left AROM',
-        'Left PROM',
-        'Left RIM',
-        'Right AROM',
-        'Right PROM',
-        'Right RIM',
-      ];
+      const headerLabels = ['AROM', 'PROM', 'RIM', 'AROM', 'PROM', 'RIM'];
       const row2Cells = headerLabels.map(
-        (lbl, i) =>
+        (label, index) =>
           new TableCell({
             shading: { fill: headerFill },
             margins: { top: 30, bottom: 30, left: 100, right: 100 },
@@ -582,7 +549,7 @@ export function exportToWord(caseData, draft) {
             children: [
               new Paragraph({
                 children: [
-                  createTextRun(lbl.replace('Left ', '').replace('Right ', ''), {
+                  createTextRun(label, {
                     bold: true,
                     size: FORMAT.sizes.small,
                     color: headerTextColor,
@@ -593,8 +560,8 @@ export function exportToWord(caseData, draft) {
               }),
             ],
             width:
-              Array.isArray(columnWidths) && columnWidths[i + 1]
-                ? { size: columnWidths[i + 1], type: WidthType.DXA }
+              Array.isArray(columnWidths) && columnWidths[index + 1]
+                ? { size: columnWidths[index + 1], type: WidthType.DXA }
                 : undefined,
           }),
       );
@@ -604,46 +571,46 @@ export function exportToWord(caseData, draft) {
         new TableRow({ children: row2Cells, tableHeader: true }),
       ];
 
-      // Body rows
-      const bodyRows = rowsData.map((row, rIdx) => {
-        return new TableRow({
-          children: row.map(
-            (cell, cIdx) =>
-              new TableCell({
-                children: [
-                  new Paragraph({
-                    children: [
-                      createTextRun((cell ?? '').toString(), { size: FORMAT.sizes.small }),
-                    ],
-                    alignment:
-                      alignments[cIdx] === 'right'
-                        ? AlignmentType.RIGHT
-                        : alignments[cIdx] === 'center'
-                          ? AlignmentType.CENTER
-                          : AlignmentType.LEFT,
-                    spacing: { before: 0, after: 0 },
-                  }),
-                ],
-                margins: { top: 60, bottom: 60, left: 100, right: 100 },
-                verticalAlign:
-                  typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
-                shading: rIdx % 2 === 1 ? { fill: FORMAT.colors.zebra } : undefined,
-                width:
-                  Array.isArray(columnWidths) && columnWidths[cIdx]
-                    ? { size: columnWidths[cIdx], type: WidthType.DXA }
-                    : undefined,
-              }),
-          ),
-          cantSplit: true,
-        });
-      });
+      const bodyRows = rowsData.map(
+        (row, rowIndex) =>
+          new TableRow({
+            children: row.map(
+              (cell, columnIndex) =>
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        createTextRun((cell ?? '').toString(), { size: FORMAT.sizes.small }),
+                      ],
+                      alignment:
+                        alignments[columnIndex] === 'right'
+                          ? AlignmentType.RIGHT
+                          : alignments[columnIndex] === 'center'
+                            ? AlignmentType.CENTER
+                            : AlignmentType.LEFT,
+                      spacing: { before: 0, after: 0 },
+                    }),
+                  ],
+                  margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                  verticalAlign:
+                    typeof VerticalAlign !== 'undefined' ? VerticalAlign.CENTER : undefined,
+                  shading: rowIndex % 2 === 1 ? { fill: FORMAT.colors.zebra } : undefined,
+                  width:
+                    Array.isArray(columnWidths) && columnWidths[columnIndex]
+                      ? { size: columnWidths[columnIndex], type: WidthType.DXA }
+                      : undefined,
+                }),
+            ),
+            cantSplit: true,
+          }),
+      );
 
       const tableOptions = {
         rows: [...headerRows, ...bodyRows],
         layout: typeof TableLayoutType !== 'undefined' ? TableLayoutType.FIXED : undefined,
         width:
           Array.isArray(columnWidths) && columnWidths.length
-            ? { size: columnWidths.reduce((a, b) => a + b, 0), type: WidthType.DXA }
+            ? { size: columnWidths.reduce((sum, width) => sum + width, 0), type: WidthType.DXA }
             : { size: 100, type: WidthType.PERCENTAGE },
         borders: {
           top: { style: BorderStyle.SINGLE, size: 8, color: FORMAT.colors.grid },
@@ -659,6 +626,7 @@ export function exportToWord(caseData, draft) {
       if (Array.isArray(columnWidths) && columnWidths.length) {
         tableOptions.columnWidths = columnWidths;
       }
+
       return new Table(tableOptions);
     }
 
@@ -881,35 +849,58 @@ export function exportToWord(caseData, draft) {
     // Patient Information Section header in black (use level-2 styling), no indent
     elements.push(createSectionHeader('PATIENT INFORMATION', 2, { indentLeft: 0 }));
 
-    // Prefer snapshot.dob, then top-level patientDOB, then meta.patientDOB
+    const subjQuick = (draft && draft.subjective) || {};
+
+    const nameValue =
+      subjQuick.patientName ||
+      getSafeValue(caseData, 'meta.patientName') ||
+      getSafeValue(caseData, 'snapshot.name', getSafeValue(caseData, 'title', 'Not specified'));
+
     const dobValue =
+      subjQuick.patientBirthday ||
+      getSafeValue(caseData, 'meta.dob') ||
       getSafeValue(caseData, 'snapshot.dob') ||
       getSafeValue(caseData, 'patientDOB') ||
       getSafeValue(caseData, 'meta.patientDOB', '');
+
     const computedAge = computeAgeFromDob(dobValue);
     const ageValue =
+      subjQuick.patientAge ||
       computedAge ||
+      getSafeValue(caseData, 'meta.age') ||
       getSafeValue(caseData, 'snapshot.age', getSafeValue(caseData, 'patientAge', 'Not specified'));
-    const genderValue = getSafeValue(
-      caseData,
-      'snapshot.sex',
-      getSafeValue(caseData, 'patientGender', 'Not specified'),
-    );
 
-    const subjQuick = (draft && draft.subjective) || {};
+    const genderValue =
+      subjQuick.patientGender ||
+      getSafeValue(caseData, 'meta.sex') ||
+      getSafeValue(
+        caseData,
+        'snapshot.sex',
+        getSafeValue(caseData, 'patientGender', 'Not specified'),
+      );
+
+    const isDieteticsExport = !!(
+      draft &&
+      (draft.nutrition_assessment ||
+        draft.nutrition_diagnosis ||
+        draft.nutrition_intervention ||
+        draft.nutrition_monitoring)
+    );
+    const exportLabel = isDieteticsExport ? 'Dietetics Note' : 'PT Evaluation';
+    const programLabel = 'University of North Dakota';
+    const filePrefix = isDieteticsExport ? 'Dietetics_Note' : 'PT_Evaluation';
     // Output patient information as simple labeled lines (no table)
     const patientInfoLines = [
-      [
-        'Patient Name',
-        getSafeValue(caseData, 'snapshot.name', getSafeValue(caseData, 'title', 'Not specified')),
-      ],
+      ['Patient Name', nameValue],
       ['DOB', dobValue || 'Not specified'],
       ['Age', ageValue || 'Not specified'],
       ['Gender', genderValue || 'Not specified'],
       [
         'Primary Complaint',
-        subjQuick.chiefComplaint ||
-          getSafeValue(caseData, 'history.chief_complaint', 'Not specified'),
+        isDieteticsExport
+          ? getSafeValue(draft, 'nutrition_diagnosis.priority_diagnosis', 'Not specified')
+          : subjQuick.chiefComplaint ||
+            getSafeValue(caseData, 'history.chief_complaint', 'Not specified'),
       ],
       ['Date of Evaluation', fmtDate(new Date())],
     ];
@@ -920,7 +911,118 @@ export function exportToWord(caseData, draft) {
       );
     });
 
-    if (draft && draft.noteType === 'simple-soap') {
+    if (isDieteticsExport) {
+      const pushDieteticsFields = (header, source, fields) => {
+        const populated = fields.filter(([, key]) => {
+          const v = source?.[key];
+          return v != null && String(v).trim().length > 0;
+        });
+        if (!populated.length) return;
+        elements.push(createSectionDivider(), createWebSectionHeader(header));
+        populated.forEach(([label, key]) =>
+          elements.push(
+            createLabelValueLine(label, source[key], {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          ),
+        );
+      };
+
+      const assessment = draft?.nutrition_assessment || {};
+      const diagnosis = draft?.nutrition_diagnosis || {};
+      const intervention = draft?.nutrition_intervention || {};
+      const monitoring = draft?.nutrition_monitoring || {};
+      const billing = draft?.billing || {};
+      const scheduling = draft?.scheduling || {};
+
+      pushDieteticsFields('NUTRITION ASSESSMENT', assessment, [
+        ['Food/Nutrition History', 'food_nutrition_history'],
+        ['Anthropometric', 'anthropometric'],
+        ['Biochemical', 'biochemical'],
+        ['Nutrition-Focused Physical Exam', 'nutrition_focused_pe'],
+        ['Client History', 'client_history'],
+        ['Malnutrition Risk', 'malnutrition_risk'],
+        ['Estimated Needs', 'estimated_needs'],
+      ]);
+
+      const pes = Array.isArray(diagnosis.pes_statements) ? diagnosis.pes_statements : [];
+      const hasPesContent = pes.some((row) => {
+        const stmt =
+          `${row?.problem || ''}${row?.etiology || ''}${row?.signs_symptoms || ''}`.trim();
+        return stmt.length > 0;
+      });
+      const hasDiag =
+        hasPesContent ||
+        (diagnosis.priority_diagnosis && String(diagnosis.priority_diagnosis).trim());
+      if (hasDiag) {
+        elements.push(createSectionDivider(), createWebSectionHeader('NUTRITION DIAGNOSIS'));
+        pes.forEach((row, idx) => {
+          const statement = `P: ${row?.problem || ''}; E: ${row?.etiology || ''}; S: ${
+            row?.signs_symptoms || ''
+          }`
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (statement.replace(/[PES:;\s]/g, '').length) {
+            elements.push(
+              createLabelValueLine(`PES #${idx + 1}`, statement, {
+                indentLeft: FORMAT.indent.level1,
+              }),
+            );
+          }
+        });
+        if (diagnosis.priority_diagnosis && String(diagnosis.priority_diagnosis).trim()) {
+          elements.push(
+            createLabelValueLine('Priority Diagnosis', diagnosis.priority_diagnosis, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        }
+      } // end hasDiag
+
+      pushDieteticsFields('NUTRITION INTERVENTION', intervention, [
+        ['Intervention Strategy', 'strategy'],
+        ['Diet Order', 'diet_order'],
+        ['Goals', 'goals'],
+        ['Education Topics', 'education_topics'],
+        ['Counseling Notes', 'counseling_notes'],
+        ['Coordination of Care', 'coordination'],
+      ]);
+
+      pushDieteticsFields('NUTRITION MONITORING & EVALUATION', monitoring, [
+        ['Indicators to Monitor', 'indicators'],
+        ['Criteria for Follow-up', 'criteria'],
+        ['Outcomes', 'outcomes'],
+        ['Follow-Up Plan', 'follow_up_plan'],
+      ]);
+
+      const appointments = Array.isArray(scheduling.appointments) ? scheduling.appointments : [];
+      const mealRounds = Array.isArray(scheduling.mealRounds) ? scheduling.mealRounds : [];
+      if (appointments.length || mealRounds.length) {
+        elements.push(createSectionDivider(), createWebSectionHeader('SCHEDULING'));
+        if (appointments.length) {
+          elements.push(
+            createLabelValueLine('Appointments', `${appointments.length}`, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        }
+        if (mealRounds.length) {
+          elements.push(
+            createLabelValueLine('Meal Rounds', `${mealRounds.length}`, {
+              indentLeft: FORMAT.indent.level1,
+            }),
+          );
+        }
+      }
+
+      pushDieteticsFields('BILLING', billing, [
+        ['CPT Code', 'cpt_code'],
+        ['Units', 'units'],
+        ['Time (minutes)', 'time_minutes'],
+        ['Diagnosis Codes', 'diagnosis_codes'],
+        ['Medical Necessity', 'justification'],
+      ]);
+    } else if (draft && draft.noteType === 'simple-soap') {
       const soap = draft.simpleSOAP || {};
 
       // S - Subjective
@@ -2266,6 +2368,69 @@ export function exportToWord(caseData, draft) {
           elements.push(createBodyParagraph(balData.notes, { indentLeft: FORMAT.indent.level1 }));
       }
 
+      const standardizedAssessments = normalizeStandardizedAssessments(obj.standardizedAssessments);
+      if (standardizedAssessments.length) {
+        elements.push(createSectionHeader('Standardized Functional Assessments', 3));
+        standardizedAssessments.forEach((assessment, index) => {
+          const definition = getAssessmentDefinition(assessment.instrumentKey);
+          const title =
+            assessment.title ||
+            definition?.name ||
+            assessment.instrumentKey ||
+            `Assessment ${index + 1}`;
+          const scoreSummary = formatAssessmentScoreSummary(assessment);
+
+          elements.push(
+            createLabelValueLine(
+              title,
+              scoreSummary || (assessment.status === 'complete' ? 'Complete' : 'In Progress'),
+              {
+                indentLeft: FORMAT.indent.level1,
+              },
+            ),
+          );
+          if (assessment.assessor) {
+            elements.push(
+              createLabelValueLine('Assessor', assessment.assessor, {
+                indentLeft: FORMAT.indent.level2,
+              }),
+            );
+          }
+          if (assessment.performedAt) {
+            elements.push(
+              createLabelValueLine('Date Performed', assessment.performedAt, {
+                indentLeft: FORMAT.indent.level2,
+              }),
+            );
+          }
+
+          if (definition?.key === 'berg-balance-scale' && Array.isArray(definition.items)) {
+            const bergRows = definition.items
+              .map((item) => {
+                const raw = assessment.responses?.[item.id];
+                if (raw === '' || raw === undefined || raw === null) return null;
+                return [item.label, String(raw)];
+              })
+              .filter(Boolean);
+            if (bergRows.length) {
+              elements.push(
+                createFormattedTable(bergRows, ['Berg Item', 'Score (0-4)'], [6200, 2000], [], {
+                  indent: FORMAT.indent.level2,
+                }),
+              );
+            }
+          }
+
+          if (assessment.notes) {
+            elements.push(
+              createLabelValueLine('Notes', assessment.notes, {
+                indentLeft: FORMAT.indent.level2,
+              }),
+            );
+          }
+        });
+      }
+
       elements.push(createSectionHeader('Functional Movement Assessment', 3));
       elements.push(
         createBodyParagraph(getSafeValue(obj, 'functional.assessment', ''), {
@@ -2769,10 +2934,10 @@ export function exportToWord(caseData, draft) {
                   new Paragraph({
                     alignment: AlignmentType.LEFT,
                     children: [
-                      createTextRun(
-                        'PT Evaluation — University of North Dakota Physical Therapy Program',
-                        { size: FORMAT.sizes.small, color: FORMAT.colors.gray },
-                      ),
+                      createTextRun(`${exportLabel} - ${programLabel}`, {
+                        size: FORMAT.sizes.small,
+                        color: FORMAT.colors.gray,
+                      }),
                     ],
                   }),
                 ],
@@ -2785,8 +2950,8 @@ export function exportToWord(caseData, draft) {
     }
 
     const doc = new Document({
-      creator: 'UND PT Program',
-      title: 'Physical Therapy Evaluation',
+      creator: programLabel,
+      title: exportLabel,
       description: 'Educational EMR simulation export',
       sections: [sectionDef],
       styles: {
@@ -2832,25 +2997,24 @@ export function exportToWord(caseData, draft) {
     });
 
     // Generate and download the document
-    Packer.toBlob(doc)
+    return Packer.toBlob(doc)
       .then((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `PT_Evaluation_${getSafeValue(caseData, 'snapshot.name', getSafeValue(caseData, 'title', 'Patient')).replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
+        a.download = `${filePrefix}_${getSafeValue(caseData, 'snapshot.name', getSafeValue(caseData, 'title', 'Patient')).replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        return true;
       })
       .catch((error) => {
         console.error('Error generating document blob:', error);
-        alert('Failed to generate document file. Please try again.');
+        throw error;
       });
-  } catch (error) {
-    console.error('Word document export failed:', error);
-    alert(
-      'Failed to export Word document. Please check that all required libraries are loaded and try again.',
-    );
+  } catch (err) {
+    console.error('Failed to create word document:', err);
+    throw err;
   }
 }

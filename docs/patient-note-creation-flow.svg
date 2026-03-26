@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1780" viewBox="0 0 1600 1780" role="img" aria-labelledby="title desc">
+  <title id="title">Patient and Note Creation Flow Map</title>
+  <desc id="desc">Standalone visual diagram of current patient and note creation flows and a unified target funnel.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f1e8; }
+      .panel { fill: #fffdf9; stroke: #d8c9b3; stroke-width: 2; rx: 22; ry: 22; }
+      .lane { fill: #fffefa; stroke: #d8c9b3; stroke-width: 2; rx: 18; ry: 18; }
+      .box { fill: #ffffff; stroke: #cfd6dc; stroke-width: 1.5; rx: 14; ry: 14; }
+      .vsp { fill: #e7f6f7; stroke: #0a6c74; }
+      .pt { fill: #e8f1f8; stroke: #22577a; }
+      .diet { fill: #f8efe2; stroke: #8f4e00; }
+      .shared { fill: #f7e8f0; stroke: #7a1f4d; }
+      .target { fill: #eef5e1; stroke: #6b8e23; }
+      .title { font: 700 40px 'Segoe UI', Arial, sans-serif; fill: #1f2933; }
+      .subtitle { font: 400 20px 'Segoe UI', Arial, sans-serif; fill: #52606d; }
+      .lane-title { font: 700 24px 'Segoe UI', Arial, sans-serif; }
+      .text { font: 400 17px 'Segoe UI', Arial, sans-serif; fill: #1f2933; }
+      .small { font: 400 15px 'Segoe UI', Arial, sans-serif; fill: #52606d; }
+      .mono { font: 400 14px Consolas, 'Courier New', monospace; fill: #334e68; }
+      .arrow { stroke: #005f73; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .link { stroke: #bb3e03; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead2); }
+      .divider { stroke: #d8c9b3; stroke-width: 1.5; }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#005f73"/>
+    </marker>
+    <marker id="arrowhead2" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#bb3e03"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1600" height="1780"/>
+
+  <rect class="panel" x="40" y="30" width="1520" height="120"/>
+  <text class="title" x="70" y="78">Patient and Note Creation Flow Map</text>
+  <text class="subtitle" x="70" y="112">Standalone browser-openable visual of the current patient and note creation system plus the target unified funnel.</text>
+
+  <rect class="panel" x="40" y="180" width="1520" height="1010"/>
+  <text class="title" x="70" y="230" style="font-size:30px;">Current-State Flows</text>
+  <text class="subtitle" x="70" y="260" style="font-size:18px;">Inputs, paths, stores, and route outputs that exist today.</text>
+
+  <rect class="lane" x="70" y="290" width="700" height="250"/>
+  <text class="lane-title" x="95" y="325" fill="#0a6c74">VSP Registry</text>
+  <rect class="box vsp" x="95" y="350" width="140" height="120"/>
+  <text class="text" x="110" y="388">Entry</text>
+  <text class="small" x="110" y="418">Faculty opens</text>
+  <text class="mono" x="110" y="442">#/vsp/registry</text>
+  <rect class="box vsp" x="275" y="350" width="200" height="120"/>
+  <text class="text" x="292" y="388">Inputs</text>
+  <text class="small" x="292" y="416">identity, demographics,</text>
+  <text class="small" x="292" y="438">language, contact, insurance,</text>
+  <text class="small" x="292" y="460">allergies, meds, history, PCP</text>
+  <rect class="box vsp" x="515" y="350" width="220" height="120"/>
+  <text class="text" x="532" y="388">Path</text>
+  <text class="mono" x="532" y="418">createPatient(fields)</text>
+  <text class="mono" x="532" y="442">updatePatient(vspId)</text>
+  <path class="arrow" d="M235 410 L275 410"/>
+  <path class="arrow" d="M475 410 L515 410"/>
+  <rect class="box" x="95" y="485" width="640" height="35"/>
+  <text class="small" x="110" y="508">Outputs: canonical VSP record -> local registry store -> optional /api/patients sync</text>
+
+  <rect class="lane" x="810" y="290" width="720" height="250"/>
+  <text class="lane-title" x="835" y="325" fill="#22577a">PT Student</text>
+  <rect class="box pt" x="835" y="350" width="140" height="120"/>
+  <text class="text" x="852" y="388">Entry</text>
+  <text class="small" x="852" y="418">My Patients panel</text>
+  <rect class="box pt" x="1005" y="350" width="170" height="120"/>
+  <text class="text" x="1022" y="388">Inputs</text>
+  <text class="small" x="1022" y="416">blank patient or</text>
+  <text class="small" x="1022" y="438">import from VSP, then</text>
+  <text class="small" x="1022" y="460">inline name/DOB/sex edits</text>
+  <rect class="box pt" x="1205" y="350" width="145" height="120"/>
+  <text class="text" x="1222" y="388">Path</text>
+  <text class="small" x="1222" y="416">start PT Eval or</text>
+  <text class="small" x="1222" y="438">Simple SOAP</text>
+  <rect class="box pt" x="1380" y="350" width="120" height="120"/>
+  <text class="text" x="1397" y="388">Output</text>
+  <text class="small" x="1397" y="416">draft + route</text>
+  <path class="arrow" d="M975 410 L1005 410"/>
+  <path class="arrow" d="M1175 410 L1205 410"/>
+  <path class="arrow" d="M1350 410 L1380 410"/>
+  <rect class="box" x="835" y="485" width="665" height="35"/>
+  <text class="mono" x="850" y="508">patient_&lt;blankId&gt; | draft_&lt;patientId&gt;_eval | #/student/editor?case=&lt;patientId&gt;&amp;encounter=eval</text>
+
+  <rect class="lane" x="70" y="565" width="700" height="250"/>
+  <text class="lane-title" x="95" y="600" fill="#22577a">PT Instructor</text>
+  <rect class="box pt" x="95" y="625" width="140" height="120"/>
+  <text class="text" x="112" y="663">Entry</text>
+  <text class="small" x="112" y="693">Create Case or</text>
+  <text class="small" x="112" y="715">Generate Case modal</text>
+  <rect class="box pt" x="275" y="625" width="210" height="120"/>
+  <text class="text" x="292" y="663">Inputs</text>
+  <text class="small" x="292" y="691">manual: title, optional VSP,</text>
+  <text class="small" x="292" y="713">DOB/age, sex, setting, acuity</text>
+  <text class="small" x="292" y="735">or prompt-generation anchors</text>
+  <rect class="box pt" x="525" y="625" width="210" height="120"/>
+  <text class="text" x="542" y="663">Path</text>
+  <text class="small" x="542" y="691">build case object with</text>
+  <text class="mono" x="542" y="715">meta + snapshot + encounters.eval</text>
+  <path class="arrow" d="M235 685 L275 685"/>
+  <path class="arrow" d="M485 685 L525 685"/>
+  <rect class="box" x="95" y="760" width="640" height="35"/>
+  <text class="mono" x="110" y="783">PT case store | #/instructor/editor?case=&lt;newCase.id&gt;</text>
+
+  <rect class="lane" x="810" y="565" width="720" height="250"/>
+  <text class="lane-title" x="835" y="600" fill="#8f4e00">Dietetics Student and Faculty</text>
+  <rect class="box diet" x="835" y="625" width="140" height="120"/>
+  <text class="text" x="852" y="663">Entry</text>
+  <text class="small" x="852" y="693">Dietetics cases</text>
+  <text class="small" x="852" y="715">dashboard</text>
+  <rect class="box diet" x="1005" y="625" width="180" height="120"/>
+  <text class="text" x="1022" y="663">Inputs</text>
+  <text class="small" x="1022" y="691">case title, diet order,</text>
+  <text class="small" x="1022" y="713">selected VSP patient</text>
+  <rect class="box diet" x="1215" y="625" width="155" height="120"/>
+  <text class="text" x="1232" y="663">Path</text>
+  <text class="small" x="1232" y="691">copy patient fields</text>
+  <text class="small" x="1232" y="713">into case meta</text>
+  <rect class="box diet" x="1400" y="625" width="100" height="120"/>
+  <text class="text" x="1417" y="663">Output</text>
+  <text class="small" x="1417" y="693">case map</text>
+  <path class="arrow" d="M975 685 L1005 685"/>
+  <path class="arrow" d="M1185 685 L1215 685"/>
+  <path class="arrow" d="M1370 685 L1400 685"/>
+  <rect class="box" x="835" y="760" width="665" height="35"/>
+  <text class="mono" x="850" y="783">dietetics_emr_cases | caseObj.meta.patientName / dob / sex / allergies / vspId</text>
+
+  <rect class="lane" x="70" y="840" width="700" height="320"/>
+  <text class="lane-title" x="95" y="875" fill="#7a1f4d">Multidisciplinary Dietetics/PT Workspace</text>
+  <rect class="box shared" x="95" y="900" width="135" height="135"/>
+  <text class="text" x="112" y="938">Entry</text>
+  <text class="small" x="112" y="968">open dietetics editor</text>
+  <text class="small" x="112" y="990">with patient switcher</text>
+  <rect class="box shared" x="260" y="900" width="170" height="135"/>
+  <text class="text" x="277" y="938">Selection</text>
+  <text class="small" x="277" y="968">profession + template</text>
+  <text class="small" x="277" y="990">dietetics-ncp</text>
+  <text class="small" x="277" y="1012">pt-eval / pt-simple-soap</text>
+  <rect class="box shared" x="460" y="900" width="135" height="135"/>
+  <text class="text" x="477" y="938">If PT</text>
+  <text class="small" x="477" y="968">ensureLinkedPtCaseId()</text>
+  <text class="small" x="477" y="990">creates local PT patient</text>
+  <rect class="box shared" x="625" y="900" width="120" height="135"/>
+  <text class="text" x="642" y="938">Draft</text>
+  <text class="small" x="642" y="968">ensurePilotPtDraft()</text>
+  <text class="small" x="642" y="990">or diet draft</text>
+  <path class="arrow" d="M230 967 L260 967"/>
+  <path class="arrow" d="M430 967 L460 967"/>
+  <path class="arrow" d="M595 967 L625 967"/>
+  <rect class="box" x="95" y="1060" width="650" height="70"/>
+  <text class="mono" x="110" y="1088">dietetics_draft_&lt;caseId&gt;</text>
+  <text class="mono" x="110" y="1112">patient_&lt;blankPtId&gt; | draft_&lt;blankPtId&gt;_&lt;encounter&gt; | shared active note session</text>
+
+  <rect class="lane" x="810" y="840" width="720" height="320"/>
+  <text class="lane-title" x="835" y="875" fill="#7a1f4d">Shared Note Outputs</text>
+  <rect class="box shared" x="835" y="900" width="130" height="135"/>
+  <text class="text" x="852" y="938">Preview</text>
+  <text class="small" x="852" y="968">review note before</text>
+  <text class="small" x="852" y="990">sign and export</text>
+  <rect class="box shared" x="995" y="900" width="155" height="135"/>
+  <text class="text" x="1012" y="938">Signature</text>
+  <text class="small" x="1012" y="968">clinician name</text>
+  <text class="small" x="1012" y="990">title and signed metadata</text>
+  <rect class="box shared" x="1180" y="900" width="145" height="135"/>
+  <text class="text" x="1197" y="938">Outputs</text>
+  <text class="small" x="1197" y="968">Word export</text>
+  <text class="small" x="1197" y="990">Case File entry</text>
+  <text class="small" x="1197" y="1012">signed draft state</text>
+  <rect class="box shared" x="1355" y="900" width="145" height="135"/>
+  <text class="text" x="1372" y="938">Amend</text>
+  <text class="small" x="1372" y="968">remove signature</text>
+  <text class="small" x="1372" y="990">mark amendingFrom</text>
+  <text class="small" x="1372" y="1012">re-sign</text>
+  <path class="arrow" d="M965 967 L995 967"/>
+  <path class="arrow" d="M1150 967 L1180 967"/>
+  <path class="arrow" d="M1325 967 L1355 967"/>
+  <rect class="box" x="835" y="1060" width="665" height="70"/>
+  <text class="mono" x="850" y="1088">meta.signature | meta.amendingFrom | export download | Case File note entry</text>
+  <path class="arrow" d="M1427 1035 C1427 1085 1300 1085 1300 1035"/>
+
+  <path class="link" d="M735 440 C780 440 790 410 835 410"/>
+  <text class="small" x="775" y="390" fill="#bb3e03">VSP picker feeds PT student import</text>
+  <path class="link" d="M735 410 C900 410 140 700 275 700"/>
+  <text class="small" x="415" y="575" fill="#bb3e03">VSP picker can seed PT instructor case creation</text>
+  <path class="link" d="M735 470 C810 470 840 690 1005 690"/>
+  <text class="small" x="880" y="560" fill="#bb3e03">VSP picker feeds dietetics case creation</text>
+  <path class="link" d="M1175 780 C990 820 900 850 900 900"/>
+  <text class="small" x="930" y="820" fill="#bb3e03">dietetics cases are the host shell for multidiscipline launch</text>
+
+  <rect class="panel" x="40" y="1220" width="1520" height="270"/>
+  <text class="title" x="70" y="1270" style="font-size:30px;">Where Patient Identity Gets Duplicated</text>
+  <rect class="box vsp" x="90" y="1310" width="260" height="120"/>
+  <text class="text" x="108" y="1350">Canonical VSP patient</text>
+  <text class="small" x="108" y="1380">best current source of truth</text>
+  <text class="small" x="108" y="1402">but downstream flows copy fields forward</text>
+
+  <rect class="box pt" x="420" y="1265" width="270" height="90"/>
+  <text class="text" x="438" y="1300">PT student copies</text>
+  <text class="mono" x="438" y="1325">patient_&lt;id&gt; -> draft subjective</text>
+
+  <rect class="box pt" x="420" y="1370" width="270" height="90"/>
+  <text class="text" x="438" y="1405">PT instructor copies</text>
+  <text class="mono" x="438" y="1430">case meta -> snapshot</text>
+
+  <rect class="box diet" x="760" y="1265" width="300" height="90"/>
+  <text class="text" x="778" y="1300">Dietetics copies</text>
+  <text class="mono" x="778" y="1325">caseObj.meta.patientName / dob / sex / allergies</text>
+
+  <rect class="box shared" x="760" y="1370" width="300" height="90"/>
+  <text class="text" x="778" y="1405">Multidiscipline PT copies</text>
+  <text class="mono" x="778" y="1430">linked blank PT patient -> PT pilot draft</text>
+
+  <rect class="box" x="1130" y="1310" width="370" height="120"/>
+  <text class="text" x="1148" y="1350">Result</text>
+  <text class="small" x="1148" y="1380">same patient can exist as a VSP record,</text>
+  <text class="small" x="1148" y="1402">a local PT patient, dietetics case meta,</text>
+  <text class="small" x="1148" y="1424">and a synthetic multidiscipline PT patient</text>
+
+  <path class="arrow" d="M350 1370 L420 1310"/>
+  <path class="arrow" d="M350 1370 L420 1415"/>
+  <path class="arrow" d="M350 1370 L760 1310"/>
+  <path class="arrow" d="M350 1370 L760 1415"/>
+  <path class="arrow" d="M690 1310 L1130 1370"/>
+  <path class="arrow" d="M690 1415 L1130 1370"/>
+  <path class="arrow" d="M1060 1310 L1130 1370"/>
+  <path class="arrow" d="M1060 1415 L1130 1370"/>
+
+  <rect class="panel" x="40" y="1520" width="1520" height="220"/>
+  <text class="title" x="70" y="1570" style="font-size:30px;">Unified Target Funnel</text>
+  <text class="subtitle" x="70" y="1600" style="font-size:18px;">One patient source, one note envelope, one front door.</text>
+
+  <rect class="box target" x="90" y="1630" width="180" height="78"/>
+  <text class="text" x="108" y="1662">1. Select patient</text>
+  <text class="small" x="108" y="1688">existing or create once</text>
+
+  <rect class="box target" x="305" y="1630" width="180" height="78"/>
+  <text class="text" x="323" y="1662">2. Keep one patientId</text>
+  <text class="small" x="323" y="1688">no local identity forks</text>
+
+  <rect class="box target" x="520" y="1630" width="180" height="78"/>
+  <text class="text" x="538" y="1662">3. Select note type</text>
+  <text class="small" x="538" y="1688">PT Eval, PT SOAP, Dietetics NCP</text>
+
+  <rect class="box target" x="735" y="1630" width="205" height="78"/>
+  <text class="text" x="753" y="1662">4. Create note envelope</text>
+  <text class="mono" x="753" y="1688">{patientId, encounterId, templateId}</text>
+
+  <rect class="box target" x="975" y="1630" width="180" height="78"/>
+  <text class="text" x="993" y="1662">5. Open shared shell</text>
+  <text class="small" x="993" y="1688">profession-specific form inside</text>
+
+  <rect class="box target" x="1190" y="1630" width="160" height="78"/>
+  <text class="text" x="1208" y="1662">6. Shared outputs</text>
+  <text class="small" x="1208" y="1688">save, sign, export, amend</text>
+
+  <rect class="box target" x="1385" y="1630" width="130" height="78"/>
+  <text class="text" x="1403" y="1662">7. Timeline</text>
+  <text class="small" x="1403" y="1688">true patient chart view</text>
+
+  <path class="arrow" d="M270 1669 L305 1669"/>
+  <path class="arrow" d="M485 1669 L520 1669"/>
+  <path class="arrow" d="M700 1669 L735 1669"/>
+  <path class="arrow" d="M940 1669 L975 1669"/>
+  <path class="arrow" d="M1155 1669 L1190 1669"/>
+  <path class="arrow" d="M1350 1669 L1385 1669"/>
+</svg>

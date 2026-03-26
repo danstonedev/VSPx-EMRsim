@@ -19,9 +19,9 @@ const budgets = {
   // Set slightly above recent measurements to avoid false positives but still catch regressions
   ChartNavigation: 56000,
   'artifacts-panel': 11500,
-  'sign-export-panel': 3000,
+  'sign-export-panel': 3310,
   SignatureModal: 7000,
-  'document-export': 47000,
+  'document-export': 47500,
   'mount-panel': 1200,
   prefetch: 1200,
   async: 1200,

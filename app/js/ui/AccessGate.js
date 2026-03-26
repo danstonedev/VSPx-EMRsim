@@ -9,6 +9,7 @@
 
 const STORAGE_KEY = 'pt_emr_access_granted';
 const ROLE_KEY = 'pt_emr_access_role';
+const CAPABILITY_KEY = 'pt_emr_access_capability';
 
 /** Check whether this session has already been granted access */
 export function isAccessGranted() {
@@ -28,11 +29,39 @@ export function getAccessRole() {
   }
 }
 
+/** Set the current session role */
+export function setAccessRole(role) {
+  try {
+    sessionStorage.setItem(ROLE_KEY, role || 'student');
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
+/** Get the max capability tier for this session. Falls back to current role. */
+export function getAccessCapability() {
+  try {
+    return sessionStorage.getItem(CAPABILITY_KEY) || getAccessRole();
+  } catch {
+    return 'student';
+  }
+}
+
+/** Set the max capability tier for this session */
+export function setAccessCapability(cap) {
+  try {
+    sessionStorage.setItem(CAPABILITY_KEY, cap || 'student');
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
 /** Mark the current session as granted with a role */
 function grantAccess(role) {
   try {
     sessionStorage.setItem(STORAGE_KEY, '1');
     sessionStorage.setItem(ROLE_KEY, role || 'student');
+    sessionStorage.setItem(CAPABILITY_KEY, role || 'student');
   } catch {
     // sessionStorage unavailable – gate will re-show on reload
   }
@@ -102,7 +131,7 @@ export function showAccessGate() {
         <p class="access-gate-status" aria-live="polite" role="status"></p>
         <h2 class="access-gate-title">University of North Dakota</h2>
         <p class="access-gate-line2">School of Medicine &amp; Health Sciences</p>
-        <p class="access-gate-line3">Clinical Simulation Platform</p>
+        <p class="access-gate-line3">Department of Physical Therapy</p>
       </div>
     `;
 

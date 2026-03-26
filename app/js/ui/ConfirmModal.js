@@ -3,6 +3,7 @@
  * Prevents accidental destructive actions by requiring user to type a confirmation string
  */
 import { el } from './utils.js';
+import { buildBrandedModal, openBrandedModal, closeBrandedModal } from './ModalShell.js';
 
 /**
  * Show a confirmation modal that requires typing a specific string
@@ -33,38 +34,16 @@ export function showConfirmModal({
     let inputRef;
     let confirmBtnRef;
 
+    let modalRef;
+
     const close = (confirmed = false) => {
-      try {
-        modal?.classList.remove('is-open');
-        const card = modal?.querySelector('.popup-card-base');
-        if (card) card.classList.remove('is-open');
-
-        const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const removeNow = () => {
-          try {
-            modal?.remove();
-          } catch {
-            /* element may not exist */
-          }
-        };
-
-        if (prefersReduce) {
-          removeNow();
-        } else {
-          modal?.addEventListener('transitionend', removeNow, { once: true });
-          setTimeout(removeNow, 480);
-        }
-
-        if (confirmed && onConfirm) {
-          onConfirm();
-        } else if (!confirmed && onCancel) {
-          onCancel();
-        }
-
-        resolve(confirmed);
-      } catch {
-        /* element may not exist */
-      }
+      closeBrandedModal(modalRef || {}, {
+        cleanup: () => {
+          if (confirmed && onConfirm) onConfirm();
+          else if (!confirmed && onCancel) onCancel();
+          resolve(confirmed);
+        },
+      });
     };
 
     const handleConfirm = () => {
@@ -84,35 +63,34 @@ export function showConfirmModal({
       }
     };
 
-    const overlay = el('div', {
-      class: 'modal-overlay popup-overlay-base',
-      role: 'dialog',
-      'aria-modal': 'true',
-      onclick: (e) => {
-        if (e.target === overlay) close(false);
-      },
-    });
-
-    const card = el(
-      'div',
+    const cancelBtn = el(
+      'button',
       {
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-labelledby': 'confirm-modal-title',
-        class:
-          'popup-card-base bg-surface text-color br-lg shadow-modal p-20 w-92 maxw-520 relative',
-        onclick: (e) => e.stopPropagation(),
+        class: 'btn secondary small',
+        onclick: () => close(false),
       },
-      [
-        el('h2', { id: 'confirm-modal-title', class: 'mb-12 fw-600' }, title),
+      cancelButton,
+    );
+    confirmBtnRef = el(
+      'button',
+      {
+        class: `btn small ${danger ? 'danger' : 'primary'}`,
+        disabled: !!confirmText,
+        onclick: handleConfirm,
+      },
+      confirmButton,
+    );
 
+    const modal = buildBrandedModal({
+      title,
+      contentClass: 'popup-card-base confirm-modal',
+      bodyChildren: [
         message &&
           el(
             'div',
             { class: 'mb-16', style: 'line-height: 1.5;' },
             typeof message === 'string' ? message : [message],
           ),
-
         confirmText &&
           el('div', { class: 'mb-16' }, [
             el('label', { for: 'confirm-input', class: 'block mb-8 fw-500' }, [
@@ -136,43 +114,15 @@ export function showConfirmModal({
               },
             })),
           ]),
-
-        el('div', { class: 'd-flex gap-8 jc-end mt-20' }, [
-          el(
-            'button',
-            {
-              class: 'btn secondary small',
-              onclick: () => close(false),
-            },
-            cancelButton,
-          ),
-          (confirmBtnRef = el(
-            'button',
-            {
-              class: `btn small ${danger ? 'danger' : 'primary'}`,
-              disabled: !!confirmText, // Disabled initially if confirmation text required
-              onclick: handleConfirm,
-            },
-            confirmButton,
-          )),
-        ]),
-      ],
-    );
-
-    overlay.appendChild(card);
-    const modal = overlay;
-
-    document.body.appendChild(modal);
-
-    // Trigger animations
-    requestAnimationFrame(() => {
-      modal.classList.add('is-open');
-      card.classList.add('is-open');
+      ].filter(Boolean),
+      footerChildren: [cancelBtn, confirmBtnRef],
+      onRequestClose: () => close(false),
     });
+    modalRef = modal;
 
-    // Focus input if present
-    if (inputRef) {
-      setTimeout(() => inputRef.focus(), 100);
-    }
+    openBrandedModal(modalRef, {
+      focusTarget: inputRef ? () => inputRef : null,
+      focusDelay: 100,
+    });
   });
 }

@@ -1,6 +1,7 @@
-﻿// ChartNavigation.js - Professional EMR-style navigation with progress tracking
+// ChartNavigation.js - Professional EMR-style navigation with progress tracking
 
 import { el } from '../../ui/utils.js';
+import { buildBrandedModal, closeBrandedModal, openBrandedModal } from '../../ui/ModalShell.js';
 
 import { openEditCaseModal } from './modal.js';
 
@@ -204,7 +205,7 @@ function createSVGElement(tag, attrs = {}, children = []) {
 function createSubsectionIndicator(status) {
   switch (status) {
     case 'complete':
-      return el('span', { class: 'subsection-indicator subsection-indicator-complete' }, '✓');
+      return el('span', { class: 'subsection-indicator subsection-indicator-complete' });
 
     case 'partial':
       return el('div', { class: 'subsection-indicator subsection-indicator-partial' });
@@ -517,7 +518,7 @@ function createEditableCaseHeader(caseInfo, onUpdate, options = {}) {
       },
     },
 
-    ['✎'],
+    ['Edit'],
   );
 
   const titleDisplay = el('div', { class: 'case-title' }, [
@@ -642,68 +643,29 @@ function createEditableCaseHeader(caseInfo, onUpdate, options = {}) {
 // Simple Case Details Modal
 
 function openCaseDetailsModal(caseInfo) {
-  const overlay = el('div', { class: 'modal-overlay', role: 'dialog', 'aria-modal': 'true' });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  const content = el('div', { class: 'modal-content case-details-modal' }, [
-    el('div', { class: 'modal-header' }, [
-      el('h3', {}, 'Case Details'),
-
-      el(
-        'button',
-
-        { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-
-        '✕',
-      ),
-    ]),
-
-    el('div', { class: 'modal-body case-details-body' }, [
+  let modal;
+  const close = () => closeBrandedModal(modal);
+  modal = buildBrandedModal({
+    title: 'Case Details',
+    contentClass: 'case-details-modal popup-card-base',
+    bodyClass: 'case-details-body',
+    bodyChildren: [
       el('div', { class: 'case-info-grid case-details-grid' }, [
-        // Secondary details: Setting, Acuity
-
         el('div', { class: 'case-info-row' }, [
           el('span', { class: 'label' }, 'Setting'),
-
           el('span', { class: 'value' }, caseInfo.setting || 'N/A'),
         ]),
-
         el('div', { class: 'case-info-row' }, [
           el('span', { class: 'label' }, 'Acuity'),
-
           el('span', { class: 'value' }, caseInfo.acuity || 'N/A'),
         ]),
       ]),
-    ]),
+    ],
+    footerChildren: [el('button', { class: 'btn secondary', onclick: close }, 'Close')],
+    onRequestClose: close,
+  });
 
-    el(
-      'div',
-
-      {
-        class: 'modal-actions',
-
-        style:
-          'justify-content: flex-end; background: var(--surface); border-top: 1px solid var(--border);',
-      },
-
-      [el('button', { class: 'btn secondary', onclick: () => overlay.remove() }, 'Close')],
-    ),
-  ]);
-
-  overlay.append(content);
-
-  document.body.append(overlay);
-
-  // Focus for accessibility
-
-  setTimeout(() => {
-    const btn = overlay.querySelector('.close-btn');
-
-    btn?.focus();
-  }, 0);
+  openBrandedModal(modal, { focusTarget: () => modal.closeButton, focusDelay: 0 });
 }
 
 // Read-only Artifact viewer modal (student and faculty view)
@@ -711,47 +673,34 @@ function openCaseDetailsModal(caseInfo) {
 function openViewArtifactModal(module, options = {}) {
   const { isFacultyMode = false, onEdit, onRemove } = options || {};
 
-  const overlay = el('div', {
-    class: 'modal-overlay popup-overlay-base',
-
-    role: 'dialog',
-
-    'aria-modal': 'true',
-  });
-
-  // Track object URLs created for thumbnails so we can revoke on close
-
   const urlsToRevoke = [];
-
   const title =
     module?.title ||
     (module?.type ? module.type[0].toUpperCase() + module.type.slice(1) : 'Artifact');
 
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
+  const cleanup = () => {
+    try {
+      urlsToRevoke.forEach((u) => {
+        try {
+          URL.revokeObjectURL(u);
+        } catch {
+          /* element may not exist */
+        }
+      });
+    } catch {
+      /* element may not exist */
+    }
+  };
 
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') overlay.remove();
-  });
+  let modal;
+  const close = () => closeBrandedModal(modal, { cleanup });
 
-  const content = el('div', { class: 'modal-content case-details-modal popup-card-base' }, [
-    el('div', { class: 'modal-header' }, [
-      el('h3', {}, title),
-
-      el(
-        'button',
-
-        { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-
-        '✕',
-      ),
-    ]),
-
-    el('div', { class: 'modal-body case-details-body' }, [
+  modal = buildBrandedModal({
+    title,
+    contentClass: 'case-details-modal popup-card-base',
+    bodyClass: 'case-details-body',
+    bodyChildren: [
       (() => {
-        // Use the shared normalizer so new/legacy modules behave the same
-
         const t = normalizeArtifactType(module);
 
         if (!module.type) module.type = t;
@@ -761,40 +710,29 @@ function openViewArtifactModal(module, options = {}) {
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el('div', { style: 'font-weight:600; margin-bottom:6px;' }, 'Referral'),
-
               el('div', { class: 'case-info-grid case-details-grid' }, [
                 el('div', { class: 'case-info-row' }, [
                   el('span', { class: 'label' }, 'Date'),
-
                   el('span', { class: 'value' }, d.date || 'N/A'),
                 ]),
-
                 el('div', { class: 'case-info-row' }, [
                   el('span', { class: 'label' }, 'From'),
-
                   el('span', { class: 'value' }, d.source || 'N/A'),
                 ]),
-
                 el('div', { class: 'case-info-row' }, [
                   el('span', { class: 'label' }, 'Reason'),
-
                   el('span', { class: 'value' }, d.reason || 'N/A'),
                 ]),
-
                 d.notes
                   ? el('div', { class: 'case-info-row' }, [
                       el('span', { class: 'label' }, 'Notes'),
-
                       el('span', { class: 'value' }, d.notes || ''),
                     ])
                   : null,
@@ -805,47 +743,32 @@ function openViewArtifactModal(module, options = {}) {
 
         if (t === 'imaging') {
           const d = module.data || {};
-
           const rows = [
             ['Study', module.title || 'Imaging Study'],
-
             ['Date', d.date || 'N/A'],
-
             ['Modality', d.modality || d.type || 'N/A'],
-
             ['Body Part', d.bodyPart || d.anatomy || 'N/A'],
-
             d.views ? ['Views', d.views] : null,
-
             d.findings ? ['Findings', d.findings] : null,
-
             d.impression ? ['Impression', d.impression] : null,
-
             d.notes ? ['Notes', d.notes] : null,
           ].filter(Boolean);
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el('div', { style: 'font-weight:600; margin-bottom:6px;' }, 'Imaging'),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 rows.map(([label, val]) =>
                   el('div', { class: 'case-info-row' }, [
                     el('span', { class: 'label' }, label),
-
                     el('span', { class: 'value' }, String(val)),
                   ]),
                 ),
@@ -856,41 +779,29 @@ function openViewArtifactModal(module, options = {}) {
 
         if (t === 'labs') {
           const d = module.data || {};
-
           const rows = [
             ['Ordered', d.date || 'N/A'],
-
             ['Panel', d.panel || module.title || 'Labs'],
-
             d.results ? ['Results', d.results] : null,
-
             d.summary ? ['Summary', d.summary] : null,
-
             d.notes ? ['Notes', d.notes] : null,
           ].filter(Boolean);
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el('div', { style: 'font-weight:600; margin-bottom:6px;' }, 'Labs'),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 rows.map(([label, val]) =>
                   el('div', { class: 'case-info-row' }, [
                     el('span', { class: 'label' }, label),
-
                     el('span', { class: 'value' }, String(val)),
                   ]),
                 ),
@@ -901,43 +812,30 @@ function openViewArtifactModal(module, options = {}) {
 
         if (t === 'meds') {
           const d = module.data || {};
-
           const rows = [
             ['Medication', d.name || module.title || 'Medication'],
-
             ['Dose', d.dose || 'N/A'],
-
             ['Route', d.route || 'N/A'],
-
             ['Frequency', d.frequency || 'N/A'],
-
             d.indication ? ['Indication', d.indication] : null,
-
             d.notes ? ['Notes', d.notes] : null,
           ].filter(Boolean);
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el('div', { style: 'font-weight:600; margin-bottom:6px;' }, 'Medications'),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 rows.map(([label, val]) =>
                   el('div', { class: 'case-info-row' }, [
                     el('span', { class: 'label' }, label),
-
                     el('span', { class: 'value' }, String(val)),
                   ]),
                 ),
@@ -948,49 +846,33 @@ function openViewArtifactModal(module, options = {}) {
 
         if (t === 'vitals') {
           const d = module.data || {};
-
           const rows = [
             ['Date', d.date || 'N/A'],
-
             d.bp ? ['BP', d.bp] : null,
-
             d.hr ? ['HR', d.hr] : null,
-
             d.temp ? ['Temp', d.temp] : null,
-
             d.rr ? ['RR', d.rr] : null,
-
             d.spo2 ? ['SpO2', d.spo2] : null,
-
             d.weight ? ['Weight', d.weight] : null,
-
             d.height ? ['Height', d.height] : null,
-
             d.notes ? ['Notes', d.notes] : null,
           ].filter(Boolean);
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el('div', { style: 'font-weight:600; margin-bottom:6px;' }, 'Vitals'),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 rows.map(([label, val]) =>
                   el('div', { class: 'case-info-row' }, [
                     el('span', { class: 'label' }, label),
-
                     el('span', { class: 'value' }, String(val)),
                   ]),
                 ),
@@ -1001,45 +883,32 @@ function openViewArtifactModal(module, options = {}) {
 
         if (t === 'pmh' || t === 'prior-notes' || t === 'other') {
           const d = module.data || {};
-
           const rows = [
             ['Title', module.title || (t === 'pmh' ? 'Past Medical History' : 'Document')],
-
             d.date ? ['Date', d.date] : null,
-
             d.summary ? ['Summary', d.summary] : null,
-
             d.notes ? ['Notes', d.notes] : null,
           ].filter(Boolean);
 
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el(
                 'div',
-
                 { style: 'font-weight:600; margin-bottom:6px;' },
-
                 t === 'pmh' ? 'Past Medical History' : module.title || 'Document',
               ),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 rows.map(([label, val]) =>
                   el('div', { class: 'case-info-row' }, [
                     el('span', { class: 'label' }, label),
-
                     el('span', { class: 'value' }, String(val)),
                   ]),
                 ),
@@ -1048,47 +917,33 @@ function openViewArtifactModal(module, options = {}) {
           );
         }
 
-        // Generic fallback table for unknown types
-
         const entries = Object.entries(module.data || {});
-
         const hasRows = entries.length > 0;
 
         if (hasRows) {
           return el(
             'div',
-
             {
               class: 'module-card',
-
               style:
                 'border:1px solid var(--border); border-radius:8px; padding:12px; background: var(--surface);',
             },
-
             [
               el(
                 'div',
-
                 { style: 'font-weight:600; margin-bottom:6px;' },
-
                 module.title || 'Details',
               ),
-
               el(
                 'div',
-
                 { class: 'case-info-grid case-details-grid' },
-
                 entries.map(([k, v]) =>
                   el('div', { class: 'case-info-row' }, [
                     el(
                       'span',
-
                       { class: 'label' },
-
                       k.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()),
                     ),
-
                     el('span', { class: 'value' }, typeof v === 'string' ? v : JSON.stringify(v)),
                   ]),
                 ),
@@ -1099,13 +954,10 @@ function openViewArtifactModal(module, options = {}) {
 
         return el(
           'div',
-
           { style: 'font-size:12px; color: var(--text-secondary);' },
-
           'No details available.',
         );
       })(),
-
       (() => {
         const atts = Array.isArray(module?.data?.attachments) ? module.data.attachments : [];
 
@@ -1113,21 +965,15 @@ function openViewArtifactModal(module, options = {}) {
 
         return el('div', { style: 'margin-top:12px;' }, [
           el('div', { class: 'goal-section-title' }, 'Attachments'),
-
           el(
             'div',
-
             { style: 'display:flex; flex-direction:column; gap:8px;' },
-
             atts.map((m) => {
               const row = el('div', { style: 'display:flex; align-items:center; gap:8px;' }, []);
-
               const thumbWrap = el('div', {
                 style:
                   'width:40px; height:40px; display:flex; align-items:center; justify-content:center;',
               });
-
-              // Create a placeholder; fill with image if mimetype is image/*
 
               const isImg = (m.mime || '').startsWith('image/');
 
@@ -1135,143 +981,104 @@ function openViewArtifactModal(module, options = {}) {
                 const img = el('img', {
                   style:
                     'width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--border); background: var(--bg-secondary);',
-
                   alt: m.name || 'attachment',
                 });
 
                 thumbWrap.appendChild(img);
 
-                // Async load object URL and set src; fall back to embedded dataUrl
-
                 (async () => {
                   try {
                     const att = await getAttachmentsService();
-
                     const o = await att.createObjectURL(m.id);
 
                     if (o?.url) {
                       img.src = o.url;
-
                       urlsToRevoke.push(o.url);
                     } else if (m.dataUrl) {
                       img.src = m.dataUrl;
                     }
                   } catch (err) {
-                    // Fall back to embedded dataUrl if IDB fails
-
                     if (m.dataUrl) img.src = m.dataUrl;
                     else console.warn('[ChartNav] attachment thumbnail load:', err);
                   }
                 })();
               } else {
-                thumbWrap.appendChild(el('span', { style: 'font-size:18px;' }, '📄'));
+                thumbWrap.appendChild(
+                  el('span', { style: 'font-size:11px; font-weight:600;' }, 'FILE'),
+                );
               }
 
               const nameSpan = el(
                 'span',
-
                 {
                   style:
                     'flex:1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;',
                 },
-
                 `${m.name} (${Math.ceil((m.size || 0) / 1024)} KB)`,
               );
 
               row.appendChild(thumbWrap);
-
               row.appendChild(nameSpan);
-
-              // Open button
-
               row.appendChild(
                 el(
                   'button',
-
                   {
                     class: 'btn secondary',
-
                     style: 'font-size:12px; padding:6px 10px;',
-
                     onclick: async () => {
-                      // In-page preview overlay
-
                       const overlay = document.createElement('div');
-
                       overlay.style.cssText =
                         'position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:10000;';
 
                       const panel = document.createElement('div');
-
                       panel.style.cssText =
                         'background:var(--surface); color:var(--text); max-width:90vw; max-height:90vh; width:min(1000px, 92vw); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); display:flex; flex-direction:column;';
 
                       const header = document.createElement('div');
-
                       header.style.cssText =
                         'display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--border);';
 
                       const title = document.createElement('div');
-
                       title.style.cssText =
                         'flex:1; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-
                       title.textContent = m.name || 'Attachment';
 
                       const closeBtn = document.createElement('button');
-
                       closeBtn.className = 'btn secondary';
-
                       closeBtn.textContent = 'Close';
-
                       closeBtn.style.cssText = 'padding:6px 10px;';
 
                       header.appendChild(title);
-
                       header.appendChild(closeBtn);
 
                       const content = document.createElement('div');
-
                       content.style.cssText =
                         'padding:10px 14px; overflow:auto; display:flex; align-items:center; justify-content:center; background:var(--bg-secondary);';
 
                       const footer = document.createElement('div');
-
                       footer.style.cssText =
                         'display:flex; gap:8px; justify-content:flex-end; padding:10px 14px; border-top:1px solid var(--border);';
 
                       const openTabBtn = document.createElement('button');
-
                       openTabBtn.className = 'btn secondary';
-
                       openTabBtn.textContent = 'Open in new tab';
-
                       openTabBtn.style.cssText = 'padding:6px 10px;';
 
                       const downloadBtn = document.createElement('button');
-
                       downloadBtn.className = 'btn secondary';
-
                       downloadBtn.textContent = 'Download';
-
                       downloadBtn.style.cssText = 'padding:6px 10px;';
 
                       footer.appendChild(openTabBtn);
-
                       footer.appendChild(downloadBtn);
 
                       panel.appendChild(header);
-
                       panel.appendChild(content);
-
                       panel.appendChild(footer);
-
                       overlay.appendChild(panel);
-
                       document.body.appendChild(overlay);
 
                       let objectUrl = null;
-
                       const cleanup = () => {
                         try {
                           if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -1287,7 +1094,6 @@ function openViewArtifactModal(module, options = {}) {
                       };
 
                       closeBtn.addEventListener('click', cleanup);
-
                       overlay.addEventListener('click', (e) => {
                         if (e.target === overlay) cleanup();
                       });
@@ -1297,160 +1103,113 @@ function openViewArtifactModal(module, options = {}) {
 
                         try {
                           const att = await getAttachmentsService();
-
                           const o = await att.createObjectURL(m.id);
-
                           if (o?.url) resolvedUrl = o.url;
                         } catch {
                           /* IDB unavailable */
                         }
 
-                        // Fall back to embedded dataUrl when IDB blob is missing
-
                         if (!resolvedUrl && m.dataUrl) resolvedUrl = m.dataUrl;
-
                         if (!resolvedUrl) throw new Error('No URL');
 
                         objectUrl = resolvedUrl;
 
                         const isImg = (m.mime || '').startsWith('image/');
-
                         const isPdf =
                           (m.mime || '').includes('pdf') || /\.pdf$/i.test(m.name || '');
 
                         if (isImg) {
                           const img = document.createElement('img');
-
                           img.src = objectUrl;
-
                           img.alt = m.name || 'image';
-
                           img.style.cssText =
                             'max-width:100%; max-height:78vh; object-fit:contain; border-radius:8px; background:#fff;';
-
                           content.replaceChildren();
-
                           content.appendChild(img);
                         } else if (isPdf) {
                           const iframe = document.createElement('iframe');
-
                           iframe.src = objectUrl;
-
                           iframe.style.cssText =
                             'width:86vw; max-width:calc(1000px - 28px); height:78vh; border:0; background:#fff;';
-
                           content.replaceChildren();
-
                           content.appendChild(iframe);
                         } else {
-                          // Generic fallback: attempt iframe, else message
-
                           const info = document.createElement('div');
-
                           info.style.cssText =
                             'display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; color:var(--text-secondary);';
 
                           const icon = document.createElement('div');
-
                           icon.style.cssText = 'font-size:42px;';
-
-                          icon.textContent = '📄';
+                          icon.textContent = 'FILE';
 
                           const msg = document.createElement('div');
-
                           msg.style.cssText = 'font-size:14px;';
-
                           msg.textContent =
                             'Preview is not available for this file type. Use Open in new tab or Download.';
 
                           info.replaceChildren(icon, msg);
-
                           content.replaceChildren();
-
                           content.appendChild(info);
                         }
 
                         openTabBtn.addEventListener('click', () => {
                           const win2 = window.open(objectUrl, '_blank');
-
                           if (!win2) alert('Pop-up blocked. Please allow pop-ups.');
                         });
 
                         downloadBtn.addEventListener('click', () => {
                           const a = document.createElement('a');
-
                           a.href = objectUrl;
-
                           a.download = m.name || 'attachment';
-
                           document.body.appendChild(a);
-
                           a.click();
-
                           a.remove();
                         });
                       } catch (e) {
                         console.warn('Preview failed:', e);
-
                         content.textContent = 'Unable to preview this file.';
                       }
                     },
                   },
-
                   'Open',
                 ),
               );
 
-              // Download button
-
               {
                 const btn = el(
                   'button',
-
                   {
                     class: 'btn secondary',
-
                     style: 'font-size:12px; padding:6px 10px;',
                   },
-
                   'Download',
                 );
 
                 btn.addEventListener('click', async () => {
                   try {
                     let dlUrl = null;
-
                     let needsRevoke = false;
 
                     try {
                       const att = await getAttachmentsService();
-
                       const o = await att.createObjectURL(m.id);
 
                       if (o?.url) {
                         dlUrl = o.url;
-
                         needsRevoke = true;
                       }
                     } catch {
                       /* IDB unavailable */
                     }
 
-                    // Fall back to embedded dataUrl
-
                     if (!dlUrl && m.dataUrl) dlUrl = m.dataUrl;
 
                     if (dlUrl) {
                       const a = document.createElement('a');
-
                       a.href = dlUrl;
-
                       a.download = m.name || 'attachment';
-
                       document.body.appendChild(a);
-
                       a.click();
-
                       a.remove();
 
                       if (needsRevoke) {
@@ -1471,20 +1230,14 @@ function openViewArtifactModal(module, options = {}) {
                 row.appendChild(btn);
               }
 
-              // Faculty-only: delete file from storage and remove reference
-
               if (isFacultyMode) {
                 const delBtn = el(
                   'button',
-
                   {
                     class: 'btn secondary',
-
                     style: 'font-size:12px; padding:6px 10px; color:#e53e3e; border-color:#e53e3e;',
-
                     title: 'Delete file from storage and remove from this document',
                   },
-
                   'Delete File',
                 );
 
@@ -1494,7 +1247,6 @@ function openViewArtifactModal(module, options = {}) {
 
                   try {
                     const att = await getAttachmentsService();
-
                     await att.delete(m.id);
                   } catch (e) {
                     console.warn('Delete file failed:', e);
@@ -1507,12 +1259,10 @@ function openViewArtifactModal(module, options = {}) {
 
                     const updated = {
                       ...module,
-
                       data: { ...(module.data || {}), attachments: nextAtts },
                     };
 
                     onEdit?.(updated);
-
                     row.remove();
                   } catch (err) {
                     console.warn('[ChartNav] update after attachment delete:', err);
@@ -1527,202 +1277,98 @@ function openViewArtifactModal(module, options = {}) {
           ),
         ]);
       })(),
-    ]),
+    ],
+    footerChildren: [
+      ...(isFacultyMode
+        ? (() => {
+            const remBtn = el(
+              'button',
+              { class: 'btn secondary', style: 'border-color:#e53e3e; color:#e53e3e;' },
+              'Remove',
+            );
 
-    el(
-      'div',
-
-      {
-        class: 'modal-actions',
-
-        style:
-          'justify-content: flex-end; background: var(--surface); border-top: 1px solid var(--border); display:flex; gap:8px;',
-      },
-
-      [
-        ...(isFacultyMode
-          ? (() => {
-              const remBtn = el(
-                'button',
-
-                { class: 'btn secondary', style: 'border-color:#e53e3e; color:#e53e3e;' },
-
-                'Remove',
-              );
-
-              remBtn.addEventListener('click', () => {
-                if (confirm('Remove this background document?')) {
-                  try {
-                    onRemove?.(module.id);
-                  } catch (err) {
-                    console.warn('[ChartNav] onRemove callback:', err);
-                  }
-
-                  overlay.remove();
+            remBtn.addEventListener('click', () => {
+              if (confirm('Remove this background document?')) {
+                try {
+                  onRemove?.(module.id);
+                } catch (err) {
+                  console.warn('[ChartNav] onRemove callback:', err);
                 }
+
+                close();
+              }
+            });
+
+            const editBtn = el('button', { class: 'btn primary' }, 'Edit');
+            editBtn.addEventListener('click', () => {
+              openEditArtifactModal(module, (updated) => {
+                try {
+                  onEdit?.(updated);
+                } catch (err) {
+                  console.warn('[ChartNav] onEdit callback:', err);
+                }
+
+                close();
               });
+            });
 
-              const editBtn = el('button', { class: 'btn primary' }, 'Edit');
-
-              editBtn.addEventListener('click', () => {
-                openEditArtifactModal(module, (updated) => {
-                  try {
-                    onEdit?.(updated);
-                  } catch (err) {
-                    console.warn('[ChartNav] onEdit callback:', err);
-                  }
-
-                  overlay.remove();
-                });
-              });
-
-              return [remBtn, editBtn];
-            })()
-          : []),
-
-        (() => {
-          const c = el('button', { class: 'btn secondary' }, 'Close');
-
-          c.addEventListener('click', () => overlay.remove());
-
-          return c;
-        })(),
-      ],
-    ),
-  ]);
-
-  overlay.append(content);
-
-  document.body.append(overlay);
-
-  requestAnimationFrame(() => {
-    overlay.classList.add('is-open');
-
-    content.classList.add('is-open');
+            return [remBtn, editBtn];
+          })()
+        : []),
+      (() => {
+        const c = el('button', { class: 'btn secondary' }, 'Close');
+        c.addEventListener('click', close);
+        return c;
+      })(),
+    ],
+    onRequestClose: close,
   });
 
-  // Fallback force-show if transitions sheet missing or class application fails
-
-  setTimeout(() => {
-    if (getComputedStyle(overlay).opacity === '0') {
-      overlay.style.opacity = '1';
-
-      content.style.opacity = '1';
-
-      content.style.transform = 'scale(1)';
-    }
-  }, 80);
-
-  const cleanup = () => {
-    try {
-      urlsToRevoke.forEach((u) => {
-        try {
-          URL.revokeObjectURL(u);
-        } catch {
-          /* element may not exist */
-        }
-      });
-    } catch {
-      /* element may not exist */
-    }
-  };
-
-  const close = () => {
-    cleanup();
-
-    overlay.remove();
-  };
-
-  // Patch close handlers to cleanup
-
-  const xBtn = content.querySelector('.close-btn');
-
-  if (xBtn) xBtn.addEventListener('click', close);
-
-  overlay.addEventListener('remove', cleanup);
-
-  setTimeout(() => xBtn?.focus(), 0);
+  openBrandedModal(modal, { focusTarget: () => modal.closeButton, focusDelay: 0 });
 }
-
 // Add Artifact modal (faculty): collects title, type, and type-specific fields
 
 export function openAddArtifactModal(onAdd) {
-  const overlay = el('div', {
-    class: 'modal-overlay popup-overlay-base',
-
-    role: 'dialog',
-
-    'aria-modal': 'true',
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') overlay.remove();
-  });
-
+  let modal;
+  const close = () => closeBrandedModal(modal);
   let currentType = 'referral';
 
   const titleInput = el('input', {
     type: 'text',
-
     class: 'instructor-form-input',
-
     placeholder: 'Artifact title (e.g., Referral to PT)',
-
     value: '',
-
     'aria-label': 'Artifact title',
   });
 
-  // Referral fields
-
   const ref = { date: '', source: '', reason: '', notes: '', attachments: [] };
-
-  // Attachment picker (input + drag & drop zone)
 
   const fileInput = el('input', {
     type: 'file',
-
     multiple: true,
-
     accept: '*/*',
-
     style: 'display:none;',
-
     'aria-label': 'Select artifact files',
-
     onchange: async (e) => handleFiles(Array.from(e.target.files || [])),
   });
 
   const dropZone = el(
     'div',
-
     {
       class: 'attachment-drop-zone',
-
       style:
         'margin-top:4px; padding:12px; border:2px dashed var(--border); border-radius:6px; text-align:center; font-size:12px; color: var(--text-secondary); cursor:pointer; transition:background .15s, border-color .15s;',
-
       onclick: () => fileInput.click(),
-
       onkeydown: (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-
           fileInput.click();
         }
       },
-
       tabindex: '0',
-
       role: 'button',
-
       'aria-label': 'Add attachments. Click or drag and drop files here',
     },
-
     [el('div', {}, 'Click or drag & drop files here')],
   );
 
@@ -1730,32 +1376,23 @@ export function openAddArtifactModal(onAdd) {
     if (!files.length) return;
 
     const att = await getAttachmentsService();
-
     if (!att?.isSupported()) {
       alert('Attachments not supported in this browser (IndexedDB unavailable).');
-
       return;
     }
 
     for (const f of files) {
       try {
         const meta = await att.save(f, f.name, f.type);
-
-        // Also embed as data URL for portability when case shared
-
         const fr = new FileReader();
-
         const dataUrl = await new Promise((res, rej) => {
           fr.onerror = () => rej(fr.error);
-
           fr.onload = () => res(fr.result);
-
           fr.readAsDataURL(f);
         }).catch(() => null);
 
         if (dataUrl) {
           meta.dataUrl = dataUrl;
-
           meta.embedStatus = 'embedded';
         }
 
@@ -1770,22 +1407,18 @@ export function openAddArtifactModal(onAdd) {
 
   const dzHighlightOn = () => {
     dropZone.style.background = 'var(--surface-alt, var(--surface-muted))';
-
     dropZone.style.borderColor = 'var(--accent, var(--primary))';
   };
 
   const dzHighlightOff = () => {
     dropZone.style.background = '';
-
     dropZone.style.borderColor = 'var(--border)';
   };
 
   ['dragenter', 'dragover'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
-
       e.stopPropagation();
-
       dzHighlightOn();
     }),
   );
@@ -1793,20 +1426,15 @@ export function openAddArtifactModal(onAdd) {
   ['dragleave', 'dragend'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
-
       e.stopPropagation();
-
       dzHighlightOff();
     }),
   );
 
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-
     e.stopPropagation();
-
     dzHighlightOff();
-
     handleFiles(Array.from(e.dataTransfer?.files || []));
   });
 
@@ -1814,36 +1442,26 @@ export function openAddArtifactModal(onAdd) {
 
   function renderAttachmentList() {
     attList.replaceChildren();
-
     if (!ref.attachments || !ref.attachments.length) return;
 
     ref.attachments.forEach((m, idx) => {
       const row = el('div', { style: 'display:flex; align-items:center; gap:8px;' }, [
         el(
           'span',
-
           { style: 'flex:1; font-size:12px;' },
-
           `${m.name} (${Math.ceil((m.size || 0) / 1024)} KB)`,
         ),
-
         el(
           'button',
-
           {
             class: 'btn secondary',
-
             style: 'font-size:11px; padding:4px 8px;',
-
             title: 'Remove attachment (does not delete the stored file)',
-
             onclick: () => {
               ref.attachments.splice(idx, 1);
-
               renderAttachmentList();
             },
           },
-
           'Remove',
         ),
       ]);
@@ -1855,306 +1473,162 @@ export function openAddArtifactModal(onAdd) {
   const refForm = el('div', { style: 'display:grid; gap:10px; margin-top: 8px;' }, [
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-date' }, 'Date'),
-
       el('input', {
         id: 'artifact-date',
-
         name: 'artifact-date',
-
         type: 'date',
-
         class: 'instructor-form-input',
-
         oninput: (e) => (ref.date = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el(
         'label',
-
         { class: 'instructor-form-label', for: 'artifact-source' },
-
         'From (provider/department)',
       ),
-
       el('input', {
         id: 'artifact-source',
-
         name: 'artifact-source',
-
         type: 'text',
-
         class: 'instructor-form-input',
-
         oninput: (e) => (ref.source = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-reason' }, 'Reason'),
-
       el('input', {
         id: 'artifact-reason',
-
         name: 'artifact-reason',
-
         type: 'text',
-
         class: 'instructor-form-input',
-
         oninput: (e) => (ref.reason = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-notes' }, 'Notes'),
-
       el('textarea', {
         id: 'artifact-notes',
-
         name: 'artifact-notes',
-
         class: 'instructor-form-input',
-
         style: 'min-height:68px;',
-
         oninput: (e) => (ref.notes = e.target.value),
       }),
     ]),
   ]);
 
-  const content = el('div', { class: 'modal-content case-details-modal popup-card-base' }, [
-    el('div', { class: 'modal-header' }, [
-      el('h3', {}, 'Add Case Artifact'),
-
-      el(
-        'button',
-
-        { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-
-        '✕',
-      ),
-    ]),
-
-    el('div', { class: 'modal-body case-details-body' }, [
+  modal = buildBrandedModal({
+    title: 'Add Case Artifact',
+    contentClass: 'case-details-modal popup-card-base',
+    bodyClass: 'case-details-body',
+    bodyChildren: [
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Title *'),
-
         titleInput,
       ]),
-
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Type *'),
-
         el(
           'select',
-
           { class: 'instructor-form-input', onchange: (e) => (currentType = e.target.value) },
-
           [
             el('option', { value: 'referral', selected: '' }, 'Referral'),
-
             el('option', { value: 'pmh' }, 'Past Medical History'),
-
             el('option', { value: 'imaging' }, 'Imaging'),
-
             el('option', { value: 'labs' }, 'Labs'),
-
             el('option', { value: 'meds' }, 'Medications'),
-
             el('option', { value: 'vitals' }, 'Vitals'),
-
             el('option', { value: 'prior-notes' }, 'Prior Notes'),
-
             el('option', { value: 'other' }, 'Other'),
           ],
         ),
       ]),
-
       refForm,
-
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Attachments (optional)'),
-
         fileInput,
-
         dropZone,
-
         el('div', { class: 'hint' }, 'Images or documents are stored locally in your browser.'),
-
         attList,
       ]),
-    ]),
+    ],
+    footerChildren: [
+      el('button', { class: 'btn secondary', onclick: close }, 'Cancel'),
+      el(
+        'button',
+        {
+          class: 'btn primary',
+          onclick: () => {
+            const title = (titleInput.value || '').trim();
+            if (!title) {
+              alert('Please enter a title for this artifact.');
+              titleInput.focus();
+              return;
+            }
 
-    el(
-      'div',
-
-      {
-        class: 'modal-actions',
-
-        style:
-          'justify-content: flex-end; background: var(--surface); border-top: 1px solid var(--border); gap:16px;',
-      },
-
-      [
-        el(
-          'button',
-
-          {
-            class: 'btn secondary',
-
-            style: 'margin-right:4px;' /* minor separate before gap spacing */,
-
-            onclick: () => overlay.remove(),
+            const id = `${currentType}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const mod = { id, type: currentType, title, data: { ...ref } };
+            onAdd?.(mod);
+            close();
           },
-
-          'Cancel',
-        ),
-
-        el(
-          'button',
-
-          {
-            class: 'btn primary',
-
-            onclick: () => {
-              const title = (titleInput.value || '').trim();
-
-              if (!title) {
-                alert('Please enter a title for this artifact.');
-
-                titleInput.focus();
-
-                return;
-              }
-
-              const id = `${currentType}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-              const mod = { id, type: currentType, title, data: { ...ref } };
-
-              onAdd?.(mod);
-
-              overlay.remove();
-            },
-          },
-
-          'Add Artifact',
-        ),
-      ],
-    ),
-  ]);
-
-  overlay.append(content);
-
-  document.body.append(overlay);
-
-  requestAnimationFrame(() => {
-    overlay.classList.add('is-open');
-
-    content.classList.add('is-open');
+        },
+        'Add Artifact',
+      ),
+    ],
+    onRequestClose: close,
   });
 
-  setTimeout(() => {
-    if (getComputedStyle(overlay).opacity === '0') {
-      overlay.style.opacity = '1';
-
-      content.style.opacity = '1';
-
-      content.style.transform = 'scale(1)';
-    }
-  }, 80);
-
-  setTimeout(() => titleInput?.focus(), 0);
+  openBrandedModal(modal, { focusTarget: titleInput, focusDelay: 0 });
 }
-
 // Edit Artifact modal (faculty): similar to Add but pre-populated and updates existing module
 
 function openEditArtifactModal(module, onSave) {
-  const overlay = el('div', {
-    class: 'modal-overlay popup-overlay-base',
-
-    role: 'dialog',
-
-    'aria-modal': 'true',
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') overlay.remove();
-  });
-
+  let modal;
+  const close = () => closeBrandedModal(modal);
   let currentType = module?.type || 'referral';
 
   const titleInput = el('input', {
     type: 'text',
-
     class: 'instructor-form-input',
-
     placeholder: 'Artifact title',
-
     value: module?.title || '',
-
     'aria-label': 'Artifact title',
   });
 
-  // Referral fields
-
   const ref = {
     date: module?.data?.date || '',
-
     source: module?.data?.source || '',
-
     reason: module?.data?.reason || '',
-
     notes: module?.data?.notes || '',
-
     attachments: Array.isArray(module?.data?.attachments) ? [...module.data.attachments] : [],
   };
 
   const fileInput = el('input', {
     type: 'file',
-
     multiple: true,
-
     accept: '*/*',
-
     style: 'display:none;',
-
     'aria-label': 'Select artifact files',
-
     onchange: async (e) => handleFilesEdit(Array.from(e.target.files || [])),
   });
 
   const dropZone = el(
     'div',
-
     {
       class: 'attachment-drop-zone',
-
       style:
         'margin-top:4px; padding:12px; border:2px dashed var(--border); border-radius:6px; text-align:center; font-size:12px; color: var(--text-secondary); cursor:pointer; transition:background .15s, border-color .15s;',
-
       onclick: () => fileInput.click(),
-
       onkeydown: (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-
           fileInput.click();
         }
       },
-
       tabindex: '0',
-
       role: 'button',
-
       'aria-label': 'Add attachments. Click or drag and drop files here',
     },
-
     [el('div', {}, 'Click or drag & drop files here')],
   );
 
@@ -2162,30 +1636,23 @@ function openEditArtifactModal(module, onSave) {
     if (!files.length) return;
 
     const att = await getAttachmentsService();
-
     if (!att?.isSupported()) {
       alert('Attachments not supported in this browser (IndexedDB unavailable).');
-
       return;
     }
 
     for (const f of files) {
       try {
         const meta = await att.save(f, f.name, f.type);
-
         const fr = new FileReader();
-
         const dataUrl = await new Promise((res, rej) => {
           fr.onerror = () => rej(fr.error);
-
           fr.onload = () => res(fr.result);
-
           fr.readAsDataURL(f);
         }).catch(() => null);
 
         if (dataUrl) {
           meta.dataUrl = dataUrl;
-
           meta.embedStatus = 'embedded';
         }
 
@@ -2200,22 +1667,18 @@ function openEditArtifactModal(module, onSave) {
 
   const dzHighlightOn = () => {
     dropZone.style.background = 'var(--surface-alt, var(--surface-muted))';
-
     dropZone.style.borderColor = 'var(--accent, var(--primary))';
   };
 
   const dzHighlightOff = () => {
     dropZone.style.background = '';
-
     dropZone.style.borderColor = 'var(--border)';
   };
 
   ['dragenter', 'dragover'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
-
       e.stopPropagation();
-
       dzHighlightOn();
     }),
   );
@@ -2223,20 +1686,15 @@ function openEditArtifactModal(module, onSave) {
   ['dragleave', 'dragend'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
-
       e.stopPropagation();
-
       dzHighlightOff();
     }),
   );
 
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-
     e.stopPropagation();
-
     dzHighlightOff();
-
     handleFilesEdit(Array.from(e.dataTransfer?.files || []));
   });
 
@@ -2244,36 +1702,26 @@ function openEditArtifactModal(module, onSave) {
 
   function renderAttachmentList() {
     attList.replaceChildren();
-
     if (!ref.attachments || !ref.attachments.length) return;
 
     ref.attachments.forEach((m, idx) => {
       const row = el('div', { style: 'display:flex; align-items:center; gap:8px;' }, [
         el(
           'span',
-
           { style: 'flex:1; font-size:12px;' },
-
           `${m.name} (${Math.ceil((m.size || 0) / 1024)} KB)`,
         ),
-
         el(
           'button',
-
           {
             class: 'btn secondary',
-
             style: 'font-size:11px; padding:4px 8px;',
-
             title: 'Remove attachment from this document',
-
             onclick: () => {
               ref.attachments.splice(idx, 1);
-
               renderAttachmentList();
             },
           },
-
           'Remove',
         ),
       ]);
@@ -2285,271 +1733,152 @@ function openEditArtifactModal(module, onSave) {
   const refForm = el('div', { style: 'display:grid; gap:10px; margin-top: 8px;' }, [
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-edit-date' }, 'Date'),
-
       el('input', {
         id: 'artifact-edit-date',
-
         name: 'artifact-edit-date',
-
         type: 'date',
-
         class: 'instructor-form-input',
-
         value: ref.date,
-
         oninput: (e) => (ref.date = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el(
         'label',
-
         { class: 'instructor-form-label', for: 'artifact-edit-source' },
-
         'From (provider/department)',
       ),
-
       el('input', {
         id: 'artifact-edit-source',
-
         name: 'artifact-edit-source',
-
         type: 'text',
-
         class: 'instructor-form-input',
-
         value: ref.source,
-
         oninput: (e) => (ref.source = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-edit-reason' }, 'Reason'),
-
       el('input', {
         id: 'artifact-edit-reason',
-
         name: 'artifact-edit-reason',
-
         type: 'text',
-
         class: 'instructor-form-input',
-
         value: ref.reason,
-
         oninput: (e) => (ref.reason = e.target.value),
       }),
     ]),
-
     el('div', {}, [
       el('label', { class: 'instructor-form-label', for: 'artifact-edit-notes' }, 'Notes'),
-
       el(
         'textarea',
-
         {
           id: 'artifact-edit-notes',
-
           name: 'artifact-edit-notes',
-
           class: 'instructor-form-input',
-
           style: 'min-height:68px;',
-
           oninput: (e) => (ref.notes = e.target.value),
         },
-
         ref.notes,
       ),
     ]),
   ]);
 
-  const content = el('div', { class: 'modal-content case-details-modal popup-card-base' }, [
-    el('div', { class: 'modal-header' }, [
-      el('h3', {}, 'Edit Background Document'),
-
-      el(
-        'button',
-
-        { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-
-        '✕',
-      ),
-    ]),
-
-    el('div', { class: 'modal-body case-details-body' }, [
+  modal = buildBrandedModal({
+    title: 'Edit Background Document',
+    contentClass: 'case-details-modal popup-card-base',
+    bodyClass: 'case-details-body',
+    bodyChildren: [
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Title *'),
-
         titleInput,
       ]),
-
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Type *'),
-
         el(
           'select',
-
-          {
-            class: 'instructor-form-input',
-
-            onchange: (e) => (currentType = e.target.value),
-          },
-
+          { class: 'instructor-form-input', onchange: (e) => (currentType = e.target.value) },
           [
             el(
               'option',
-
               { value: 'referral', selected: currentType === 'referral' ? '' : undefined },
-
               'Referral',
             ),
-
             el(
               'option',
-
               { value: 'pmh', selected: currentType === 'pmh' ? '' : undefined },
-
               'Past Medical History',
             ),
-
             el(
               'option',
-
               { value: 'imaging', selected: currentType === 'imaging' ? '' : undefined },
-
               'Imaging',
             ),
-
             el(
               'option',
-
               { value: 'labs', selected: currentType === 'labs' ? '' : undefined },
-
               'Labs',
             ),
-
             el(
               'option',
-
               { value: 'meds', selected: currentType === 'meds' ? '' : undefined },
-
               'Medications',
             ),
-
             el(
               'option',
-
               { value: 'vitals', selected: currentType === 'vitals' ? '' : undefined },
-
               'Vitals',
             ),
-
             el(
               'option',
-
               { value: 'prior-notes', selected: currentType === 'prior-notes' ? '' : undefined },
-
               'Prior Notes',
             ),
-
             el(
               'option',
-
               { value: 'other', selected: currentType === 'other' ? '' : undefined },
-
               'Other',
             ),
           ],
         ),
       ]),
-
       refForm,
-
       el('div', { class: 'instructor-form-field' }, [
         el('label', { class: 'instructor-form-label' }, 'Attachments'),
-
         fileInput,
-
         dropZone,
-
         el('div', { class: 'hint' }, 'Add images or documents (stored locally in your browser).'),
-
         attList,
       ]),
-    ]),
+    ],
+    footerChildren: [
+      el('button', { class: 'btn secondary', onclick: close }, 'Cancel'),
+      el(
+        'button',
+        {
+          class: 'btn primary',
+          onclick: () => {
+            const title = (titleInput.value || '').trim();
+            if (!title) {
+              alert('Please enter a title.');
+              titleInput.focus();
+              return;
+            }
 
-    el(
-      'div',
-
-      {
-        class: 'modal-actions',
-
-        style:
-          'justify-content: flex-end; background: var(--surface); border-top: 1px solid var(--border); display:flex; gap:8px;',
-      },
-
-      [
-        el('button', { class: 'btn secondary', onclick: () => overlay.remove() }, 'Cancel'),
-
-        el(
-          'button',
-
-          {
-            class: 'btn primary',
-
-            onclick: () => {
-              const title = (titleInput.value || '').trim();
-
-              if (!title) {
-                alert('Please enter a title.');
-
-                titleInput.focus();
-
-                return;
-              }
-
-              const updated = { id: module.id, type: currentType, title, data: { ...ref } };
-
-              onSave?.(updated);
-
-              overlay.remove();
-            },
+            const updated = { id: module.id, type: currentType, title, data: { ...ref } };
+            onSave?.(updated);
+            close();
           },
-
-          'Save Changes',
-        ),
-      ],
-    ),
-  ]);
-
-  overlay.append(content);
-
-  document.body.append(overlay);
-
-  requestAnimationFrame(() => {
-    overlay.classList.add('is-open');
-
-    content.classList.add('is-open');
+        },
+        'Save Changes',
+      ),
+    ],
+    onRequestClose: close,
   });
 
-  setTimeout(() => {
-    if (getComputedStyle(overlay).opacity === '0') {
-      overlay.style.opacity = '1';
-
-      content.style.opacity = '1';
-
-      content.style.transform = 'scale(1)';
-    }
-  }, 80);
-
-  setTimeout(() => titleInput?.focus(), 0);
-
+  openBrandedModal(modal, { focusTarget: titleInput, focusDelay: 0 });
   renderAttachmentList();
 }
-
 // Edit Case Details Modal (faculty): mirrors Create New Case layout
 
 // openEditCaseModal is now sourced from './modal.js'
@@ -2576,15 +1905,15 @@ export function createChartNavigation(config) {
   // Define top-level sections only; subsections will be derived from DOM anchors to keep sidebar in sync with editor content
 
   const allSections = [
-    { id: 'subjective', label: 'Subjective', icon: '◉' },
+    { id: 'subjective', label: 'Subjective' },
 
-    { id: 'objective', label: 'Objective', icon: '⚬' },
+    { id: 'objective', label: 'Objective' },
 
-    { id: 'assessment', label: 'Assessment', icon: '⬢' },
+    { id: 'assessment', label: 'Assessment' },
 
-    { id: 'plan', label: 'Plan', icon: '▪' },
+    { id: 'plan', label: 'Plan' },
 
-    { id: 'billing', label: 'Billing', icon: '⬟' },
+    { id: 'billing', label: 'Billing' },
   ];
 
   // Simple SOAP notes: only S/O/A/P (no Billing)
@@ -2595,18 +1924,6 @@ export function createChartNavigation(config) {
 
   const subsectionDataResolvers = {
     // Subjective
-
-    hpi: (section) => ({
-      patientName: section?.patientName,
-
-      patientBirthday: section?.patientBirthday,
-
-      patientAge: section?.patientAge,
-
-      patientGender: section?.patientGender,
-
-      patientDemographics: section?.patientDemographics,
-    }),
 
     history: (section) => ({
       chiefComplaint: section?.chiefComplaint,
@@ -2841,8 +2158,6 @@ export function createChartNavigation(config) {
 
   const subsectionFallbackMap = {
     subjective: [
-      'hpi',
-
       'history',
 
       'interview-qa',
@@ -2880,8 +2195,6 @@ export function createChartNavigation(config) {
   };
 
   const subsectionTitleMap = {
-    hpi: 'Patient Profile',
-
     history: 'History',
 
     'interview-qa': 'Interview Q&A',
@@ -3021,7 +2334,7 @@ export function createChartNavigation(config) {
     return { status };
   };
 
-  // Simple tri-state dot indicator — delegated to SidebarProgressTracker
+  // Simple tri-state dot indicator � delegated to SidebarProgressTracker
 
   const createProgressIndicator = createProgressIndicatorShared;
 
@@ -3183,13 +2496,11 @@ export function createChartNavigation(config) {
           'span',
 
           {
-            class: 'twisty-right',
-
-            style:
-              'width:14px; display:inline-block; color:var(--text-secondary); margin-left:auto; text-align:right;',
+            class: 'twisty-right ' + (isCollapsed ? 'is-collapsed' : 'is-expanded'),
+            'aria-hidden': 'true',
           },
 
-          isCollapsed ? '▶' : '▼',
+          '',
         ),
       ],
     );
@@ -3391,6 +2702,7 @@ export function createChartNavigation(config) {
 
     {
       class: 'case-file-header',
+      'data-sidebar-section': 'case-file',
 
       style:
         'background:#00883A;display:flex;align-items:center;justify-content:center;margin:0;padding:0;height:56px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;font-size:clamp(0.95rem,2.7vw,1.125rem);color:#fff;border:0;border-bottom:2px solid #fff;box-sizing:border-box;',
@@ -3466,6 +2778,7 @@ export function createChartNavigation(config) {
           (() => {
             const container = el('div', {
               id: 'artifact-block',
+              'data-sidebar-section': 'case-file',
 
               class: 'artifact-block grouped-artifacts',
             });
@@ -3537,7 +2850,7 @@ export function createChartNavigation(config) {
 
           // Extra padding before section trackers
 
-          el('div', { style: 'height: 20px;' }),
+          el('div', { style: 'height: 20px;', 'data-sidebar-section': 'current-note' }),
 
           // My Note header (toggleable)
 
@@ -3547,6 +2860,7 @@ export function createChartNavigation(config) {
 
               {
                 class: 'current-encounter-header',
+                'data-sidebar-section': 'current-note',
 
                 role: 'button',
 
@@ -3755,6 +3069,7 @@ export function createChartNavigation(config) {
 
             const wrapper = el('div', {
               class: 'note-sections',
+              'data-sidebar-section': 'current-note',
 
               style: 'max-height:none; opacity:1; transform:translateY(0);',
             });
@@ -3764,10 +3079,13 @@ export function createChartNavigation(config) {
             return wrapper;
           })(),
 
-          // Footer actions: Sign & Export (Word) — lazy-loaded panel
+          // Footer actions: Sign & Export (Word) � lazy-loaded panel
 
           (() => {
-            const mountNode = el('div', { class: 'nav-panel nav-sign-export' });
+            const mountNode = el('div', {
+              class: 'nav-panel nav-sign-export',
+              'data-sidebar-section': 'sign-export',
+            });
 
             // Lazy mount using standard panel contract
 

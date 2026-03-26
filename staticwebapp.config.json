@@ -24,7 +24,17 @@
     {
       "route": "/api/cases",
       "methods": ["GET"],
-      "allowedRoles": ["anonymous", "authenticated"]
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/patients",
+      "methods": ["POST", "DELETE"],
+      "allowedRoles": ["faculty", "admin"]
+    },
+    {
+      "route": "/api/patients",
+      "methods": ["GET"],
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/api/user",

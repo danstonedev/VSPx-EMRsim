@@ -1,6 +1,7 @@
 /**
  * AppointmentForm.js — Modal form for creating / editing appointments.
  */
+import { buildBrandedModal, openBrandedModal, closeBrandedModal } from '../../ui/ModalShell.js';
 import { el } from '../../ui/utils.js';
 import {
   APPOINTMENT_TYPES,
@@ -19,20 +20,11 @@ import {
 export function openAppointmentForm(existing, onSave) {
   const isEdit = !!existing;
   const appt = existing ? { ...existing } : createBlankAppointment();
+  let modalRef;
 
-  const overlay = el('div', {
-    class: 'modal-overlay scheduling-modal-overlay',
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-label': isEdit ? 'Edit Appointment' : 'New Appointment',
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') overlay.remove();
-  });
+  function close() {
+    closeBrandedModal(modalRef || {});
+  }
 
   // --- Form fields ---
   const dateInput = el('input', {
@@ -138,7 +130,8 @@ export function openAppointmentForm(existing, onSave) {
     ]);
   }
 
-  const form = el('form', { class: 'scheduling-form', autocomplete: 'off' }, [
+  const formId = `appt-form-${Date.now()}`;
+  const form = el('form', { class: 'scheduling-form', autocomplete: 'off', id: formId }, [
     el('div', { class: 'scheduling-form-grid' }, [
       fieldRow('Date', dateInput),
       fieldRow('Time', timeInput),
@@ -155,12 +148,12 @@ export function openAppointmentForm(existing, onSave) {
 
   const saveBtn = el(
     'button',
-    { class: 'btn primary', type: 'submit' },
+    { class: 'btn primary', type: 'submit', form: formId },
     isEdit ? 'Update' : 'Add Appointment',
   );
   const cancelBtn = el(
     'button',
-    { class: 'btn secondary', type: 'button', onclick: () => overlay.remove() },
+    { class: 'btn secondary', type: 'button', onclick: close },
     'Cancel',
   );
 
@@ -180,23 +173,16 @@ export function openAppointmentForm(existing, onSave) {
       cpt_code: cptDisplay.value.trim(),
     };
     onSave(saved);
-    overlay.remove();
+    close();
   });
 
-  const content = el('div', { class: 'modal-content scheduling-modal-content' }, [
-    el('div', { class: 'modal-header' }, [
-      el('h3', {}, isEdit ? 'Edit Appointment' : 'New Appointment'),
-      el(
-        'button',
-        { class: 'close-btn', onclick: () => overlay.remove(), 'aria-label': 'Close' },
-        '✕',
-      ),
-    ]),
-    el('div', { class: 'modal-body' }, [form]),
-    el('div', { class: 'modal-actions' }, [cancelBtn, saveBtn]),
-  ]);
-
-  overlay.append(content);
-  document.body.append(overlay);
-  setTimeout(() => dateInput.focus(), 50);
+  modalRef = buildBrandedModal({
+    title: isEdit ? 'Edit Appointment' : 'New Appointment',
+    overlayClass: 'scheduling-modal-overlay',
+    contentClass: 'scheduling-modal-content',
+    bodyChildren: [form],
+    footerChildren: [cancelBtn, saveBtn],
+    onRequestClose: close,
+  });
+  openBrandedModal(modalRef, { focusTarget: () => dateInput, focusDelay: 80 });
 }

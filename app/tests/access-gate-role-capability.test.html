@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Access Gate Role Capability Test</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      body {
+        padding: 16px;
+        font:
+          14px/1.4 system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+      .result {
+        margin-top: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+      .pass {
+        background: #e6ffed;
+        color: #046b1c;
+        border: 1px solid #a6f4c5;
+      }
+      .fail {
+        background: #ffeff0;
+        color: #8a041a;
+        border: 1px solid #ffd0d4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Access Gate Role Capability Test</h1>
+    <div id="results" class="result">Running...</div>
+
+    <script type="module">
+      import {
+        canAssumeAccessRole,
+        getAccessCapability,
+        getAccessRole,
+        setAccessCapability,
+        setAccessRole,
+      } from '../js/ui/AccessGate.js';
+
+      const errors = [];
+      const assert = (condition, message) => {
+        if (!condition) errors.push(message);
+      };
+
+      sessionStorage.clear();
+      sessionStorage.setItem('pt_emr_access_role', 'faculty');
+
+      assert(getAccessRole() === 'faculty', 'initial role should read from session');
+      assert(getAccessCapability() === 'faculty', 'capability should backfill from legacy role');
+      assert(
+        canAssumeAccessRole('student') === true,
+        'faculty capability should allow student mode',
+      );
+      assert(
+        canAssumeAccessRole('admin') === false,
+        'faculty capability should not allow admin mode',
+      );
+
+      setAccessRole('student');
+      assert(getAccessRole() === 'student', 'active role should downgrade to student');
+      assert(
+        getAccessCapability() === 'faculty',
+        'capability should stay at faculty after temporary downgrade',
+      );
+
+      setAccessCapability('admin');
+      setAccessRole('admin');
+      assert(getAccessCapability() === 'admin', 'capability should promote to admin');
+      assert(getAccessRole() === 'admin', 'active role should switch to admin when allowed');
+
+      const result = document.getElementById('results');
+      result.textContent = errors.length ? `FAIL: ${errors.join('; ')}` : 'PASS';
+      result.className = `result ${errors.length ? 'fail' : 'pass'}`;
+      console.log('Access Gate Role Capability Test:', errors.length ? 'FAIL' : 'PASS', errors);
+    </script>
+  </body>
+</html>

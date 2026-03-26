@@ -1,9 +1,13 @@
 const { getContainer } = require('../shared/cosmos.js');
+const { requireAuthenticatedPrincipal } = require('../shared/auth');
 
 const MAX_CASES = 500; // Safety limit to avoid unbounded reads
 
 module.exports = async function (context, req) {
   try {
+    const principal = requireAuthenticatedPrincipal(context, req);
+    if (!principal) return;
+
     const container = await getContainer();
 
     // Paginated query with a safety cap

@@ -36,6 +36,7 @@ async function _deleteCase(id) {
 }
 import { generateCase } from '../../services/index.js';
 import { el } from '../../ui/utils.js';
+import { buildPatientPicker } from '../../ui/vsp-patient-picker.js';
 import {
   parseAndValidateCaseForm,
   createSortableHeader,
@@ -145,6 +146,24 @@ function showSharePopup(url) {
 }
 
 function showCaseCreationModal() {
+  const picker = buildPatientPicker({
+    onSelect: (vspId, data) => {
+      const vspInput = document.getElementById('case-vsp-id');
+      if (vspInput) vspInput.value = vspId || '';
+      if (data) {
+        const dobEl = document.getElementById('case-dob');
+        if (dobEl && data.dob) {
+          dobEl.value = data.dob;
+          delete dobEl.dataset.autofilled;
+          const computed = computeAgeFromDob(data.dob);
+          const ageEl = document.getElementById('case-age');
+          if (ageEl && computed) ageEl.value = computed;
+        }
+        const sexEl = document.getElementById('case-gender');
+        if (sexEl && data.sex) sexEl.value = data.sex;
+      }
+    },
+  });
   const modal = el('div', {
     'data-modal': 'create-case',
     class:
@@ -177,6 +196,8 @@ function showCaseCreationModal() {
               class: 'instructor-form-input',
             }),
           ]),
+          el('input', { type: 'hidden', id: 'case-vsp-id', value: '' }),
+          picker.element,
           el('div', { class: 'instructor-form-field' }, [
             el('label', { class: 'instructor-form-label', for: 'case-dob' }, 'DOB'),
             el('input', {
@@ -719,8 +740,9 @@ function handleCaseCreation(e) {
   }
 
   const { title, setting, age, gender, acuity, dobFinal } = formData;
+  const vspId = (document.getElementById('case-vsp-id')?.value || '').trim() || null;
 
-  handleCaseCreationAsync(title, setting, age, gender, acuity, dobFinal)
+  handleCaseCreationAsync(title, setting, age, gender, acuity, dobFinal, vspId)
     .catch(() => {
       // On error, re-enable submit so user can retry
       if (submitBtn) {
@@ -733,7 +755,7 @@ function handleCaseCreation(e) {
     });
 }
 
-async function handleCaseCreationAsync(title, setting, age, gender, acuity, dob) {
+async function handleCaseCreationAsync(title, setting, age, gender, acuity, dob, vspId) {
   try {
     // Create the case with proper structure and metadata
     const normalizeSex = (s) => {
@@ -760,6 +782,7 @@ async function handleCaseCreationAsync(title, setting, age, gender, acuity, dob)
         patientGender: gender,
         acuity,
         patientDOB: dob || undefined,
+        vspId: vspId || null,
       },
       snapshot: {
         age: String(age ?? ''),

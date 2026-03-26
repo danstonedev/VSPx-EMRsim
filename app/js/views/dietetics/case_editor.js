@@ -12,7 +12,21 @@ import { renderSchedulingPanel } from '../../features/scheduling/SchedulingPanel
 import { createDefaultSchedulingData } from '../../features/scheduling/scheduling-data.js';
 import { createProgressTracker } from '../../features/navigation/SidebarProgressTracker.js';
 import { dieteticsDisciplineConfig } from '../../features/navigation/dietetics-discipline-config.js';
-import { getPatientDisplayName, formatDOB } from '../CaseEditorUtils.js';
+import { ptDisciplineConfig } from '../../features/navigation/pt-discipline-config.js';
+import { getPatientDisplayName } from '../CaseEditorUtils.js';
+import { createChartSidebar } from '../../features/navigation/ChartSidebarOrchestrator.js';
+import { getArtifactTypeLabel, openCaseFileViewer } from './casefile_helpers.js';
+import { createPilotNoteSession } from './note_session_controller.js';
+import { createPilotWorkspaceController } from './note_workspace_adapters.js';
+import { createPilotWorkspaceContent } from './note_workspace_content.js';
+import { createDieteticsPatientHeader } from './patient_header.js';
+import { createPilotWorkspaceSidebar } from './note_workspace_sidebar.js';
+import { ptSimpleSoapDisciplineConfig } from './pt_note_workspace.js';
+import { listPilotProfessions, listPilotTemplatesForProfession } from '../../core/noteCatalog.js';
+import {
+  buildSignedNoteCaseFileEntry,
+  upsertCaseFileEntry,
+} from '../../core/casefile-repository.js';
 
 /** Create a Material Symbols Outlined icon element */
 function materialIcon(name) {
@@ -21,6 +35,7 @@ function materialIcon(name) {
 
 const STORE_KEY = 'dietetics_emr_cases';
 const DRAFT_PREFIX = 'dietetics_draft_';
+const PILOT_META_KEY = 'multidisciplinePilot';
 
 function loadCase(caseId) {
   try {
@@ -28,6 +43,22 @@ function loadCase(caseId) {
     return cases[caseId] || null;
   } catch {
     return null;
+  }
+}
+
+function loadCaseMap() {
+  try {
+    return JSON.parse(storage.getItem(STORE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveCaseMap(cases) {
+  try {
+    storage.setItem(STORE_KEY, JSON.stringify(cases || {}));
+  } catch (e) {
+    console.warn('[Dietetics] saveCaseMap failed:', e);
   }
 }
 
@@ -547,122 +578,292 @@ const SECTION_RENDERERS = {
   billing: renderBillingSection,
 };
 
-function renderEditor(wrapper, caseId) {
+function renderEditor(wrapper, caseId, query = new URLSearchParams()) {
+  // Clean up stale chart rail state from previous view
+  document.body.classList.remove('has-chart-rail', 'chart-panel-open');
+
   const caseData = loadCase(caseId);
   const caseObj = caseData?.caseObj || {};
-  let draft = loadDraft(caseId) || createDefaultDraft(caseObj);
-  draft = migrateDraft(draft);
+  const meta = caseObj.meta || {};
+  const patientName = getPatientDisplayName(caseObj);
+  let dietDraft = loadDraft(caseId) || createDefaultDraft(caseObj);
+  dietDraft = migrateDraft(dietDraft);
 
   let activeSection = 'nutrition-assessment';
+  let activePtSection = 'subjective';
+  let activeSimplePtSection = 'subjective';
+  const isFacultyMode = window.location.hash.startsWith('#/dietetics/instructor/editor');
+  const requestedProfession = query.get('profession') || '';
+  const requestedTemplateId = query.get('template') || '';
 
-  const onDraftChange = (d) => {
-    draft = d;
-    saveDraft(caseId, draft);
-    updateSidebarStatus();
+  const dietTracker = createProgressTracker(dieteticsDisciplineConfig);
+  const ptTracker = createProgressTracker(ptDisciplineConfig);
+  const ptSimpleTracker = createProgressTracker(ptSimpleSoapDisciplineConfig);
+
+  function savePilotState(updates) {
+    caseObj.meta = caseObj.meta || {};
+    const next = {
+      ...(caseObj.meta[PILOT_META_KEY] || {}),
+      ...updates,
+    };
+    caseObj.meta[PILOT_META_KEY] = next;
+
+    const cases = loadCaseMap();
+    const row = cases[caseId];
+    if (row?.caseObj) {
+      row.caseObj.meta = row.caseObj.meta || {};
+      row.caseObj.meta[PILOT_META_KEY] = next;
+      saveCaseMap(cases);
+    }
+
+    return next;
+  }
+  const noteSession = createPilotNoteSession({
+    caseId,
+    caseObj,
+    patientName,
+    dietDraft,
+    isFacultyMode,
+    requestedProfession,
+    requestedTemplateId,
+    pilotMetaKey: PILOT_META_KEY,
+    dietDraftPrefix: DRAFT_PREFIX,
+    savePilotState,
+    saveDietDraft: (nextDraft) => saveDraft(caseId, nextDraft),
+  });
+
+  function showSavedIndicator() {
     const indicator = wrapper.querySelector('.note-editor__save-indicator');
     if (indicator) {
       indicator.textContent = 'Saved';
       indicator.classList.add('saved');
       setTimeout(() => indicator.classList.remove('saved'), 1500);
     }
-  };
-
-  // --- Patient Header (read-only — demographics set at case creation) ---
-  const meta = caseObj.meta || {};
-  const patientName = getPatientDisplayName(caseObj);
-  const dobFormatted = formatDOB(meta.dob || '');
-  const patientHeader = el('div', { class: 'note-editor__patient-header' }, [
-    el('div', { class: 'note-editor__patient-name' }, patientName),
-    el('div', { class: 'note-editor__patient-details' }, [
-      dobFormatted ? el('span', {}, `DOB: ${dobFormatted}`) : null,
-      meta.sex ? el('span', {}, meta.sex) : null,
-      meta.dietOrder ? el('span', {}, `Diet: ${meta.dietOrder}`) : null,
-      meta.allergies
-        ? el('span', { class: 'dietetics-allergy-badge' }, [
-            materialIcon('warning'),
-            ` ${meta.allergies}`,
-          ])
-        : null,
-    ]),
-    el('span', { class: 'note-editor__save-indicator' }, ''),
-  ]);
-
-  // --- Sidebar ---
-  const tracker = createProgressTracker(dieteticsDisciplineConfig);
-
-  function buildSidebar() {
-    return el('nav', { class: 'note-editor__sidebar', 'aria-label': 'NCP Sections' }, [
-      el('div', { class: 'note-editor__sidebar-title' }, 'Chart Sections'),
-      ...NCP_SECTIONS.map((s) => {
-        const status = tracker.getSectionStatus(s.id, draft);
-        const btn = el(
-          'button',
-          {
-            class: `note-editor__sidebar-item ${s.id === activeSection ? 'note-editor__sidebar-item--active' : ''}`,
-            'data-section': s.id,
-            onclick: () => {
-              activeSection = s.id;
-              renderContent();
-              updateSidebarStatus();
-              wrapper
-                .querySelectorAll('.note-editor__sidebar-item')
-                .forEach((b) =>
-                  b.classList.toggle(
-                    'note-editor__sidebar-item--active',
-                    b.dataset.section === s.id,
-                  ),
-                );
-            },
-          },
-          [
-            tracker.createIndicator(status),
-            el('span', { class: 'note-editor__sidebar-icon' }, [materialIcon(s.icon)]),
-            el('span', {}, s.label),
-          ],
-        );
-        return btn;
-      }),
-    ]);
   }
 
-  /** Refresh progress dots in the sidebar without full rebuild */
-  function updateSidebarStatus() {
-    sidebar?.querySelectorAll('.note-editor__sidebar-item').forEach((btn) => {
-      const sectionId = btn.dataset.section;
-      const status = tracker.getSectionStatus(sectionId, draft);
-      const dot = btn.querySelector('.progress-indicator');
-      if (dot) {
-        const colors = {
-          empty: 'var(--border)',
-          partial: 'var(--und-orange)',
-          complete: 'var(--und-green)',
-        };
-        const color = colors[status] || colors.empty;
-        dot.style.background = status === 'empty' ? 'var(--bg)' : color;
-        dot.style.borderColor = color;
-        dot.dataset.status = status;
-        dot.setAttribute('aria-label', `Status: ${status}`);
-      }
-    });
+  const workspaceController = createPilotWorkspaceController({
+    noteSession,
+    dietTracker,
+    ptTracker,
+    ptSimpleTracker,
+    ncpSections: NCP_SECTIONS,
+    dieteticSectionRenderers: SECTION_RENDERERS,
+    onDieteticsDraftChange: handleDieteticsDraftChange,
+    onPtDraftChange: handlePtDraftChange,
+  });
+
+  function handleDieteticsDraftChange(nextDraft) {
+    dietDraft = noteSession.updateDietDraft(nextDraft);
+    noteSession.handleDieteticsDraftChange(nextDraft, () => updateSidebarStatus());
+    updateSidebarStatus();
+    showSavedIndicator();
   }
 
-  // --- Content pane ---
-  const contentPane = el('div', { class: 'note-editor__content' });
+  function handlePtDraftChange(templateId, nextDraft) {
+    noteSession.handlePtDraftChange(templateId, nextDraft, () => updateSidebarStatus());
+    updateSidebarStatus();
+    showSavedIndicator();
+  }
 
-  function renderContent() {
-    contentPane.replaceChildren();
-    const renderer = SECTION_RENDERERS[activeSection];
-    if (renderer) {
-      contentPane.append(renderer(draft, onDraftChange));
+  noteSession.syncGlobals(() => updateSidebarStatus());
+
+  function syncPatientHeaderHeight() {
+    const h = patientHeader.offsetHeight || 0;
+    document.documentElement.style.setProperty('--patient-sticky-h', `${h}px`);
+  }
+
+  function getCaseModules() {
+    return Array.isArray(caseObj.modules) ? caseObj.modules : [];
+  }
+
+  function saveCaseModules(nextModules) {
+    caseObj.modules = Array.isArray(nextModules) ? nextModules : [];
+    const cases = loadCaseMap();
+    const row = cases[caseId];
+    if (row && row.caseObj) {
+      row.caseObj.modules = caseObj.modules;
+      saveCaseMap(cases);
     }
   }
 
-  // --- Layout ---
-  const sidebar = buildSidebar();
-  const layout = el('div', { class: 'note-editor' }, [sidebar, contentPane]);
+  function saveSignedNoteToCasefile(draftLike, rawContext = {}) {
+    if (!draftLike?.meta?.signature) return null;
 
+    const context = {
+      caseId,
+      professionId: noteSession.getSelectedProfession(),
+      encounterId: noteSession.getSelectedTemplateId() === 'dietetics-ncp' ? 'nutrition' : '',
+      templateId: noteSession.getSelectedTemplateId(),
+      ...rawContext,
+    };
+
+    const sourceKey =
+      rawContext.sourceKey ||
+      (context.professionId === 'dietetics'
+        ? `dietetics_draft_${context.caseId}`
+        : `draft_${context.caseId}_${context.encounterId || 'eval'}`);
+
+    const entry = buildSignedNoteCaseFileEntry({
+      draft: draftLike,
+      caseId: context.caseId || caseId,
+      professionId: context.professionId,
+      encounterId: context.encounterId,
+      templateId: context.templateId,
+      sourceKey,
+    });
+
+    const nextModules = upsertCaseFileEntry(getCaseModules(), entry);
+    saveCaseModules(nextModules);
+    return entry;
+  }
+
+  // --- Patient Header (read-only — demographics set at case creation) ---
+  const patientHeaderController = createDieteticsPatientHeader({
+    meta,
+    patientName,
+    materialIcon,
+    professionOptions: listPilotProfessions(),
+    selectedProfession: noteSession.getSelectedProfession(),
+    noteTypeOptions: listPilotTemplatesForProfession(noteSession.getSelectedProfession()),
+    selectedTemplateId: noteSession.getSelectedTemplateId(),
+    onProfessionChange: (professionId) => {
+      noteSession.setSelectedProfession(professionId);
+      workspaceController.ensureValidActiveSection();
+      patientHeaderController.updateSelectors({
+        professionOptions: listPilotProfessions(),
+        selectedProfession: noteSession.getSelectedProfession(),
+        noteTypeOptions: listPilotTemplatesForProfession(noteSession.getSelectedProfession()),
+        selectedTemplateId: noteSession.getSelectedTemplateId(),
+      });
+      noteSession.syncGlobals(() => updateSidebarStatus());
+      rerenderCurrentNoteWorkspace();
+      renderContent();
+      updateSidebarStatus();
+      syncPatientHeaderHeight();
+    },
+    onNoteTypeChange: (templateId) => {
+      noteSession.setSelectedTemplateId(templateId);
+      workspaceController.ensureValidActiveSection();
+      patientHeaderController.updateSelectors({
+        professionOptions: listPilotProfessions(),
+        selectedProfession: noteSession.getSelectedProfession(),
+        noteTypeOptions: listPilotTemplatesForProfession(noteSession.getSelectedProfession()),
+        selectedTemplateId: noteSession.getSelectedTemplateId(),
+      });
+      noteSession.syncGlobals(() => updateSidebarStatus());
+      rerenderCurrentNoteWorkspace();
+      renderContent();
+      updateSidebarStatus();
+      syncPatientHeaderHeight();
+    },
+  });
+  const patientHeader = patientHeaderController.element;
+
+  let rerenderCurrentNoteWorkspace = () => {};
+  let updateSidebarStatus = () => {};
+
+  function launchPilotTemplate(templateId = noteSession.getSelectedTemplateId()) {
+    noteSession.launchTemplate(templateId);
+    workspaceController.ensureValidActiveSection();
+    patientHeaderController.updateSelectors({
+      professionOptions: listPilotProfessions(),
+      selectedProfession: noteSession.getSelectedProfession(),
+      noteTypeOptions: listPilotTemplatesForProfession(noteSession.getSelectedProfession()),
+      selectedTemplateId: noteSession.getSelectedTemplateId(),
+    });
+    noteSession.syncGlobals(() => updateSidebarStatus());
+    rerenderCurrentNoteWorkspace();
+    renderContent();
+    updateSidebarStatus();
+  }
+
+  const contentController = createPilotWorkspaceContent({
+    workspaceController,
+    onSyncGlobals: () => noteSession.syncGlobals(() => updateSidebarStatus()),
+  });
+  const contentPane = contentController.contentPane;
+  const renderContent = contentController.renderContent;
+
+  // --- Layout: chart rail + detail panel + content area ---
+  const sidebarController = createPilotWorkspaceSidebar({
+    caseObj: caseObj || {},
+    isFacultyMode,
+    getCaseModules,
+    saveCaseModules,
+    openCaseFileViewer: (moduleItem, opts) =>
+      openCaseFileViewer(moduleItem, { ...opts, isFacultyMode }),
+    getArtifactTypeLabel,
+    noteSession,
+    workspaceController,
+    onSectionChange: () => {
+      renderContent();
+    },
+    onLaunch: launchPilotTemplate,
+    ncpSections: NCP_SECTIONS,
+    dietTracker,
+    materialIcon,
+  });
+  const sidebar = sidebarController.sidebar;
+  rerenderCurrentNoteWorkspace = sidebarController.rerenderCurrentNoteWorkspace;
+  updateSidebarStatus = sidebarController.updateSidebarStatus;
+  const refreshCaseFileView = sidebarController.refreshCaseFileView;
+
+  const chartSidebar = createChartSidebar({
+    notesSidebar: sidebar,
+    caseObj: caseObj || {},
+    caseId,
+    maxPhase: 1,
+    defaultTab: 'current-note',
+    embedStrategy: {
+      embed(el, container) {
+        el.classList.add('note-editor__sidebar--embedded');
+        container.appendChild(el);
+      },
+      restore(el) {
+        el.classList.remove('note-editor__sidebar--embedded');
+      },
+    },
+  });
+
+  const contentArea = el('div', { class: 'note-editor main-content-with-sidebar' }, [
+    patientHeader,
+    contentPane,
+  ]);
+
+  document.body.classList.add('has-chart-rail');
   wrapper.replaceChildren();
-  wrapper.append(patientHeader, layout);
+  wrapper.append(chartSidebar.wrapper, contentArea);
+  syncPatientHeaderHeight();
+
+  if (typeof window !== 'undefined') {
+    window.saveSignedNoteToCasefile = ({ draft, context } = {}) => {
+      const record = saveSignedNoteToCasefile(draft, context);
+      refreshCaseFileView();
+      return record;
+    };
+    window.refreshCaseFileView = refreshCaseFileView;
+  }
+
+  try {
+    if (window.__dieteticsHeaderResizeObserver?.disconnect) {
+      window.__dieteticsHeaderResizeObserver.disconnect();
+    }
+    if (window.__dieteticsHeaderResizeHandler) {
+      window.removeEventListener('resize', window.__dieteticsHeaderResizeHandler);
+      window.__dieteticsHeaderResizeHandler = null;
+    }
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(syncPatientHeaderHeight);
+      ro.observe(patientHeader);
+      window.__dieteticsHeaderResizeObserver = ro;
+    } else {
+      const resizeHandler = () => syncPatientHeaderHeight();
+      window.__dieteticsHeaderResizeHandler = resizeHandler;
+      window.addEventListener('resize', resizeHandler, { passive: true });
+    }
+  } catch {
+    /* safe fallback */
+  }
   renderContent();
 }
 
@@ -673,7 +874,8 @@ route('#/dietetics/student/editor', (wrapper, query) => {
     wrapper.replaceChildren(el('p', {}, 'No case specified.'));
     return;
   }
-  renderEditor(wrapper, caseId);
+  renderEditor(wrapper, caseId, query);
+  return () => document.body.classList.remove('has-chart-rail', 'chart-panel-open');
 });
 
 route('#/dietetics/instructor/editor', (wrapper, query) => {
@@ -682,5 +884,6 @@ route('#/dietetics/instructor/editor', (wrapper, query) => {
     wrapper.replaceChildren(el('p', {}, 'No case specified.'));
     return;
   }
-  renderEditor(wrapper, caseId);
+  renderEditor(wrapper, caseId, query);
+  return () => document.body.classList.remove('has-chart-rail', 'chart-panel-open');
 });

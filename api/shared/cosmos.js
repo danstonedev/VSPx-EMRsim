@@ -5,10 +5,12 @@ const CONNECTION_STRING = process.env.AZURE_COSMOS_CONNECTION_STRING;
 const DATABASE_ID = 'emr-db';
 const CASES_CONTAINER_ID = 'cases';
 const USERS_CONTAINER_ID = 'users';
+const PATIENTS_CONTAINER_ID = 'patients';
 
 let client = null;
 let casesContainer = null;
 let usersContainer = null;
+let patientsContainer = null;
 
 function getClient() {
   if (!CONNECTION_STRING) {
@@ -34,4 +36,11 @@ function getUsersContainer() {
   return usersContainer;
 }
 
-module.exports = { getContainer, getUsersContainer };
+function getPatientsContainer() {
+  if (patientsContainer) return patientsContainer;
+  const database = getClient().database(DATABASE_ID);
+  patientsContainer = database.container(PATIENTS_CONTAINER_ID);
+  return patientsContainer;
+}
+
+module.exports = { getContainer, getUsersContainer, getPatientsContainer };

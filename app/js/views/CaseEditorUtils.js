@@ -2,6 +2,7 @@
  * Case Editor utility functions to reduce complexity
  * Extracted from case_editor.js to improve maintainability
  */
+import { resolvePatient, displayName } from '../core/vsp-registry.js';
 
 /**
  * Get title from various case properties
@@ -53,9 +54,15 @@ function getNestedValue(obj, path) {
  */
 function getPatientDemographics(c) {
   return {
-    age: getFieldWithFallback(c, ['patientAge', 'age', 'snapshot.age']),
-    sex: getFieldWithFallback(c, ['patientGender', 'sex', 'snapshot.sex'], 'N/A'),
-    dob: getFieldWithFallback(c, ['patientDOB', 'dob', 'snapshot.dob']),
+    age: getFieldWithFallback(c, ['patientAge', 'age', 'meta.age', 'snapshot.age']),
+    sex: getFieldWithFallback(c, ['patientGender', 'sex', 'meta.sex', 'snapshot.sex'], 'N/A'),
+    dob: getFieldWithFallback(c, [
+      'patientDOB',
+      'dob',
+      'meta.dob',
+      'meta.patientDOB',
+      'snapshot.dob',
+    ]),
   };
 }
 
@@ -86,6 +93,11 @@ export function getCaseInfo(c) {
  * @returns {string} Patient display name
  */
 export function getPatientDisplayName(c) {
+  // Prefer VSP registry canonical name
+  const vsp = resolvePatient(c);
+  const vspName = vsp ? displayName(vsp) : '';
+  if (vspName) return vspName;
+
   const sources = [
     c.patientName,
     c.name,
@@ -201,7 +213,9 @@ export function calculateHeaderOffset() {
  * @returns {string} DOB value
  */
 export function getPatientDOB(c) {
-  return c.patientDOB || c.dob || (c.snapshot && c.snapshot.dob) || '';
+  const vsp = resolvePatient(c);
+  if (vsp && vsp.dob) return vsp.dob;
+  return c.patientDOB || c.dob || c.meta?.dob || c.meta?.patientDOB || c.snapshot?.dob || '';
 }
 
 /**
@@ -210,7 +224,9 @@ export function getPatientDOB(c) {
  * @returns {string} Sex value
  */
 export function getPatientSex(c) {
-  return c.patientGender || c.sex || (c.snapshot && c.snapshot.sex) || '';
+  const vsp = resolvePatient(c);
+  if (vsp && vsp.sex) return vsp.sex;
+  return c.patientGender || c.sex || c.meta?.sex || c.snapshot?.sex || '';
 }
 
 /**
@@ -276,7 +292,7 @@ function getTargetAnchorId(sectionId) {
   }
 
   const preferredAnchorBySection = {
-    subjective: 'hpi',
+    subjective: 'history',
     objective: 'regional-assessment',
     assessment: 'primary-impairments',
     plan: 'goal-setting',

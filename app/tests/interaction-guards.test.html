@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interaction Guards Test</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        padding: 16px;
+      }
+      .test {
+        margin-bottom: 12px;
+      }
+      .pass {
+        color: #0a7;
+      }
+      .fail {
+        color: #c00;
+      }
+      pre {
+        background: #f6f8fa;
+        padding: 8px;
+        border-radius: 6px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Interaction Guards Test</h1>
+    <div id="results" aria-live="polite"></div>
+
+    <script type="module">
+      import { runExclusiveButtonAction } from '../js/core/async.js';
+      import { createSaveWrapper } from '../js/views/CaseInitializationManager.js';
+
+      const results = document.getElementById('results');
+      const failures = [];
+
+      function log(name, ok, details = '') {
+        const div = document.createElement('div');
+        div.className = 'test ' + (ok ? 'pass' : 'fail');
+        div.innerHTML =
+          `<strong>${ok ? 'PASS' : 'FAIL'} ${name}</strong>` +
+          (details ? `<pre>${details}</pre>` : '');
+        results.appendChild(div);
+      }
+
+      function assert(name, condition, details = '') {
+        if (!condition) failures.push(name);
+        log(name, condition, details);
+      }
+
+      async function checkExclusiveButtonAction() {
+        const button = document.createElement('button');
+        button.textContent = 'Open';
+
+        let started = 0;
+        let release;
+        const gate = new Promise((resolve) => {
+          release = resolve;
+        });
+
+        const run = () =>
+          runExclusiveButtonAction(
+            button,
+            async () => {
+              started += 1;
+              await gate;
+            },
+            { pendingLabel: 'Opening...', idleLabel: 'Open' },
+          );
+
+        const first = run();
+        const second = run();
+        await Promise.resolve();
+
+        assert('Exclusive button action drops duplicate clicks', started === 1);
+        assert(
+          'Exclusive button action disables the button while pending',
+          button.disabled === true,
+        );
+        assert(
+          'Exclusive button action updates pending label',
+          button.textContent === 'Opening...',
+          button.textContent,
+        );
+
+        release();
+        await Promise.all([first, second]);
+
+        assert(
+          'Exclusive button action restores button state after settle',
+          button.disabled === false && button.textContent === 'Open',
+          `${button.disabled} / ${button.textContent}`,
+        );
+      }
+
+      async function checkSaveWrapperIgnoresStaleCompletion() {
+        const announcer = document.createElement('div');
+        announcer.id = 'route-announcer';
+        document.body.appendChild(announcer);
+
+        let refreshCount = 0;
+        window.refreshChartProgress = () => {
+          refreshCount += 1;
+        };
+
+        const pending = [];
+        const statusLog = [];
+        const save = createSaveWrapper({
+          chartNav: { id: 'nav' },
+          updateSaveStatus: (_nav, status) => statusLog.push(status),
+          originalSave: () =>
+            new Promise((resolve, reject) => {
+              pending.push({ resolve, reject });
+            }),
+        });
+
+        const first = save();
+        const second = save();
+
+        pending[1].resolve();
+        await second;
+        pending[0].reject(new Error('stale failure'));
+        await first;
+
+        assert(
+          'Save wrapper keeps latest completion status',
+          statusLog.join(',') === 'saving,saving,saved',
+          statusLog.join(','),
+        );
+        assert(
+          'Save wrapper announces only the latest successful save',
+          announcer.textContent === 'All changes saved',
+          announcer.textContent,
+        );
+        assert('Save wrapper refreshes progress once for the latest save', refreshCount === 1);
+
+        announcer.remove();
+        delete window.refreshChartProgress;
+      }
+
+      async function checkSourceContracts() {
+        const [sectionSwitcherSrc, userMenuSrc, chartNavSrc] = await Promise.all([
+          fetch('../js/views/SectionSwitcher.js').then((r) => r.text()),
+          fetch('../js/ui/UserMenu.js').then((r) => r.text()),
+          fetch('../js/features/navigation/ChartNavigation.js').then((r) => r.text()),
+        ]);
+
+        assert(
+          'Section switcher tracks live active section state',
+          /const changingSection = s !== switchTo\.active/.test(sectionSwitcherSrc) &&
+            /switchTo\.active = s;/.test(sectionSwitcherSrc),
+        );
+        assert(
+          'Section switcher uses live debounced save callback',
+          /switchTo\.debouncedSave\(\)/.test(sectionSwitcherSrc) &&
+            /switchTo\.save\(\)/.test(sectionSwitcherSrc),
+        );
+        assert(
+          'User menu guards repeated faculty-access clicks',
+          /requestBtn\.dataset\.pending === 'true'/.test(userMenuSrc) &&
+            /Request faculty access failed:/.test(userMenuSrc),
+        );
+        assert(
+          'Chart navigation wraps attachment actions with exclusive button guards',
+          /runExclusiveButtonAction\(openBtn/.test(chartNavSrc) &&
+            /runExclusiveButtonAction\(btn/.test(chartNavSrc) &&
+            /runExclusiveButtonAction\(delBtn/.test(chartNavSrc),
+        );
+      }
+
+      try {
+        await checkExclusiveButtonAction();
+        await checkSaveWrapperIgnoresStaleCompletion();
+        await checkSourceContracts();
+      } catch (error) {
+        failures.push('Unhandled error');
+        log('Unhandled error', false, String(error?.stack || error));
+      }
+
+      const summary = document.createElement('div');
+      summary.className = failures.length ? 'fail' : 'pass';
+      summary.style.marginTop = '16px';
+      summary.innerHTML = `<strong>${failures.length ? 'FAIL' : 'PASS'}</strong>${
+        failures.length ? ` (${failures.length} failure${failures.length > 1 ? 's' : ''})` : ''
+      }`;
+      results.appendChild(summary);
+
+      console.log('Interaction Guards Test:', failures.length ? 'FAIL' : 'PASS', failures);
+    </script>
+  </body>
+</html>

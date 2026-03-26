@@ -70,7 +70,7 @@ export async function loadComponentCSS(component) {
     soap: [tablesLazyUrl],
     forms: [formsLazyUrl, buttonsUrl],
     navigation: [sidebarUrl],
-    editor: [tablesLazyUrl, formsLazyUrl, buttonsUrl, sidebarUrl],
+    editor: [tablesLazyUrl, formsLazyUrl, buttonsUrl],
     mobile: [mobilePatchUrl],
     homev2: [homeUrl],
   };
