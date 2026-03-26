@@ -27,8 +27,7 @@
 
       body {
         margin: 0;
-        font-family:
-          "Segoe UI", "Aptos", "Helvetica Neue", sans-serif;
+        font-family: 'Segoe UI', 'Aptos', 'Helvetica Neue', sans-serif;
         color: var(--ink);
         background:
           radial-gradient(circle at top left, rgba(0, 95, 115, 0.08), transparent 28%),
@@ -194,7 +193,7 @@
         border-radius: 999px;
         background: rgba(31, 41, 51, 0.06);
         border: 1px solid rgba(31, 41, 51, 0.08);
-        font-family: Consolas, "Courier New", monospace;
+        font-family: Consolas, 'Courier New', monospace;
         font-size: 0.84rem;
       }
 
@@ -259,7 +258,7 @@
       }
 
       .target-step::after {
-        content: "→";
+        content: '→';
         position: absolute;
         top: 50%;
         right: -12px;
@@ -270,7 +269,7 @@
       }
 
       .target-step:last-child::after {
-        content: "";
+        content: '';
       }
 
       .target-step span {
@@ -321,7 +320,7 @@
       }
 
       code {
-        font-family: Consolas, "Courier New", monospace;
+        font-family: Consolas, 'Courier New', monospace;
         font-size: 0.92em;
       }
 
@@ -337,7 +336,7 @@
         }
 
         .target-step::after {
-          content: "";
+          content: '';
         }
       }
 
@@ -407,7 +406,9 @@
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Path</strong>
-                <small><code>createPatient(fields)</code> or <code>updatePatient(vspId)</code></small>
+                <small
+                  ><code>createPatient(fields)</code> or <code>updatePatient(vspId)</code></small
+                >
               </div>
               <div class="arrow">→</div>
               <div class="step">
@@ -431,7 +432,10 @@
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Inputs</strong>
-                <small>Blank local patient or imported VSP demographics, then inline name/DOB/sex edits</small>
+                <small
+                  >Blank local patient or imported VSP demographics, then inline name/DOB/sex
+                  edits</small
+                >
               </div>
               <div class="arrow">→</div>
               <div class="step">
@@ -469,7 +473,10 @@
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Path</strong>
-                <small>Build case object with <code>meta</code>, <code>snapshot</code>, <code>encounters.eval</code></small>
+                <small
+                  >Build case object with <code>meta</code>, <code>snapshot</code>,
+                  <code>encounters.eval</code></small
+                >
               </div>
               <div class="arrow">→</div>
               <div class="step">
@@ -522,17 +529,24 @@
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Inputs</strong>
-                <small>Select profession and template: dietetics NCP, PT eval, PT simple SOAP</small>
+                <small
+                  >Select profession and template: dietetics NCP, PT eval, PT simple SOAP</small
+                >
               </div>
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Path</strong>
-                <small>If PT is chosen, create a linked blank PT patient and PT pilot draft behind the scenes</small>
+                <small
+                  >If PT is chosen, create a linked blank PT patient and PT pilot draft behind the
+                  scenes</small
+                >
               </div>
               <div class="arrow">→</div>
               <div class="step">
                 <strong>Outputs</strong>
-                <small>Shared active session plus dietetics or PT draft for the current shell</small>
+                <small
+                  >Shared active session plus dietetics or PT draft for the current shell</small
+                >
               </div>
             </div>
             <div class="store-row">
@@ -622,13 +636,17 @@
             <ul class="hub-list">
               <li><code>dietetics_emr_cases</code></li>
               <li><code>caseObj.meta.patientName</code></li>
-              <li><code>dob</code>, <code>sex</code>, <code>allergies</code>, <code>vspId</code></li>
+              <li>
+                <code>dob</code>, <code>sex</code>, <code>allergies</code>, <code>vspId</code>
+              </li>
             </ul>
           </div>
 
           <div class="hub-branch">
             <h3>Multidiscipline PT Copies</h3>
-            <div class="hub-connector">dietetics case meta -> linked PT patient -> PT pilot draft</div>
+            <div class="hub-connector">
+              dietetics case meta -> linked PT patient -> PT pilot draft
+            </div>
             <ul class="hub-list">
               <li><code>patient_&lt;blankPtId&gt;</code></li>
               <li><code>draft_&lt;blankPtId&gt;_&lt;encounter&gt;</code></li>
@@ -679,7 +697,10 @@
           <div class="target-step">
             <span>Step 7</span>
             <strong>Show chart timeline</strong>
-            <p>Patient workspace index becomes a true cross-discipline timeline, not an aggregator of copies.</p>
+            <p>
+              Patient workspace index becomes a true cross-discipline timeline, not an aggregator of
+              copies.
+            </p>
           </div>
         </div>
       </section>
@@ -689,8 +710,8 @@
         <div class="takeaways">
           <div class="takeaway">
             <strong>Make patient creation singular</strong>
-            Every funnel should begin with select/create patient, not by synthesizing local copies in
-            each discipline.
+            Every funnel should begin with select/create patient, not by synthesizing local copies
+            in each discipline.
           </div>
           <div class="takeaway">
             <strong>Adopt one note storage contract</strong>
