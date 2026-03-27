@@ -143,6 +143,6 @@
   }
 
   .chart-detail__resize-handle:hover {
-    background: var(--color-brand-600, #16a34a);
+    background: var(--color-brand-green, #009a44);
   }
 </style>

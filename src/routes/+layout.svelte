@@ -36,12 +36,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 1rem;
-    background: var(--color-brand-700, #15803d);
+    padding: 0 1.25rem;
+    background: linear-gradient(
+      180deg,
+      var(--color-topbar-start, #000) 0%,
+      var(--color-topbar-end, #1a1a1a) 100%
+    );
     color: white;
+    height: 72px;
+    min-height: 72px;
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   }
 
   .brand {
@@ -51,25 +58,30 @@
   }
 
   .und-logo {
-    height: 2rem;
+    height: 2.25rem;
   }
 
   .topnav {
     display: flex;
-    gap: 1rem;
+    gap: 0.25rem;
     align-items: center;
   }
 
   .topnav a {
-    color: white;
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     font-weight: 500;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    transition:
+      background 0.15s,
+      color 0.15s;
   }
 
   .topnav a:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
   }
 
   #app {
@@ -81,19 +93,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.25rem 1rem;
-    background: var(--color-neutral-100, #f5f5f5);
-    font-size: 0.75rem;
-    color: var(--color-neutral-600, #525252);
-    border-top: 1px solid var(--color-neutral-200, #e5e5e5);
+    padding: 0.25rem 1.25rem;
+    height: 28px;
+    min-height: 28px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
+    font-size: 0.6875rem;
+    color: var(--color-neutral-500, #737373);
+    border-top: 2px solid var(--color-brand-green, #009a44);
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
   }
 
   .edu-ribbon a {
-    color: var(--color-brand-700, #15803d);
+    color: var(--color-neutral-400, #a3a3a3);
     text-decoration: none;
   }
 
   .edu-ribbon a:hover {
+    color: var(--color-brand-green, #009a44);
     text-decoration: underline;
   }
 

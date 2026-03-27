@@ -61,7 +61,7 @@
     height: 100%;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.08) 100%),
-      var(--color-brand-600, #16a34a);
+      var(--color-brand-green, #009a44);
     padding: 8px 0 12px;
     overflow-y: auto;
     overflow-x: hidden;

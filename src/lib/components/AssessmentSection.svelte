@@ -114,41 +114,35 @@
   }
 
   .soap-fieldset {
-    border: 1px solid var(--color-neutral-200, #e5e5e5);
-    border-radius: 0.5rem;
+    border: 1px solid var(--color-neutral-200, #e0e0e0);
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 0;
+    background: white;
   }
 
   .soap-fieldset legend {
     font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--color-neutral-700, #404040);
-    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    color: white;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(180deg, #424242 0%, #525252 100%);
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .soap-fieldset > textarea {
-    width: 100%;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    font-family: inherit;
-    color: var(--color-neutral-900, #171717);
-    background: var(--color-white, #fff);
-    resize: vertical;
     margin-top: 0.5rem;
-    box-sizing: border-box;
   }
 
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.375rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--color-neutral-600, #525252);
+    color: var(--color-neutral-600, #616161);
     flex: 1;
     min-width: 0;
     margin-top: 0.75rem;
@@ -156,32 +150,6 @@
 
   .field-label--select {
     flex: 0 0 200px;
-  }
-
-  .field-label textarea,
-  .field-label select {
-    width: 100%;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    font-family: inherit;
-    color: var(--color-neutral-900, #171717);
-    background: var(--color-white, #fff);
-    box-sizing: border-box;
-  }
-
-  .field-label textarea {
-    resize: vertical;
-  }
-
-  .field-label textarea:focus,
-  .field-label select:focus,
-  .soap-fieldset > textarea:focus {
-    outline: 2px solid var(--color-brand-500, #22c55e);
-    outline-offset: -1px;
-    border-color: var(--color-brand-500, #22c55e);
   }
 
   .prognosis-row {

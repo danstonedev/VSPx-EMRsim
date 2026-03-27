@@ -73,10 +73,17 @@
 
 <style>
   .patient-header {
-    background: var(--color-brand-800, #166534);
+    background: linear-gradient(
+      180deg,
+      var(--color-patient-header-start, #424242) 0%,
+      var(--color-patient-header-end, #525252) 100%
+    );
     color: white;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.5rem 1.25rem;
+    border-bottom: 2px solid var(--color-brand-green, #009a44);
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
 
   .patient-header__row {

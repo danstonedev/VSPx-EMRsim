@@ -173,32 +173,26 @@
   }
 
   .soap-fieldset {
-    border: 1px solid var(--color-neutral-200, #e5e5e5);
-    border-radius: 0.5rem;
+    border: 1px solid var(--color-neutral-200, #e0e0e0);
+    border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 0;
+    background: white;
   }
 
   .soap-fieldset legend {
     font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--color-neutral-700, #404040);
-    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    color: white;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(180deg, #424242 0%, #525252 100%);
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .soap-fieldset > textarea {
-    width: 100%;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    font-family: inherit;
-    color: var(--color-neutral-900, #171717);
-    background: var(--color-white, #fff);
-    resize: vertical;
     margin-top: 0.5rem;
-    box-sizing: border-box;
   }
 
   .field-row {
@@ -210,33 +204,12 @@
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.375rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--color-neutral-600, #525252);
+    color: var(--color-neutral-600, #616161);
     flex: 1;
     min-width: 140px;
-  }
-
-  .field-label input {
-    width: 100%;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    font-family: inherit;
-    color: var(--color-neutral-900, #171717);
-    background: var(--color-white, #fff);
-    box-sizing: border-box;
-  }
-
-  .field-label input:focus,
-  .soap-fieldset > textarea:focus,
-  .list-item textarea:focus {
-    outline: 2px solid var(--color-brand-500, #22c55e);
-    outline-offset: -1px;
-    border-color: var(--color-brand-500, #22c55e);
   }
 
   .list-items {
@@ -257,22 +230,8 @@
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--color-neutral-500, #737373);
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
     min-width: 1.5rem;
-  }
-
-  .list-item textarea {
-    flex: 1;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    font-family: inherit;
-    color: var(--color-neutral-900, #171717);
-    background: var(--color-white, #fff);
-    resize: vertical;
-    box-sizing: border-box;
   }
 
   .btn-remove {
@@ -284,12 +243,12 @@
     cursor: pointer;
     padding: 0.375rem;
     line-height: 1;
-    border-radius: 0.25rem;
+    border-radius: 4px;
   }
 
   .btn-remove:hover {
-    color: var(--color-error-600, #dc2626);
-    background: var(--color-error-50, #fef2f2);
+    color: #dc2626;
+    background: #fef2f2;
   }
 
   .empty-hint {
@@ -302,16 +261,17 @@
   .btn-add {
     background: none;
     border: 1px dashed var(--color-neutral-300, #d4d4d4);
-    border-radius: 0.375rem;
+    border-radius: 8px;
     padding: 0.5rem 1rem;
+    min-height: 44px;
     font-size: 0.8125rem;
-    color: var(--color-brand-600, #16a34a);
+    color: var(--color-brand-green, #009a44);
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .btn-add:hover {
     background: var(--color-neutral-50, #fafafa);
-    border-color: var(--color-brand-400, #4ade80);
+    border-color: var(--color-brand-green, #009a44);
   }
 </style>

@@ -43,8 +43,8 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 1.25rem;
-    border: 1px solid var(--color-neutral-200, #e5e5e5);
-    border-radius: 0.5rem;
+    border: 1px solid var(--color-neutral-200, #e0e0e0);
+    border-radius: 8px;
     background: white;
     transition:
       border-color 0.15s,
@@ -52,8 +52,8 @@
   }
 
   .case-card:hover {
-    border-color: var(--color-brand-400, #4ade80);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-color: var(--color-brand-green, #009a44);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .case-card__header {
@@ -82,8 +82,8 @@
   }
 
   .status--not-started {
-    background: var(--color-neutral-200, #e5e5e5);
-    color: var(--color-neutral-600, #525252);
+    background: var(--color-neutral-200, #e0e0e0);
+    color: var(--color-neutral-600, #616161);
   }
 
   .status--in-progress {
@@ -107,10 +107,11 @@
     align-items: center;
     justify-content: center;
     padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.375rem;
+    min-height: 44px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     text-decoration: none;
     cursor: pointer;
     transition:
@@ -119,12 +120,12 @@
   }
 
   .btn--primary {
-    background: var(--color-brand-600, #16a34a);
+    background: var(--color-brand-green, #009a44);
     color: white;
   }
 
   .btn--primary:hover {
-    background: var(--color-brand-700, #15803d);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: var(--color-brand-green-dark, #007a35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   }
 </style>

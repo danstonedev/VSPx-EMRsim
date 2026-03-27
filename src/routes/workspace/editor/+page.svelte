@@ -207,6 +207,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem 2rem;
+    background: var(--color-editor-bg, color-mix(in srgb, #eeeeee 80%, white));
     transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -215,30 +216,34 @@
   }
 
   .note-editor {
-    max-width: 800px;
+    max-width: clamp(900px, 82vw, 1200px);
     margin: 0 auto;
   }
 
   .note-editor__header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--color-brand-600, #16a34a);
+    margin-bottom: 0;
+    padding: 0.625rem 1rem;
+    background: linear-gradient(180deg, #424242 0%, #525252 100%);
+    border-radius: 8px 8px 0 0;
     flex-wrap: wrap;
+    color: white;
   }
 
   .note-editor__title {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 700;
     margin: 0;
-    color: var(--color-neutral-900, #171717);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .note-editor__encounter {
     font-size: 0.8125rem;
-    color: var(--color-neutral-500, #737373);
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
   }
 
@@ -255,68 +260,78 @@
   }
 
   .save-indicator--unsaved {
-    color: var(--color-warning-600, #d97706);
+    color: var(--color-brand-orange, #ff671f);
   }
 
   .save-indicator--saved {
-    color: var(--color-brand-600, #16a34a);
+    color: rgba(255, 255, 255, 0.7);
   }
 
   .note-editor__body {
     min-height: 400px;
+    background: white;
+    border-radius: 0 0 8px 8px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
-  /* SOAP section tabs (inline above content) */
+  /* SOAP section tabs — styled like original green section dividers */
   .soap-tabs {
     display: flex;
-    gap: 2px;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
+    gap: 0;
+    margin-bottom: 0;
+    background: var(--color-section-divider, #009a44);
     overflow-x: auto;
+    border-radius: 0;
   }
 
   .soap-tabs__btn {
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
+    padding: 0.625rem 1.25rem;
+    min-height: 42px;
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
     cursor: pointer;
     font-size: 0.875rem;
-    color: var(--color-neutral-600, #525252);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     transition:
       color 0.12s,
-      border-color 0.12s;
+      background 0.12s;
   }
 
   .soap-tabs__btn:hover {
-    color: var(--color-neutral-900, #171717);
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .soap-tabs__btn--active {
-    color: var(--color-brand-700, #15803d);
-    border-bottom-color: var(--color-brand-600, #16a34a);
-    font-weight: 600;
+    color: white;
+    border-bottom-color: white;
+    background: rgba(0, 0, 0, 0.12);
   }
 
   .soap-tabs__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 4px;
-    background: var(--color-neutral-100, #f5f5f5);
-    font-size: 0.6875rem;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
     font-weight: 700;
+    color: white;
   }
 
   .soap-tabs__btn--active .soap-tabs__icon {
-    background: var(--color-brand-600, #16a34a);
-    color: white;
+    background: rgba(255, 255, 255, 0.35);
   }
 
   /* Section nav inside the detail panel */
@@ -333,22 +348,22 @@
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     border: none;
-    border-radius: 0.375rem;
+    border-radius: 6px;
     background: transparent;
     cursor: pointer;
     text-align: left;
     font-size: 0.875rem;
-    color: var(--color-neutral-700, #404040);
+    color: var(--color-neutral-700, #525252);
     transition: background 0.12s;
   }
 
   .section-nav__btn:hover {
-    background: var(--color-neutral-200, #e5e5e5);
+    background: var(--color-neutral-200, #e0e0e0);
   }
 
   .section-nav__btn--active {
-    background: var(--color-brand-100, #dcfce7);
-    color: var(--color-brand-800, #166534);
+    background: var(--color-brand-green, #009a44);
+    color: white;
     font-weight: 600;
   }
 
@@ -359,14 +374,14 @@
     width: 24px;
     height: 24px;
     border-radius: 6px;
-    background: var(--color-neutral-200, #e5e5e5);
+    background: var(--color-neutral-200, #e0e0e0);
     font-size: 0.75rem;
     font-weight: 700;
     flex-shrink: 0;
   }
 
   .section-nav__btn--active .section-nav__icon {
-    background: var(--color-brand-600, #16a34a);
+    background: rgba(255, 255, 255, 0.25);
     color: white;
   }
 
@@ -400,31 +415,5 @@
   .editor-error p {
     color: var(--color-neutral-500, #737373);
     margin-bottom: 1.5rem;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .btn--primary {
-    background: var(--color-brand-600, #16a34a);
-    color: white;
-  }
-
-  .btn--primary:hover {
-    background: var(--color-brand-700, #15803d);
-  }
-
-  .btn--sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
   }
 </style>
