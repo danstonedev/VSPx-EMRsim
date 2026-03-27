@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In Required - PT EMR Simulator</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --text: #1e293b;
+        --text-muted: #64748b;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      .container {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow:
+          0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        padding: 2.5rem;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .icon {
+        width: 64px;
+        height: 64px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+
+      p {
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+
+      .btn:hover {
+        background: var(--primary-hover);
+      }
+
+      .btn svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .secondary-link {
+        display: block;
+        margin-top: 1rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.875rem;
+      }
+
+      .secondary-link:hover {
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">🔐</div>
+      <h1>Sign In Required</h1>
+      <p>You need to sign in with your school account to access this feature.</p>
+
+      <a href="/.auth/login/aad" class="btn">
+        <svg viewBox="0 0 23 23" fill="currentColor">
+          <path d="M11 0H0v11h11V0zM23 0H12v11h11V0zM11 12H0v11h11V12zM23 12H12v11h11V12z" />
+        </svg>
+        Sign in with Microsoft
+      </a>
+
+      <a href="/" class="secondary-link">← Back to Home</a>
+    </div>
+  </body>
+</html>
