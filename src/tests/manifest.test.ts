@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getManifest, flattenManifestCases, type Manifest } from '$lib/manifest';
+import {
+  getManifest,
+  flattenManifestCases,
+  resetManifestCache,
+  type Manifest,
+} from '$lib/manifest';
 
 const mockManifest: Manifest = {
   categories: [
@@ -7,15 +12,15 @@ const mockManifest: Manifest = {
       id: 'shoulder',
       name: 'Shoulder',
       cases: [
-        { id: 'impingement_001', name: 'Impingement', file: 'shoulder/impingement_001.json' },
+        { id: 'impingement_001', title: 'Impingement', file: 'shoulder/impingement_001.json' },
       ],
     },
     {
       id: 'neuro',
       name: 'Neurological',
       cases: [
-        { id: 'stroke_001', name: 'Stroke', file: 'neuro/stroke_001.json' },
-        { id: 'parkinsons_001', name: "Parkinson's", file: 'neuro/parkinsons_001.json' },
+        { id: 'stroke_001', title: 'Stroke', file: 'neuro/stroke_001.json' },
+        { id: 'parkinsons_001', title: "Parkinson's", file: 'neuro/parkinsons_001.json' },
       ],
     },
   ],
@@ -24,6 +29,7 @@ const mockManifest: Manifest = {
 describe('manifest loader', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetManifestCache();
   });
 
   it('fetches and caches manifest', async () => {
@@ -53,7 +59,7 @@ describe('flattenManifestCases', () => {
     expect(cases).toHaveLength(3);
     expect(cases[0]).toEqual({
       id: 'impingement_001',
-      name: 'Impingement',
+      title: 'Impingement',
       file: 'shoulder/impingement_001.json',
       category: 'shoulder',
     });
@@ -73,8 +79,8 @@ describe('flattenManifestCases', () => {
           id: 'test',
           name: 'Test',
           cases: [
-            { id: '', name: 'No ID', file: 'test.json' },
-            { id: 'valid', name: 'Valid', file: 'valid.json' },
+            { id: '', title: 'No ID', file: 'test.json' },
+            { id: 'valid', title: 'Valid', file: 'valid.json' },
           ],
         },
       ],

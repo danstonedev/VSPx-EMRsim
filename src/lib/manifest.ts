@@ -5,7 +5,7 @@
 
 export interface ManifestCase {
   id: string;
-  name: string;
+  title: string;
   file: string;
   category?: string;
 }
@@ -32,6 +32,10 @@ export async function getManifest(): Promise<Manifest | null> {
   } catch {
     return null;
   }
+}
+
+export function resetManifestCache(): void {
+  cached = null;
 }
 
 export function flattenManifestCases(manifest: Manifest): ManifestCase[] {
