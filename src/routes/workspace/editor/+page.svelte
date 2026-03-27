@@ -10,8 +10,14 @@
   import ChartDetailPanel from '$lib/components/ChartDetailPanel.svelte';
   import PatientHeader from '$lib/components/PatientHeader.svelte';
   import PatientSummaryPanel from '$lib/components/PatientSummaryPanel.svelte';
-  import { activeCase, loadActiveCase, saveActiveDraft, clearActiveCase } from '$lib/stores/cases';
+  import SubjectiveSection from '$lib/components/SubjectiveSection.svelte';
+  import ObjectiveSection from '$lib/components/ObjectiveSection.svelte';
+  import AssessmentSection from '$lib/components/AssessmentSection.svelte';
+  import PlanSection from '$lib/components/PlanSection.svelte';
+  import BillingSection from '$lib/components/BillingSection.svelte';
+  import { activeCase, loadActiveCase, clearActiveCase } from '$lib/stores/cases';
   import { activeChartTab, isPanelOpen, closePanel } from '$lib/stores/ui';
+  import { initDraft, saveDraftNow, clearDraft, isDirty } from '$lib/stores/noteSession';
   import type { CaseObj } from '$lib/store';
 
   // SOAP sections
@@ -39,6 +45,7 @@
 
     try {
       loadActiveCase(caseId, encounter);
+      initDraft();
       caseLoaded = true;
     } catch {
       loadError = `Failed to load case "${caseId}".`;
@@ -46,19 +53,25 @@
   });
 
   onDestroy(() => {
+    if ($isDirty) saveDraftNow();
+    clearDraft();
     clearActiveCase();
     closePanel();
   });
 
   const caseObj = $derived($activeCase.caseWrapper?.caseObj as CaseObj | undefined);
-  const draft = $derived($activeCase.draft ?? {});
 
   function goBack() {
+    if ($isDirty) saveDraftNow();
     goto('/workspace/cases');
   }
 
   function selectSection(sectionId: string) {
     activeSection = sectionId;
+  }
+
+  function handleSave() {
+    saveDraftNow();
   }
 </script>
 
@@ -129,89 +142,44 @@
             <span class="note-editor__encounter">
               {$activeCase.encounter === 'eval' ? 'Initial Evaluation' : $activeCase.encounter}
             </span>
+            <div class="note-editor__actions">
+              {#if $isDirty}
+                <span class="save-indicator save-indicator--unsaved">Unsaved</span>
+              {:else}
+                <span class="save-indicator save-indicator--saved">Saved</span>
+              {/if}
+              <button type="button" class="btn btn--primary btn--sm" onclick={handleSave}>
+                Save Draft
+              </button>
+            </div>
           </div>
+
+          <!-- SOAP section tabs (mobile/inline) -->
+          <nav class="soap-tabs" aria-label="SOAP sections">
+            {#each soapSections as section}
+              <button
+                type="button"
+                class="soap-tabs__btn"
+                class:soap-tabs__btn--active={activeSection === section.id}
+                onclick={() => selectSection(section.id)}
+              >
+                <span class="soap-tabs__icon">{section.icon}</span>
+                <span class="soap-tabs__label">{section.label}</span>
+              </button>
+            {/each}
+          </nav>
 
           <div class="note-editor__body">
             {#if activeSection === 'subjective'}
-              <div class="section-content">
-                <h3>Chief Complaint</h3>
-                <p>{caseObj.history?.chief_complaint ?? 'Not documented'}</p>
-
-                <h3>History of Present Illness</h3>
-                <p>{caseObj.history?.hpi ?? 'Not documented'}</p>
-
-                {#if caseObj.history?.pain}
-                  <h3>Pain Assessment</h3>
-                  <dl class="clinical-data">
-                    {#each Object.entries(caseObj.history.pain) as [key, value]}
-                      <div class="clinical-data__row">
-                        <dt>{key.replace(/_/g, ' ')}</dt>
-                        <dd>{value}</dd>
-                      </div>
-                    {/each}
-                  </dl>
-                {/if}
-
-                {#if caseObj.history?.functional_goals?.length}
-                  <h3>Patient Goals</h3>
-                  <ul>
-                    {#each caseObj.history.functional_goals as goal}
-                      <li>{goal}</li>
-                    {/each}
-                  </ul>
-                {/if}
-              </div>
+              <SubjectiveSection />
             {:else if activeSection === 'objective'}
-              <div class="section-content">
-                {#if caseObj.findings?.vitals}
-                  <h3>Vital Signs</h3>
-                  <dl class="clinical-data">
-                    {#each Object.entries(caseObj.findings.vitals) as [key, value]}
-                      <div class="clinical-data__row">
-                        <dt>{key.toUpperCase()}</dt>
-                        <dd>{value}</dd>
-                      </div>
-                    {/each}
-                  </dl>
-                {/if}
-
-                {#if caseObj.findings?.gait}
-                  <h3>Gait Assessment</h3>
-                  <dl class="clinical-data">
-                    {#each Object.entries(caseObj.findings.gait) as [key, value]}
-                      <div class="clinical-data__row">
-                        <dt>{key.replace(/_/g, ' ')}</dt>
-                        <dd>{value}</dd>
-                      </div>
-                    {/each}
-                  </dl>
-                {/if}
-
-                <p class="placeholder-hint">
-                  Full objective editor (ROM tables, MMT, special tests) will be ported in the next
-                  phase.
-                </p>
-              </div>
+              <ObjectiveSection />
             {:else if activeSection === 'assessment'}
-              <div class="section-content">
-                <p class="placeholder-hint">
-                  Assessment section editor — clinical reasoning, ICF classification, and PT
-                  diagnosis will be ported in the next phase.
-                </p>
-              </div>
+              <AssessmentSection />
             {:else if activeSection === 'plan'}
-              <div class="section-content">
-                <p class="placeholder-hint">
-                  Plan section editor — goals, treatment plan, and HEP will be ported in the next
-                  phase.
-                </p>
-              </div>
+              <PlanSection />
             {:else if activeSection === 'billing'}
-              <div class="section-content">
-                <p class="placeholder-hint">
-                  Billing section — ICD-10/CPT codes and orders will be ported in the next phase.
-                </p>
-              </div>
+              <BillingSection />
             {/if}
           </div>
         </div>
@@ -255,9 +223,10 @@
     display: flex;
     align-items: baseline;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid var(--color-brand-600, #16a34a);
+    flex-wrap: wrap;
   }
 
   .note-editor__title {
@@ -273,68 +242,81 @@
     font-weight: 500;
   }
 
+  .note-editor__actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .save-indicator {
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .save-indicator--unsaved {
+    color: var(--color-warning-600, #d97706);
+  }
+
+  .save-indicator--saved {
+    color: var(--color-brand-600, #16a34a);
+  }
+
   .note-editor__body {
     min-height: 400px;
   }
 
-  .section-content h3 {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin: 1.25rem 0 0.5rem;
-    color: var(--color-neutral-700, #404040);
-  }
-
-  .section-content h3:first-child {
-    margin-top: 0;
-  }
-
-  .section-content p {
-    line-height: 1.6;
-    margin: 0 0 0.75rem;
-  }
-
-  .section-content ul {
-    margin: 0 0 0.75rem;
-    padding-left: 1.25rem;
-  }
-
-  .section-content li {
-    margin-bottom: 0.25rem;
-    line-height: 1.5;
-  }
-
-  .clinical-data {
-    margin: 0 0 1rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .clinical-data__row {
+  /* SOAP section tabs (inline above content) */
+  .soap-tabs {
     display: flex;
-    gap: 0.75rem;
-    padding: 0.375rem 0;
-    border-bottom: 1px solid var(--color-neutral-100, #f5f5f5);
+    gap: 2px;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
+    overflow-x: auto;
   }
 
-  .clinical-data__row dt {
-    flex-shrink: 0;
-    width: 10rem;
-    font-weight: 500;
-    font-size: 0.8125rem;
-    color: var(--color-neutral-600, #525252);
-    text-transform: capitalize;
-  }
-
-  .clinical-data__row dd {
-    margin: 0;
+  .soap-tabs__btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
     font-size: 0.875rem;
+    color: var(--color-neutral-600, #525252);
+    white-space: nowrap;
+    transition:
+      color 0.12s,
+      border-color 0.12s;
   }
 
-  .placeholder-hint {
-    color: var(--color-neutral-400, #a3a3a3);
-    font-style: italic;
-    padding: 2rem 0;
+  .soap-tabs__btn:hover {
+    color: var(--color-neutral-900, #171717);
+  }
+
+  .soap-tabs__btn--active {
+    color: var(--color-brand-700, #15803d);
+    border-bottom-color: var(--color-brand-600, #16a34a);
+    font-weight: 600;
+  }
+
+  .soap-tabs__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--color-neutral-100, #f5f5f5);
+    font-size: 0.6875rem;
+    font-weight: 700;
+  }
+
+  .soap-tabs__btn--active .soap-tabs__icon {
+    background: var(--color-brand-600, #16a34a);
+    color: white;
   }
 
   /* Section nav inside the detail panel */
@@ -439,5 +421,10 @@
 
   .btn--primary:hover {
     background: var(--color-brand-700, #15803d);
+  }
+
+  .btn--sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
   }
 </style>
