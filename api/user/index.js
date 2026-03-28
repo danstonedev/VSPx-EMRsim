@@ -147,7 +147,9 @@ module.exports = async function (context, req) {
           context.res = {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Invalid discipline. Must be one of: ' + allowed.join(', ') }),
+            body: JSON.stringify({
+              error: 'Invalid discipline. Must be one of: ' + allowed.join(', '),
+            }),
           };
           return;
         }

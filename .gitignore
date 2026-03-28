@@ -12,6 +12,7 @@ tmp/
 # Development Environment
 .vscode/
 .idea/
+.claude/
 
 # OS Files
 .DS_Store
