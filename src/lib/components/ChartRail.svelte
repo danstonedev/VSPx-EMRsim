@@ -12,10 +12,10 @@
   }
 
   const tabs: Tab[] = [
-    { id: 'current-note', label: 'Current Note', icon: 'note_add' },
-    { id: 'patient-summary', label: 'Patient', icon: 'person' },
-    { id: 'my-notes', label: 'My Notes', icon: 'library_books' },
-    { id: 'case-file', label: 'Case File', icon: 'folder' },
+    { id: 'current-note', label: 'Note Guide', icon: 'note_add' },
+    { id: 'patient-summary', label: 'Chart Summary', icon: 'person' },
+    { id: 'my-notes', label: 'Note History', icon: 'library_books' },
+    { id: 'case-file', label: 'Shared File', icon: 'folder' },
   ];
 
   function handleKeydown(e: KeyboardEvent, idx: number) {
@@ -45,7 +45,7 @@
       onclick={() => toggleTab(tab.id)}
       onkeydown={(e) => handleKeydown(e, i)}
     >
-      <span class="chart-rail__icon material-symbols" aria-hidden="true">{tab.icon}</span>
+      <span class="chart-rail__icon material-symbols-outlined" aria-hidden="true">{tab.icon}</span>
       <span class="chart-rail__label">{tab.label}</span>
     </button>
   {/each}
@@ -56,18 +56,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: var(--rail-w, 82px);
-    min-width: var(--rail-w, 82px);
+    align-self: stretch;
+    flex-shrink: 0;
+    width: var(--rail-w, 104px);
+    min-width: var(--rail-w, 104px);
     height: 100%;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.08) 100%),
-      var(--color-brand-green, #009a44);
-    padding: 8px 0 12px;
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 32%),
+      linear-gradient(180deg, #0f9c4a 0%, #0a7b39 58%, #075629 100%);
+    padding: 14px 10px 18px;
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
     box-shadow:
       inset -1px 0 0 rgba(255, 255, 255, 0.14),
-      10px 0 24px rgba(0, 0, 0, 0.08);
+      16px 0 28px rgba(0, 0, 0, 0.12);
   }
 
   .chart-rail__tab {
@@ -75,30 +78,30 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    width: 70px;
-    min-height: 66px;
-    margin: 3px 0;
-    padding: 8px 4px;
+    gap: 8px;
+    width: 100%;
+    min-height: 88px;
+    margin: 0;
+    padding: 12px 10px;
     border: none;
-    border-radius: 14px;
+    border-radius: 18px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.76);
+    color: rgba(255, 255, 255, 0.82);
     cursor: pointer;
     transition:
       background 160ms ease,
       color 160ms ease,
       box-shadow 160ms ease,
       transform 160ms ease;
-    opacity: 0.96;
+    opacity: 0.98;
   }
 
   .chart-rail__tab:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-      0 8px 18px rgba(0, 0, 0, 0.1);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 10px 20px rgba(0, 0, 0, 0.12);
   }
 
   .chart-rail__tab:focus-visible {
@@ -107,29 +110,56 @@
   }
 
   .chart-rail__tab--active {
-    background: linear-gradient(180deg, rgba(71, 71, 71, 0.98) 0%, rgba(58, 58, 58, 0.96) 100%);
+    background: linear-gradient(180deg, rgba(38, 38, 38, 0.98) 0%, rgba(22, 22, 22, 0.97) 100%);
     color: #fff;
     opacity: 1;
     box-shadow:
-      0 12px 24px rgba(0, 0, 0, 0.24),
+      0 14px 26px rgba(0, 0, 0, 0.24),
       inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .chart-rail__icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.14);
     font-size: 24px;
     line-height: 1;
   }
 
+  .chart-rail__tab--active .chart-rail__icon {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
   .chart-rail__label {
-    max-width: 60px;
-    font-size: 10.5px;
-    line-height: 1.1;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 1.18;
+    font-weight: 700;
+    letter-spacing: 0.015em;
     text-align: center;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  @media (max-width: 920px) {
+    .chart-rail {
+      width: var(--rail-w, 88px);
+      min-width: var(--rail-w, 88px);
+      padding-inline: 8px;
+    }
+
+    .chart-rail__tab {
+      min-height: 78px;
+      padding-inline: 8px;
+    }
+
+    .chart-rail__label {
+      font-size: 11px;
+    }
   }
 </style>

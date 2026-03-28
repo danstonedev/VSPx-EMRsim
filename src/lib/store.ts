@@ -8,6 +8,12 @@
  */
 
 import { storage } from './storage';
+import {
+  deleteCaseChartRecords,
+  syncCaseWrapperToChart,
+  upsertDraftNoteRecord,
+} from '$lib/services/chartRecords';
+import { refreshChartRecords } from '$lib/stores/chartRecords';
 
 const CASES_KEY = 'pt_emr_cases';
 const CASE_COUNTER_KEY = 'pt_emr_case_counter';
@@ -16,10 +22,40 @@ const CASE_COUNTER_KEY = 'pt_emr_case_counter';
 // Types
 // ---------------------------------------------------------------------------
 
+export interface CaseSnapshot {
+  name?: string;
+  dob?: string;
+  age?: string;
+  sex?: string;
+  mrn?: string;
+  teaser?: string;
+  [key: string]: unknown;
+}
+
+export interface CaseMeta {
+  setting?: string;
+  diagnosis?: string;
+  acuity?: string;
+  profession?: string;
+  discipline?: string;
+  [key: string]: unknown;
+}
+
+export interface CaseHistory {
+  allergies?: unknown[];
+  meds?: unknown[];
+  pmh?: unknown[];
+  chief_complaint?: string;
+  [key: string]: unknown;
+}
+
 export interface CaseObj {
   id?: string;
   patientName?: string;
   diagnosis?: string;
+  snapshot?: CaseSnapshot;
+  meta?: CaseMeta;
+  history?: CaseHistory;
   [key: string]: unknown;
 }
 
@@ -84,6 +120,8 @@ export function createCase(caseObj: CaseObj): CaseWrapper {
   const cases = loadCasesFromStorage();
   cases[id] = wrapper;
   saveCasesToStorage(cases);
+  syncCaseWrapperToChart(wrapper);
+  refreshChartRecords();
   return wrapper;
 }
 
@@ -91,14 +129,24 @@ export function updateCase(id: string, caseObj: CaseObj): boolean {
   const cases = loadCasesFromStorage();
   if (!cases[id]) return false;
   cases[id].caseObj = { ...caseObj, id };
-  return saveCasesToStorage(cases);
+  const ok = saveCasesToStorage(cases);
+  if (ok) {
+    syncCaseWrapperToChart(cases[id]);
+    refreshChartRecords();
+  }
+  return ok;
 }
 
 export function deleteCase(id: string): boolean {
   const cases = loadCasesFromStorage();
   if (!cases[id]) return false;
   delete cases[id];
-  return saveCasesToStorage(cases);
+  const ok = saveCasesToStorage(cases);
+  if (ok) {
+    deleteCaseChartRecords(id);
+    refreshChartRecords();
+  }
+  return ok;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,6 +159,15 @@ function draftKey(caseId: string, encounter: string): string {
 
 export function saveDraft(caseId: string, encounter: string, draft: unknown): void {
   storage.setItem(draftKey(caseId, encounter), JSON.stringify(draft));
+  if (draft && typeof draft === 'object' && !Array.isArray(draft)) {
+    upsertDraftNoteRecord({
+      caseId,
+      encounterKey: encounter,
+      draft: draft as Record<string, unknown>,
+      caseObj: getCase(caseId)?.caseObj ?? undefined,
+    });
+    refreshChartRecords();
+  }
 }
 
 export function loadDraft(caseId: string, encounter: string): unknown | null {

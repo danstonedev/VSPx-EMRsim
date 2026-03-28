@@ -4,25 +4,49 @@
 -->
 <script lang="ts">
   import type { CaseObj } from '$lib/store';
+  import {
+    computeAge,
+    displayName,
+    allergySummary,
+    type VspRecord,
+  } from '$lib/services/vspRegistry';
 
   interface Props {
     caseObj: CaseObj;
+    vspPatient?: VspRecord | null;
   }
 
-  let { caseObj }: Props = $props();
+  let { caseObj, vspPatient = null }: Props = $props();
 
   const snap = $derived(caseObj?.snapshot ?? {});
   const meta = $derived(caseObj?.meta ?? {});
   const history = $derived(caseObj?.history ?? {});
 
-  // Identity rows
+  // When a VSP patient is resolved, prefer live registry data over stale snapshot
+  const patientName = $derived(
+    vspPatient ? displayName(vspPatient) : (snap.name ?? 'Unknown Patient'),
+  );
+  const patientAge = $derived(
+    vspPatient
+      ? computeAge(vspPatient.dob) != null
+        ? String(computeAge(vspPatient.dob))
+        : ''
+      : (snap.age ?? ''),
+  );
+  const patientSex = $derived(vspPatient?.sex ?? snap.sex ?? '');
+  const patientDob = $derived(vspPatient?.dob ?? snap.dob ?? '');
+  const patientMrn = $derived(vspPatient?.mrn ?? snap.mrn ?? '');
+
+  // Identity rows — merge VSP + snapshot
   const identityRows = $derived(
     [
-      ['Name', snap.name],
-      ['DOB', snap.dob],
-      ['Age', snap.age],
-      ['Sex', snap.sex],
-      ['MRN', snap.mrn],
+      ['Name', patientName],
+      ['DOB', patientDob],
+      ['Age', patientAge],
+      ['Sex', patientSex],
+      ['MRN', patientMrn],
+      ['Pronouns', vspPatient?.pronouns ?? snap.pronouns ?? ''],
+      ['Language', vspPatient?.preferredLanguage ?? snap.preferredLanguage ?? ''],
     ].filter(([, v]) => v),
   );
 
@@ -35,24 +59,73 @@
     ].filter(([, v]) => v),
   );
 
-  // Clinical
-  const allergies = $derived(history.allergies ?? []);
-  const meds = $derived(history.meds ?? []);
-  const pmh = $derived(history.pmh ?? []);
-  const chiefComplaint = $derived(history.chief_complaint ?? '');
+  // Clinical — prefer live VSP data, fall back to case history
+  const allergies = $derived.by(() => {
+    if (vspPatient?.allergies?.length) {
+      return vspPatient.allergies.map((a) => {
+        const parts = [a.name];
+        if (a.severity) parts.push(`(${a.severity})`);
+        if (a.reaction) parts.push(`— ${a.reaction}`);
+        return parts.join(' ');
+      });
+    }
+    return (history.allergies as string[] | undefined) ?? [];
+  });
+
+  const meds = $derived.by(() => {
+    if (vspPatient?.activeMedications?.length) {
+      return vspPatient.activeMedications.map((m) => {
+        const parts = [m.name];
+        if (m.dose) parts.push(m.dose);
+        if (m.frequency) parts.push(m.frequency);
+        if (m.route) parts.push(`(${m.route})`);
+        return parts.join(' ');
+      });
+    }
+    return (history.meds as string[] | undefined) ?? [];
+  });
+
+  const pmh = $derived.by(() => {
+    if (vspPatient) {
+      return [...(vspPatient.medicalHistory ?? []), ...(vspPatient.surgicalHistory ?? [])].filter(
+        Boolean,
+      );
+    }
+    return (history.pmh as string[] | undefined) ?? [];
+  });
+
+  const chiefComplaint = $derived((history.chief_complaint as string | undefined) ?? '');
+
+  // Additional VSP-only fields
+  const emergencyContact = $derived.by(() => {
+    if (!vspPatient?.emergencyContactName) return '';
+    const parts = [vspPatient.emergencyContactName];
+    if (vspPatient.emergencyContactRelationship)
+      parts.push(`(${vspPatient.emergencyContactRelationship})`);
+    if (vspPatient.emergencyContactPhone) parts.push(`— ${vspPatient.emergencyContactPhone}`);
+    return parts.join(' ');
+  });
+
+  const insurance = $derived.by(() => {
+    if (!vspPatient?.insuranceProvider) return '';
+    const parts = [vspPatient.insuranceProvider];
+    if (vspPatient.insurancePolicyNumber) parts.push(`#${vspPatient.insurancePolicyNumber}`);
+    return parts.join(' ');
+  });
 </script>
 
 <div class="patient-summary">
   <!-- Hero section -->
   <section class="patient-summary__hero">
-    <h2 class="patient-summary__name">{snap.name ?? 'Unknown Patient'}</h2>
+    <h2 class="patient-summary__name">{patientName}</h2>
     {#if snap.teaser}
       <p class="patient-summary__teaser">{snap.teaser}</p>
     {/if}
     <div class="patient-summary__chips">
-      {#if snap.age}<span class="chip">{snap.age} y/o</span>{/if}
-      {#if snap.sex}<span class="chip">{snap.sex}</span>{/if}
+      {#if patientAge}<span class="chip">{patientAge} y/o</span>{/if}
+      {#if patientSex}<span class="chip">{patientSex}</span>{/if}
       {#if meta.setting}<span class="chip">{meta.setting}</span>{/if}
+      {#if patientMrn}<span class="chip chip--muted">{patientMrn}</span>{/if}
     </div>
   </section>
 
@@ -95,28 +168,32 @@
   {/if}
 
   <!-- Allergies -->
-  {#if allergies.length > 0}
-    <section class="summary-section">
-      <h3 class="summary-section__heading">Allergies</h3>
+  <section class="summary-section">
+    <h3 class="summary-section__heading">Allergies</h3>
+    {#if allergies.length > 0}
       <ul class="summary-list">
         {#each allergies as allergy}
           <li>{allergy}</li>
         {/each}
       </ul>
-    </section>
-  {/if}
+    {:else}
+      <p class="summary-text summary-text--muted">NKDA (No Known Drug Allergies)</p>
+    {/if}
+  </section>
 
   <!-- Medications -->
-  {#if meds.length > 0}
-    <section class="summary-section">
-      <h3 class="summary-section__heading">Medications</h3>
+  <section class="summary-section">
+    <h3 class="summary-section__heading">Medications</h3>
+    {#if meds.length > 0}
       <ul class="summary-list">
         {#each meds as med}
           <li>{med}</li>
         {/each}
       </ul>
-    </section>
-  {/if}
+    {:else}
+      <p class="summary-text summary-text--muted">None documented</p>
+    {/if}
+  </section>
 
   <!-- PMH -->
   {#if pmh.length > 0}
@@ -127,6 +204,22 @@
           <li>{item}</li>
         {/each}
       </ul>
+    </section>
+  {/if}
+
+  <!-- Emergency Contact (VSP only) -->
+  {#if emergencyContact}
+    <section class="summary-section">
+      <h3 class="summary-section__heading">Emergency Contact</h3>
+      <p class="summary-text">{emergencyContact}</p>
+    </section>
+  {/if}
+
+  <!-- Insurance (VSP only) -->
+  {#if insurance}
+    <section class="summary-section">
+      <h3 class="summary-section__heading">Insurance</h3>
+      <p class="summary-text">{insurance}</p>
     </section>
   {/if}
 </div>
@@ -220,5 +313,15 @@
   .summary-list li {
     margin-bottom: 0.25rem;
     line-height: 1.4;
+  }
+
+  .summary-text--muted {
+    color: var(--color-neutral-400, #a3a3a3);
+    font-style: italic;
+  }
+
+  .chip--muted {
+    background: var(--color-neutral-100, #f5f5f5);
+    color: var(--color-neutral-600, #525252);
   }
 </style>

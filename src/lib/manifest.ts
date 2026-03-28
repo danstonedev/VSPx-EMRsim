@@ -8,6 +8,8 @@ export interface ManifestCase {
   title: string;
   file: string;
   category?: string;
+  /** Discipline this case belongs to (e.g., 'pt', 'dietetics'). */
+  discipline?: string;
 }
 
 export interface ManifestCategory {

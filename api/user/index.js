@@ -77,6 +77,8 @@ module.exports = async function (context, req) {
           email: user.email,
           displayName: user.displayName,
           role: user.role,
+          discipline: user.discipline || null,
+          disciplines: user.disciplines || [],
           roleRequestedAt: user.roleRequestedAt,
           createdAt: user.createdAt,
         }),
@@ -133,6 +135,30 @@ module.exports = async function (context, req) {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: 'Profile updated', displayName: user.displayName }),
+        };
+        return;
+      }
+
+      // Handle discipline update
+      if (body.action === 'set-discipline' && body.discipline) {
+        const allowed = ['pt', 'dietetics'];
+        const disc = String(body.discipline).toLowerCase();
+        if (!allowed.includes(disc)) {
+          context.res = {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'Invalid discipline. Must be one of: ' + allowed.join(', ') }),
+          };
+          return;
+        }
+        user.discipline = disc;
+        await container.item(userId, userId).replace(user);
+        context.log(`Discipline set to ${disc} for: ${email}`);
+
+        context.res = {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Discipline updated', discipline: user.discipline }),
         };
         return;
       }

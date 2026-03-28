@@ -127,6 +127,64 @@ describe('cases reactive store', () => {
       expect(state.draft).toEqual({ objective: 'ROM limited' });
     });
 
+    it('round-trips standardized assessments through active draft storage', () => {
+      const wrapper = createCase({ patientName: 'Assessment Saver' });
+      loadActiveCase(wrapper.id, 'eval');
+
+      saveActiveDraft({
+        objective: {
+          standardizedAssessments: [
+            {
+              id: 'berg_1',
+              discipline: 'pt',
+              instrumentKey: 'berg-balance-scale',
+              version: 1,
+              title: 'Berg Balance Scale',
+              status: 'complete',
+              responses: {
+                sitting_to_standing: 4,
+                standing_unsupported: 4,
+                sitting_unsupported: 4,
+                standing_to_sitting: 4,
+                transfers: 4,
+                standing_eyes_closed: 4,
+                standing_feet_together: 4,
+                reaching_forward: 2,
+                retrieve_object_floor: 2,
+                turn_to_look_behind: 2,
+                turn_360: 2,
+                place_alternate_foot: 2,
+                tandem_stance: 2,
+                single_leg_stance: 2,
+              },
+              scores: {
+                total: 42,
+                max: 56,
+                completedItems: 14,
+                totalItems: 14,
+              },
+              interpretation: 'Increased fall risk',
+              notes: 'Completed during gait/balance screen',
+              performedAt: '2026-03-27',
+              assessor: 'Student PT',
+            },
+          ],
+        },
+      });
+
+      loadActiveCase(wrapper.id, 'eval');
+      const state = get(activeCase);
+      const assessments = (state.draft as { objective?: { standardizedAssessments?: unknown[] } })
+        ?.objective?.standardizedAssessments;
+      expect(assessments).toHaveLength(1);
+      expect((assessments?.[0] as { instrumentKey?: string }).instrumentKey).toBe(
+        'berg-balance-scale',
+      );
+      expect((assessments?.[0] as { interpretation?: string }).interpretation).toBe(
+        'Increased fall risk',
+      );
+    });
+
     it('clears active case', () => {
       const wrapper = createCase({ patientName: 'Clear Me' });
       loadActiveCase(wrapper.id, 'eval');

@@ -61,6 +61,7 @@
 body {
   font-family: var(--font-family-sans);
   color: var(--color-neutral-900);
+  background: var(--color-editor-bg);
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -134,37 +135,367 @@ textarea {
   font-size: 0.8125rem;
 }
 
-/* ─── Global table styles (EMR clinical tables) ─── */
-table {
+.btn--secondary {
+  background: var(--color-neutral-100, #f0f0f0);
+  color: var(--color-neutral-700, #525252);
+  border-color: transparent;
+}
+
+.btn--secondary:hover {
+  background: var(--color-neutral-200, #e0e0e0);
+}
+
+.btn--outline {
+  background: transparent;
+  border: 1px solid var(--color-neutral-300, #d4d4d4);
+  color: var(--color-neutral-700, #525252);
+}
+
+.btn--outline:hover {
+  border-color: var(--color-brand-green, #009a44);
+  color: var(--color-brand-green, #009a44);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-neutral-600, #616161);
+  border-color: transparent;
+}
+
+.btn--ghost:hover {
+  background: var(--color-neutral-100, #f0f0f0);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Clinical Table v3 Design Tokens
+
+   Shared variables for every clinical data table in the EMR:
+   ROM, Vitals, Neuroscreen, MMT, Special Tests, CPT, etc.
+
+   Header chrome uses FIXED colors (not neutral-scale) so they
+   stay dark in both light and dark mode.
+   Border/surface vars use the neutral scale and auto-invert.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Structure ── */
+  --ct-border-w: 2px;
+  --ct-cell-border-w: 1px;
+  --ct-radius: 8px;
+
+  /* ── Header chrome (fixed — does NOT invert) ── */
+  --ct-header-bg: #616161;
+  --ct-header-sub-bg: #6b6b6b;
+  --ct-header-text: #ffffff;
+  --ct-region-bg: #009a44;
+  --ct-region-bg-dark: #007a35;
+  --ct-region-text: #ffffff;
+
+  /* ── Borders (uses neutral scale — inverts correctly) ── */
+  --ct-border: var(--color-neutral-300);
+  --ct-cell-border: var(--color-neutral-200);
+
+  /* ── Surfaces ── */
+  --ct-surface: var(--color-surface);
+  --ct-row-alt: var(--color-neutral-50);
+  --ct-row-hover: rgba(0, 154, 68, 0.05);
+  --ct-row-hover-strong: rgba(0, 154, 68, 0.1);
+
+  /* ── Inputs ── */
+  --ct-input-bg: var(--color-surface);
+  --ct-input-border: var(--color-neutral-300);
+  --ct-focus-color: #009a44;
+  --ct-focus-ring: 0 0 0 2px rgba(0, 154, 68, 0.15);
+
+  /* ── Elevation ── */
+  --ct-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme='dark'] {
+  --ct-header-bg: #3a3a3a;
+  --ct-header-sub-bg: #454545;
+  --ct-region-bg: #007a35;
+  --ct-region-bg-dark: #005e28;
+  --ct-focus-color: #00b44f;
+  --ct-focus-ring: 0 0 0 2px rgba(0, 180, 79, 0.2);
+  --ct-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --ct-row-hover: rgba(0, 180, 79, 0.08);
+  --ct-row-hover-strong: rgba(0, 180, 79, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Clinical Table Utility Classes (.ct-*)
+   Compose from --ct-* tokens above. Components apply these
+   classes in markup and keep only unique layout in scoped <style>.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Table skeleton ── */
+.ct-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-thead th {
-  background: var(--color-panel-header);
-  color: white;
-  font-weight: 600;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: var(--ct-border-w) solid var(--ct-border);
+  border-radius: var(--ct-radius);
   font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--ct-shadow);
+}
+
+.ct-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Scroll wrapper ── */
+.ct-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Header cells ── */
+.ct-th {
+  padding: 0.625rem 0.625rem;
+  text-align: center;
+  font-weight: 600;
+  background: var(--ct-header-bg);
+  color: var(--ct-header-text);
+  border-bottom: var(--ct-border-w) solid var(--ct-border);
+}
+
+.ct-th--region {
+  background: var(--ct-region-bg);
+  color: var(--ct-region-text);
   text-align: left;
+  padding-left: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-right: var(--ct-border-w) solid var(--ct-border);
 }
 
-thead th:first-child {
-  border-radius: 8px 0 0 0;
+.ct-th--group {
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
-thead th:last-child {
-  border-radius: 0 8px 0 0;
+.ct-th--sub {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--ct-header-sub-bg);
+  padding: 0.5rem 0.375rem;
 }
 
-tbody td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-neutral-100);
+.ct-th--divider {
+  border-left: var(--ct-border-w) solid var(--ct-border);
 }
 
-tbody tr:nth-child(even) {
-  background: var(--color-neutral-50);
+.ct-th--actions {
+  width: 2.75rem;
+  padding: 0.375rem;
+}
+
+/* ── Body cells ── */
+.ct-td {
+  padding: 0.625rem 0.625rem;
+  border-bottom: var(--ct-cell-border-w) solid var(--ct-cell-border);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.ct-td--label {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding-left: 0.875rem;
+  border-right: var(--ct-border-w) solid var(--ct-border);
+  white-space: nowrap;
+  color: var(--color-neutral-800, #333);
+}
+
+.ct-td--divider {
+  border-left: var(--ct-border-w) solid var(--ct-border);
+}
+
+.ct-td--empty {
+  color: var(--color-neutral-400, #a3a3a3);
+  font-style: italic;
+}
+
+/* ── Row behaviors ── */
+.ct-row td {
+  transition: background 0.15s ease;
+}
+.ct-row:hover td {
+  background: var(--ct-row-hover) !important;
+}
+.ct-row:hover .ct-td--label {
+  background: var(--ct-row-hover-strong) !important;
+}
+.ct-row--alt td {
+  background: var(--ct-row-alt);
+}
+.ct-row--dragging {
+  opacity: 0.4;
+}
+
+/* ── Form controls ── */
+.ct-input {
+  padding: 0.375rem 0.375rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--ct-input-border);
+  border-radius: 6px;
+  background: var(--ct-input-bg);
+  color: var(--color-neutral-900, #1a1a1a);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.ct-input:hover {
+  border-color: var(--color-neutral-400, #a3a3a3);
+}
+.ct-input:focus {
+  outline: none;
+  border-color: var(--ct-focus-color);
+  box-shadow: var(--ct-focus-ring);
+}
+
+.ct-select {
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.375rem;
+  border: 1px solid var(--ct-input-border);
+  border-radius: 6px;
+  background: var(--ct-input-bg);
+  color: var(--color-neutral-900, #1a1a1a);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.ct-select:hover {
+  border-color: var(--color-neutral-400, #a3a3a3);
+}
+.ct-select:focus {
+  outline: none;
+  border-color: var(--ct-focus-color);
+  box-shadow: var(--ct-focus-ring);
+}
+
+/* ── Buttons ── */
+.ct-btn-add {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--ct-region-bg);
+  color: var(--ct-region-text);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.ct-btn-add:hover {
+  background: var(--ct-region-bg-dark);
+}
+
+.ct-btn-remove {
+  background: none;
+  border: none;
+  font-size: 1.125rem;
+  color: var(--color-neutral-400, #a3a3a3);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 4px;
+  transition:
+    color 0.1s,
+    background 0.1s;
+}
+.ct-btn-remove:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* ── Pills (region/category selector) ── */
+.ct-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.ct-pill {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  background: var(--ct-surface);
+  color: var(--color-neutral-600, #616161);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ct-pill:hover:not(.ct-pill--active) {
+  border-color: var(--ct-focus-color);
+  color: var(--ct-focus-color);
+  background: rgba(0, 154, 68, 0.04);
+}
+.ct-pill--active {
+  background: var(--ct-region-bg);
+  color: var(--ct-region-text);
+  border-color: var(--ct-region-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Drag handle ── */
+.ct-drag-handle {
+  cursor: grab;
+  font-size: 1rem;
+  color: var(--color-neutral-400, #a3a3a3);
+  -webkit-user-select: none;
+  user-select: none;
+  padding: 0.375rem 0.25rem;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+.ct-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ── Empty state hint ── */
+.ct-empty-hint {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-400, #a3a3a3);
+  font-style: italic;
+  padding: 0.5rem 0.625rem;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ct-th--region,
+  .ct-td--label {
+    min-width: 90px;
+    padding-left: 0.5rem;
+  }
+  .ct-th--sub {
+    font-size: 0.6875rem;
+    padding: 0.375rem 0.125rem;
+  }
+  .ct-td {
+    padding: 0.5rem 0.375rem;
+  }
+  .ct-select {
+    font-size: 0.75rem;
+  }
 }
 
 /* ─── Scrollbar styling ─── */
@@ -183,4 +514,75 @@ tbody tr:nth-child(even) {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-neutral-400);
+}
+
+/* ─── Dark mode overrides ─── */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-editor-bg: #121212;
+  --color-surface: #1e1e1e;
+  --color-input-bg: #262626;
+  --color-input-border: #383838;
+  --color-panel-header: #2c2c2c;
+  --color-topbar-start: #000000;
+  --color-topbar-end: #121212;
+  --color-patient-header-start: #121212;
+  --color-patient-header-end: #1e1e1e;
+  --color-section-divider: #007a35;
+
+  /* Inverted neutral scale for dark mode */
+  --color-neutral-50: #1e1e1e;
+  --color-neutral-100: #262626;
+  --color-neutral-200: #383838;
+  --color-neutral-300: #424242;
+  --color-neutral-400: #525252;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #a3a3a3;
+  --color-neutral-700: #d4d4d4;
+  --color-neutral-800: #e0e0e0;
+  --color-neutral-900: #f5f5f5;
+}
+
+:root[data-theme='dark'] body {
+  color: var(--color-neutral-900);
+  background: var(--color-editor-bg);
+}
+
+:root[data-theme='dark'] input[type='text'],
+:root[data-theme='dark'] input[type='number'],
+:root[data-theme='dark'] input[type='email'],
+:root[data-theme='dark'] input[type='tel'],
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select {
+  background: #383838;
+  border-color: #525252;
+  color: #f5f5f5;
+}
+
+:root[data-theme='dark'] input:focus,
+:root[data-theme='dark'] textarea:focus,
+:root[data-theme='dark'] select:focus {
+  border-color: #00b44f;
+  box-shadow: 0 0 0 3px rgba(0, 154, 68, 0.15);
+}
+
+:root[data-theme='dark'] table thead th {
+  background: #424242;
+}
+
+:root[data-theme='dark'] table tbody td {
+  border-bottom-color: #383838;
+}
+
+:root[data-theme='dark'] table tbody tr:nth-child(even) {
+  background: #2c2c2c;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #525252;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #616161;
 }

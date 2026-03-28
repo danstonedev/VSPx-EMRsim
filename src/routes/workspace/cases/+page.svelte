@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { manifestCases, isLoading, loadAllCases, getDraftStatusMap } from '$lib/stores/cases';
+  import { userDiscipline } from '$lib/stores/auth';
   import CaseCard from '$lib/components/CaseCard.svelte';
 
   let search = $state('');
@@ -11,15 +12,23 @@
     draftMap = getDraftStatusMap();
   });
 
-  const filtered = $derived(
-    $manifestCases.filter((c) => {
-      if (!search) return true;
-      const q = search.toLowerCase();
-      const name = (c.name ?? c.id ?? '').toLowerCase();
-      const cat = (c.category ?? '').toLowerCase();
-      return name.includes(q) || cat.includes(q);
-    }),
-  );
+  const filtered = $derived.by(() => {
+    const disc = $userDiscipline;
+    return $manifestCases
+      .filter((c) => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        const name = (c.title ?? c.id ?? '').toLowerCase();
+        const cat = (c.category ?? '').toLowerCase();
+        return name.includes(q) || cat.includes(q);
+      })
+      .sort((a, b) => {
+        // Prioritize cases matching the user's discipline
+        const aMatch = a.discipline === disc ? 0 : 1;
+        const bMatch = b.discipline === disc ? 0 : 1;
+        return aMatch - bMatch;
+      });
+  });
 </script>
 
 <svelte:head>
@@ -83,13 +92,13 @@
     border-radius: 0.375rem;
     font-size: 0.875rem;
     min-width: 220px;
-    background: white;
+    background: var(--color-surface, #ffffff);
   }
 
   .search-input:focus {
-    outline: 2px solid var(--color-brand-400, #4ade80);
+    outline: 2px solid var(--color-brand-green, #009a44);
     outline-offset: -1px;
-    border-color: var(--color-brand-400, #4ade80);
+    border-color: var(--color-brand-green, #009a44);
   }
 
   .case-library__status {

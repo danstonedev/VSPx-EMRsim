@@ -1,40 +1,29 @@
 <!--
-  ChartDetailPanel — Sliding detail panel shown beside the chart rail.
-  Ported from app/js/features/navigation/ChartDetailPanel.js
+  ChartDetailPanel — sliding detail panel shown beside the chart rail.
 -->
 <script lang="ts">
   import { activeChartTab, isPanelOpen, panelWidth, closePanel } from '$lib/stores/ui';
 
   const tabLabels: Record<string, string> = {
-    'current-note': 'Current Note',
-    'patient-summary': 'Patient Summary',
-    'my-notes': 'My Notes',
-    'case-file': 'Case File',
+    'current-note': 'Note Guide',
+    'patient-summary': 'Chart Summary',
+    'my-notes': 'Note History',
+    'case-file': 'Shared Case File',
   };
 
   let { children } = $props();
 
-  let resizing = $state(false);
-
-  function startResize(e: PointerEvent) {
-    e.preventDefault();
-    resizing = true;
-    const startX = e.clientX;
+  function startResize(event: PointerEvent) {
+    event.preventDefault();
+    const startX = event.clientX;
     const startWidth = $panelWidth;
-    const railWidth = 82;
 
-    function onMove(ev: PointerEvent) {
-      const newWidth = Math.min(560, Math.max(280, startWidth + ev.clientX - startX));
-      if (newWidth < 240) {
-        closePanel();
-        cleanup();
-        return;
-      }
+    function onMove(moveEvent: PointerEvent) {
+      const newWidth = Math.min(560, Math.max(300, startWidth + moveEvent.clientX - startX));
       panelWidth.set(newWidth);
     }
 
     function cleanup() {
-      resizing = false;
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', cleanup);
     }
@@ -43,8 +32,8 @@
     window.addEventListener('pointerup', cleanup);
   }
 
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') closePanel();
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') closePanel();
   }
 </script>
 
@@ -53,20 +42,22 @@
 {#if $isPanelOpen && $activeChartTab}
   <aside
     class="chart-detail-panel"
-    class:chart-detail-panel--open={$isPanelOpen}
     style="width: {$panelWidth}px"
     aria-label={tabLabels[$activeChartTab] ?? 'Detail panel'}
   >
     <div class="chart-detail__header">
-      <span class="chart-detail__title">{tabLabels[$activeChartTab] ?? ''}</span>
-      <button
-        class="chart-detail__close"
-        onclick={closePanel}
-        aria-label="Close panel"
-        type="button"
-      >
-        ✕
-      </button>
+      <div class="chart-detail__eyebrow">Workspace Panel</div>
+      <div class="chart-detail__heading-row">
+        <span class="chart-detail__title">{tabLabels[$activeChartTab] ?? ''}</span>
+        <button
+          class="chart-detail__close"
+          onclick={closePanel}
+          aria-label="Close panel"
+          type="button"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
     </div>
 
     <div class="chart-detail__body">
@@ -82,51 +73,82 @@
   .chart-detail-panel {
     display: flex;
     flex-direction: column;
+    align-self: stretch;
+    flex-shrink: 0;
     height: 100%;
-    background: var(--color-neutral-100, #f5f5f5);
+    min-height: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(247, 248, 249, 0.98));
     color: var(--color-neutral-800, #262626);
     overflow: hidden;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    border-right: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow:
+      0 22px 46px rgba(15, 23, 42, 0.12),
+      0 6px 18px rgba(15, 23, 42, 0.06);
     position: relative;
   }
 
   .chart-detail__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
-    background: var(--color-neutral-50, #fafafa);
+    padding: 0.9rem 1.125rem 1rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
     position: sticky;
     top: 0;
     z-index: 1;
+    backdrop-filter: blur(8px);
+  }
+
+  .chart-detail__eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-neutral-500, #737373);
+    margin-bottom: 0.35rem;
+  }
+
+  .chart-detail__heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
 
   .chart-detail__title {
-    font-weight: 600;
-    font-size: 0.875rem;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
   }
 
   .chart-detail__close {
-    border: none;
-    background: none;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.9);
     cursor: pointer;
-    font-size: 1rem;
     color: var(--color-neutral-500, #737373);
-    padding: 0.25rem;
-    border-radius: 4px;
+    padding: 0;
+    border-radius: 999px;
     line-height: 1;
+    transition:
+      background 0.16s ease,
+      color 0.16s ease,
+      border-color 0.16s ease;
   }
 
   .chart-detail__close:hover {
-    background: var(--color-neutral-200, #e5e5e5);
+    background: rgba(15, 23, 42, 0.06);
     color: var(--color-neutral-800, #262626);
+    border-color: rgba(15, 23, 42, 0.14);
   }
 
   .chart-detail__body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 1rem;
+    overscroll-behavior: contain;
+    padding: 1.125rem;
   }
 
   .chart-detail__resize-handle {
@@ -143,6 +165,11 @@
   }
 
   .chart-detail__resize-handle:hover {
-    background: var(--color-brand-green, #009a44);
+    background: linear-gradient(
+      180deg,
+      rgba(0, 154, 68, 0),
+      rgba(0, 154, 68, 0.22),
+      rgba(0, 154, 68, 0)
+    );
   }
 </style>

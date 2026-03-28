@@ -18,6 +18,9 @@
   );
   const actionLabel = $derived(draftStatus?.hasContent ? 'Continue Working' : 'Start Case');
   const categoryLabel = $derived(caseItem.category ?? '');
+  const disciplineLabel = $derived(
+    caseItem.discipline === 'dietetics' ? 'RDN' : caseItem.discipline === 'pt' ? 'PT' : '',
+  );
 </script>
 
 <article class="case-card">
@@ -26,9 +29,14 @@
     <span class="case-card__status {statusClass}">{statusLabel}</span>
   </div>
 
-  {#if categoryLabel}
-    <span class="case-card__category">{categoryLabel}</span>
-  {/if}
+  <div class="case-card__meta">
+    {#if disciplineLabel}
+      <span class="case-card__discipline">{disciplineLabel}</span>
+    {/if}
+    {#if categoryLabel}
+      <span class="case-card__category">{categoryLabel}</span>
+    {/if}
+  </div>
 
   <div class="case-card__actions">
     <a class="btn btn--primary" href="/workspace/editor?case={caseItem.id}&encounter=eval">
@@ -45,7 +53,7 @@
     padding: 1.25rem;
     border: 1px solid var(--color-neutral-200, #e0e0e0);
     border-radius: 8px;
-    background: white;
+    background: var(--color-surface, #ffffff);
     transition:
       border-color 0.15s,
       box-shadow 0.15s;
@@ -89,6 +97,24 @@
   .status--in-progress {
     background: #fef3c7;
     color: #92400e;
+  }
+
+  .case-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .case-card__discipline {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.125rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(0, 154, 68, 0.12);
+    color: var(--color-brand-green, #009a44);
+    border: 1px solid rgba(0, 154, 68, 0.25);
   }
 
   .case-card__category {

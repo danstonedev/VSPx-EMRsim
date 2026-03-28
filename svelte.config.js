@@ -7,7 +7,7 @@ const config = {
       pages: 'build',
       assets: 'build',
       fallback: 'index.html',
-      precompress: false,
+      precompress: true,
     }),
     // Azure SWA serves API from /api/* — keep paths clean
     paths: {

@@ -1,16 +1,10 @@
-<svelte:head>
-  <title>New Note | UND EMR-Sim</title>
-</svelte:head>
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
-<section class="note-launcher">
-  <h1>New Note</h1>
-  <p>Note launcher will be ported here — select discipline, patient, and encounter type.</p>
-</section>
+  onMount(() => {
+    goto('/workspace', { replaceState: true });
+  });
+</script>
 
-<style>
-  .note-launcher {
-    padding: 2rem;
-    max-width: 960px;
-    margin: 0 auto;
-  }
-</style>
+<p>Redirecting to workspace…</p>

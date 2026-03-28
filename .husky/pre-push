@@ -1,7 +1,25 @@
 #!/usr/bin/env bash
-# Pre-push hook: run quick checks before allowing a push
+# Pre-push hook: block production branch pushes and run quick checks
 
 set -euo pipefail
+
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [[ "${ALLOW_MAIN_PUSH:-0}" != "1" ]]; then
+	if [[ "$current_branch" == "main" ]]; then
+		echo "[pre-push] Push blocked: direct pushes from main are disabled."
+		echo "[pre-push] Switch to a feature branch or set ALLOW_MAIN_PUSH=1 for an intentional override."
+		exit 1
+	fi
+
+	while read -r local_ref local_sha remote_ref remote_sha; do
+		if [[ "$remote_ref" == "refs/heads/main" ]]; then
+			echo "[pre-push] Push blocked: refusing to update origin/main from $current_branch."
+			echo "[pre-push] Open a pull request instead, or set ALLOW_MAIN_PUSH=1 for an intentional override."
+			exit 1
+		fi
+	done
+fi
 
 echo "husky pre-push: running npm run check"
 
