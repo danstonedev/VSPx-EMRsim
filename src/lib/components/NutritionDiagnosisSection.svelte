@@ -169,7 +169,7 @@
       <textarea
         id="nd-priority"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Identify the primary diagnosis to address first"
         value={section.priority_diagnosis ?? ''}
         oninput={onPriorityInput}

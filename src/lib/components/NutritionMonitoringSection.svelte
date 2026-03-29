@@ -95,7 +95,7 @@
       <textarea
         id="nm-outcomes"
         class="form-textarea"
-        rows="4"
+        rows="2"
         placeholder="Compare current status to previous assessment and intervention goals"
         value={field('outcomes')}
         oninput={(e) => onInput('outcomes', e)}
@@ -114,7 +114,7 @@
       <textarea
         id="nm-followup"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Reassessment timeline, continued monitoring, discharge criteria"
         value={field('follow_up_plan')}
         oninput={(e) => onInput('follow_up_plan', e)}

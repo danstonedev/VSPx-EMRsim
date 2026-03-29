@@ -41,7 +41,7 @@
     dataSubsection="primary-impairments"
   >
     <textarea
-      rows="3"
+      rows="2"
       value={field('primaryImpairments')}
       oninput={(e) => onInput('primaryImpairments', e)}
       placeholder="Prioritized list of impairments driving the patient's functional limitations (e.g., 'Decreased R shoulder flexion ROM, impaired rotator cuff strength, altered scapulohumeral rhythm')"
@@ -62,7 +62,7 @@
         integrity</span
       >
       <textarea
-        rows="3"
+        rows="2"
         value={field('bodyFunctions')}
         oninput={(e) => onInput('bodyFunctions', e)}
         placeholder="Impairments in body functions (pain, ROM, strength, motor control)..."
@@ -156,7 +156,7 @@
         >Movement system diagnosis, contributing factors, tissue vs. movement-based hypothesis</span
       >
       <textarea
-        rows="4"
+        rows="2"
         value={field('clinicalReasoning')}
         oninput={(e) => onInput('clinicalReasoning', e)}
         placeholder="Synthesize subjective/objective findings to justify movement system diagnosis and plan of care. Address tissue irritability, stage of healing, differential reasoning."
@@ -174,20 +174,20 @@
 
   .field-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
   }
 
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
+    gap: 0.25rem;
+    font-size: 0.78125rem;
     font-weight: 500;
     color: var(--color-neutral-600, #616161);
     flex: 1;
     min-width: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.375rem;
   }
 
   .field-label--select {

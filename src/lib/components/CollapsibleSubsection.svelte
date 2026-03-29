@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { autogrowTextareas } from '$lib/actions/autogrowTextareas';
 
   interface Props {
     title: string;
@@ -26,7 +27,7 @@
       >{title}{#if titleExtra}{@render titleExtra()}{/if}</span
     >
   </button>
-  <div class="collapsible-body" class:collapsible-body--hidden={!open}>
+  <div class="collapsible-body" class:collapsible-body--hidden={!open} use:autogrowTextareas>
     <div class="collapsible-inner">
       {@render children()}
     </div>

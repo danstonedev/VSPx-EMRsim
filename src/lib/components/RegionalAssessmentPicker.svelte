@@ -597,8 +597,8 @@
   }
 
   .rap-region__header {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 700;
     color: var(--color-neutral-700, #424242);
     cursor: pointer;
@@ -618,15 +618,15 @@
   /* ─── Combined ROM section ─── */
 
   .crom-section {
-    padding: 0.75rem 0.875rem;
+    padding: 0.625rem 0.75rem;
   }
 
   .crom-heading {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 700;
     font-style: italic;
     color: var(--ct-region-bg);
-    margin: 0 0 0.625rem;
+    margin: 0 0 0.5rem;
   }
 
   /* ROM region column width override */
@@ -643,7 +643,7 @@
   }
 
   .crom-input-w {
-    width: 3.75rem;
+    width: 3.25rem;
   }
 
   .crom-deg {
@@ -654,13 +654,13 @@
   }
 
   .crom-select-w {
-    min-width: 9.5rem;
+    min-width: 8.5rem;
   }
 
   /* ─── MMT section ─── */
 
   .mmt-section {
-    padding: 0.75rem 0.875rem 0.5rem;
+    padding: 0.625rem 0.75rem 0.375rem;
   }
 
   /* MMT region column width override */
@@ -674,7 +674,7 @@
 
   .mmt-td--actions {
     text-align: center;
-    padding: 0.375rem;
+    padding: 0.25rem;
   }
 
   .mmt-select-w {
@@ -700,7 +700,7 @@
   /* ─── Special Tests section ─── */
 
   .st-section {
-    padding: 0.75rem 0.875rem 0.5rem;
+    padding: 0.625rem 0.75rem 0.375rem;
   }
 
   .st-td--purpose {

@@ -446,7 +446,7 @@
     <label class="field-label">
       History of Present Illness
       <textarea
-        rows="4"
+        rows="2"
         value={field('historyOfPresentIllness')}
         oninput={(e) => onInput('historyOfPresentIllness', e)}
         placeholder="Onset, mechanism of injury, duration, progression, prior treatment. Include 24-hour symptom pattern and current functional status."
@@ -455,7 +455,7 @@
     <label class="field-label">
       Functional Limitations
       <textarea
-        rows="3"
+        rows="2"
         value={field('functionalLimitations')}
         oninput={(e) => onInput('functionalLimitations', e)}
         placeholder="Specific ADL, IADL, work, and recreational tasks the patient reports difficulty with (e.g., 'Unable to reach overhead, difficulty sleeping on affected side')"
@@ -692,20 +692,20 @@
 
   .field-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
   }
 
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
+    gap: 0.25rem;
+    font-size: 0.78125rem;
     font-weight: 500;
     color: var(--color-neutral-600, #616161);
     flex: 1;
     min-width: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.375rem;
   }
 
   /* Q&A pairs */

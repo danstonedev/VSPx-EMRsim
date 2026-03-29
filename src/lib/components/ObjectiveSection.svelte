@@ -203,7 +203,7 @@
     <label class="field-label">
       General Observation
       <textarea
-        rows="3"
+        rows="2"
         value={field('text')}
         oninput={(e) => onInput('text', e)}
         placeholder="General observations: posture, gait deviations, movement quality, willingness to move, use of assistive devices"
@@ -328,7 +328,7 @@
       <label class="field-label">
         Skin Integrity
         <textarea
-          rows="3"
+          rows="2"
           value={field('skinIntegrity')}
           oninput={(e) => onInput('skinIntegrity', e)}
           placeholder="Wound location, size (L×W×D), stage, drainage, wound bed, periwound, surgical incision status..."
@@ -449,7 +449,7 @@
     dataSubsection="treatment-performed"
   >
     <textarea
-      rows="4"
+      rows="2"
       value={field('treatmentPerformed')}
       oninput={(e) => onInput('treatmentPerformed', e)}
       placeholder="Interventions performed this session, parameters (sets/reps/duration), and patient response (tolerance, pain, functional change)"
@@ -467,13 +467,13 @@
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
+    gap: 0.25rem;
+    font-size: 0.78125rem;
     font-weight: 500;
     color: var(--color-neutral-600, #616161);
     flex: 1;
     min-width: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.375rem;
   }
 
   .field-label--compact {
@@ -492,7 +492,7 @@
   .vitals-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem 1rem;
+    gap: 0.5rem 0.75rem;
   }
 
   .vitals-grid .field-label--compact {
@@ -520,8 +520,8 @@
   }
 
   .supplemental-fields {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.625rem;
     border-top: 1px solid var(--color-neutral-100, #f5f5f5);
   }
 

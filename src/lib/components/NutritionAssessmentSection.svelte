@@ -83,7 +83,7 @@
         <textarea
           id="na-{domain.id}"
           class="form-textarea"
-          rows="4"
+          rows="2"
           placeholder={domain.hint}
           value={field(domain.id)}
           oninput={(e) => onInput(domain.id, e)}

@@ -91,7 +91,7 @@
       <textarea
         id="ni-goals"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Measurable goals related to the nutrition diagnosis"
         value={field('goals')}
         oninput={(e) => onInput('goals', e)}
@@ -110,7 +110,7 @@
       <textarea
         id="ni-education"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Topics covered, materials provided, patient understanding..."
         value={field('education_topics')}
         oninput={(e) => onInput('education_topics', e)}
@@ -122,7 +122,7 @@
       <textarea
         id="ni-counseling"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Behavioral strategies, motivational interviewing notes..."
         value={field('counseling_notes')}
         oninput={(e) => onInput('counseling_notes', e)}
@@ -141,7 +141,7 @@
       <textarea
         id="ni-coordination"
         class="form-textarea"
-        rows="3"
+        rows="2"
         placeholder="Referrals, communication with RN/MD/pharmacy/dietary staff"
         value={field('coordination')}
         oninput={(e) => onInput('coordination', e)}

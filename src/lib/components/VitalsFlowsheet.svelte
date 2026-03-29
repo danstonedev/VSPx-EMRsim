@@ -189,7 +189,6 @@
 
   .vf-wrap {
     width: 100%;
-    border: 2px solid var(--color-neutral-300, #d4d4d4);
     border-radius: 6px;
     overflow: hidden;
   }
@@ -203,13 +202,13 @@
   /* ─── Header ─── */
 
   .vf-param-col {
-    width: 130px;
-    min-width: 100px;
-    padding-left: 0.75rem;
+    width: 118px;
+    min-width: 92px;
+    padding-left: 0.625rem;
   }
 
   .vf-col-th {
-    min-width: 140px;
+    min-width: 126px;
   }
 
   .vf-col-header {
@@ -223,8 +222,9 @@
     min-width: 0;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
-    padding: 0.375rem 0.5rem;
-    font-size: 0.8125rem;
+    min-height: 1.875rem;
+    padding: 0.25rem 0.4375rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
@@ -246,8 +246,8 @@
   }
 
   .vf-col-del {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
     border: none;
     border-radius: 4px;
@@ -271,14 +271,14 @@
   }
 
   .vf-add-th {
-    width: 2.75rem;
+    width: 2.25rem;
     text-align: center;
   }
 
   /* Size override: ct-btn-add is 1.75rem, this component uses 2rem */
   .vf-add-btn {
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
   }
 
   /* ─── Body ─── */
@@ -289,29 +289,29 @@
   }
 
   .vf-param-name {
-    font-size: 0.8125rem;
+    font-size: 0.78125rem;
     font-weight: 600;
     color: var(--color-neutral-800, #333333);
     display: block;
-    line-height: 1.2;
+    line-height: 1.1;
   }
 
   .vf-param-unit {
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 500;
     color: var(--color-neutral-400, #9e9e9e);
     text-transform: lowercase;
   }
 
   .vf-val-td {
-    min-width: 140px;
+    min-width: 126px;
   }
 
   /* ─── Inputs ─── */
 
   .vf-input {
     width: 100%;
-    max-width: 72px;
+    max-width: 64px;
     margin: 0 auto;
     text-align: center;
   }
@@ -322,7 +322,7 @@
   }
 
   .vf-input--bp {
-    max-width: 52px;
+    max-width: 46px;
   }
 
   /* BP split pair */
@@ -330,7 +330,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem;
+    gap: 0.1875rem;
   }
 
   .vf-bp-slash {
@@ -341,7 +341,7 @@
   }
 
   .vf-add-spacer {
-    width: 2.75rem;
+    width: 2.25rem;
   }
 
   @media (max-width: 640px) {

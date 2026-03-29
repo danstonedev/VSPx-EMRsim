@@ -116,7 +116,7 @@
       <textarea
         id="db-justification"
         class="form-textarea"
-        rows="4"
+        rows="2"
         placeholder="Medical necessity statement supporting the nutrition intervention"
         value={field('justification')}
         oninput={(e) => onInput('justification', e)}

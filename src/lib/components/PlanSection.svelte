@@ -121,7 +121,14 @@
 
   // ─── Goal drag-reorder ───
 
-  const goalDrag = createDragReorder(() => goals, updateGoals);
+  let goalDragIdx = $state<number | null>(null);
+  const goalDrag = createDragReorder(
+    () => goals,
+    updateGoals,
+    (index) => {
+      goalDragIdx = index;
+    },
+  );
 
   // ─── Modalities (checkbox array) ───
 
@@ -171,7 +178,14 @@
 
   // ─── In-Clinic drag-reorder ───
 
-  const icDrag = createDragReorder(() => inClinic, updateInClinic);
+  let inClinicDragIdx = $state<number | null>(null);
+  const icDrag = createDragReorder(
+    () => inClinic,
+    updateInClinic,
+    (index) => {
+      inClinicDragIdx = index;
+    },
+  );
 
   // ─── HEP Interventions ───
 
@@ -207,7 +221,14 @@
 
   // ─── HEP drag-reorder ───
 
-  const hepDrag = createDragReorder(() => hepItems, updateHep);
+  let hepDragIdx = $state<number | null>(null);
+  const hepDrag = createDragReorder(
+    () => hepItems,
+    updateHep,
+    (index) => {
+      hepDragIdx = index;
+    },
+  );
 </script>
 
 <div class="soap-section soap-plan">
@@ -250,7 +271,7 @@
         {#each goals as entry, i (i)}
           <div
             class="goal-row"
-            class:goal-row--dragging={goalDrag.dragIdx === i}
+            class:goal-row--dragging={goalDragIdx === i}
             draggable="false"
             role="listitem"
             ondragover={(e) => goalDrag.dragOver(e)}
@@ -321,7 +342,7 @@
     <label class="field-label">
       Treatment Plan / Approach
       <textarea
-        rows="3"
+        rows="2"
         value={field('treatmentPlan')}
         oninput={(e) => onInput('treatmentPlan', e)}
         placeholder="Overall approach and clinical rationale linking impairments to interventions (e.g., 'Address ROM deficits through joint mobilization, strengthen rotator cuff via progressive resistance')"
@@ -405,7 +426,7 @@
         {#each inClinic as entry, idx (idx)}
           <tr
             class="ct-row"
-            class:ct-row--dragging={icDrag.dragIdx === idx}
+            class:ct-row--dragging={inClinicDragIdx === idx}
             ondragover={(e) => {
               e.preventDefault();
             }}
@@ -490,7 +511,7 @@
         {#each hepItems as entry, idx (idx)}
           <tr
             class="ct-row"
-            class:ct-row--dragging={hepDrag.dragIdx === idx}
+            class:ct-row--dragging={hepDragIdx === idx}
             ondragover={(e) => {
               e.preventDefault();
             }}
@@ -553,7 +574,7 @@
     dataSubsection="patient-education"
   >
     <textarea
-      rows="3"
+      rows="2"
       value={field('patientEducation')}
       oninput={(e) => onInput('patientEducation', e)}
       placeholder="Topics covered with patient: activity modification, precautions, expected recovery timeline, adherence strategies, when to contact provider"
@@ -572,15 +593,15 @@
 
   .field-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
   }
 
   .field-label {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
+    gap: 0.25rem;
+    font-size: 0.78125rem;
     font-weight: 500;
     color: var(--color-neutral-600, #616161);
     flex: 1;
