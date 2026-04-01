@@ -12,7 +12,6 @@ const SYSTEMS = [
   { id: 'integumentary', label: 'Integumentary' },
   { id: 'musculoskeletal', label: 'Musculoskeletal' },
   { id: 'neuromuscular', label: 'Neuromuscular' },
-  { id: 'standardizedFunctional', label: 'Standardized Functional Assessment' },
 ];
 
 // ── Sub-categories per system ─────────────────────────────

@@ -71,8 +71,10 @@
                 <th class="ct-th ct-th--region ns-region-col" rowspan="2"
                   >{region.name.toUpperCase()}</th
                 >
-                <th class="ct-th ct-th--group" colspan="2">Dermatome</th>
-                <th class="ct-th ct-th--group ct-th--divider" colspan="2">Myotome</th>
+                <th class="ct-th ct-th--group" colspan="2">{region.columnLabels.sensory}</th>
+                <th class="ct-th ct-th--group ct-th--divider" colspan="2"
+                  >{region.columnLabels.motor}</th
+                >
                 {#if region.items.some((l: import('$lib/config/neuroscreenData').NeuroscreenItem) => l.reflex !== null)}
                   <th class="ct-th ct-th--group ct-th--divider" colspan="2">Reflex</th>
                 {/if}
@@ -101,7 +103,7 @@
                     {@const dk = neuroKey(regionMeta.value, level.level, side, 'derm')}
                     <td class="ct-td">
                       <select
-                        class="ct-select ns-sel-w"
+                        class="ct-select ct-select--dense ns-sel-w"
                         value={dermatome[dk] ?? ''}
                         onchange={(e) =>
                           handleSelect('dermatome', dk, (e.target as HTMLSelectElement).value)}
@@ -117,7 +119,7 @@
                     {@const mk = neuroKey(regionMeta.value, level.level, side, 'myo')}
                     <td class="ct-td" class:ct-td--divider={si === 0}>
                       <select
-                        class="ct-select ns-sel-w"
+                        class="ct-select ct-select--dense ns-sel-w"
                         value={myotome[mk] ?? ''}
                         onchange={(e) =>
                           handleSelect('myotome', mk, (e.target as HTMLSelectElement).value)}
@@ -134,7 +136,7 @@
                         {@const rk = neuroKey(regionMeta.value, level.level, side, 'reflex')}
                         <td class="ct-td" class:ct-td--divider={si === 0}>
                           <select
-                            class="ct-select ns-sel-w"
+                            class="ct-select ct-select--dense ns-sel-w"
                             value={reflex[rk] ?? ''}
                             onchange={(e) =>
                               handleSelect('reflex', rk, (e.target as HTMLSelectElement).value)}

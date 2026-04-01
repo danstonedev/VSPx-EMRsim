@@ -17,6 +17,7 @@
     arom: Record<string, string>;
     prom: Record<string, string>;
     rims: Record<string, string>;
+    endFeel: Record<string, string>;
     mmt: Record<string, string>;
     specialTests: Record<string, string>;
     mmtCustomRows?: Record<string, CustomMmtRow[]>;
@@ -28,11 +29,22 @@
     arom,
     prom,
     rims,
+    endFeel,
     mmt,
     specialTests,
     mmtCustomRows = {},
     onUpdate,
   }: Props = $props();
+
+  const END_FEEL_OPTIONS = [
+    { value: '', label: '—' },
+    { value: 'hard', label: 'Hard' },
+    { value: 'firm', label: 'Firm' },
+    { value: 'soft', label: 'Soft' },
+    { value: 'empty', label: 'Empty' },
+    { value: 'springy-block', label: 'Springy Block' },
+    { value: 'muscle-spasm', label: 'Muscle Spasm' },
+  ];
 
   /* ── Region toggle ── */
 
@@ -74,6 +86,8 @@
         return prom;
       case 'rims':
         return rims;
+      case 'endFeel':
+        return endFeel;
       case 'mmt':
         return mmt;
       case 'specialTests':
@@ -158,6 +172,13 @@
     });
   }
 
+  /* ── Region midline check ── */
+
+  const SPINE_REGIONS = new Set(['cervical-spine', 'thoracic-spine', 'lumbar-spine']);
+  function isSpineRegion(regionId: string): boolean {
+    return SPINE_REGIONS.has(regionId);
+  }
+
   /* ── Special Test options ── */
 
   const ST_OPTIONS = [
@@ -167,6 +188,10 @@
     { value: 'equivocal', label: 'Equiv' },
     { value: 'not-tested', label: 'N/T' },
   ];
+
+  function stKeyBilateral(regionId: string, testName: string, side: string): string {
+    return `${regionId}:${testName}:${side}`;
+  }
 </script>
 
 <div class="rap">
@@ -208,22 +233,29 @@
                     <th class="ct-th ct-th--region crom-region-col" rowspan="2"
                       >{region.name.toUpperCase()}</th
                     >
-                    <th class="ct-th ct-th--group" colspan="3">Left</th>
-                    <th class="ct-th ct-th--group ct-th--divider" colspan="3">Right</th>
+                    <th class="ct-th ct-th--group" colspan="4">Left</th>
+                    <th class="ct-th ct-th--group ct-th--divider" colspan="4">Right</th>
                   </tr>
                   <tr>
                     <th class="ct-th ct-th--sub">AROM</th>
                     <th class="ct-th ct-th--sub">PROM</th>
+                    <th class="ct-th ct-th--sub">End-Feel</th>
                     <th class="ct-th ct-th--sub">RIM</th>
                     <th class="ct-th ct-th--sub ct-th--divider">AROM</th>
                     <th class="ct-th ct-th--sub">PROM</th>
+                    <th class="ct-th ct-th--sub">End-Feel</th>
                     <th class="ct-th ct-th--sub">RIM</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each romGroups as group, i}
                     <tr class="ct-row" class:ct-row--alt={i % 2 === 1}>
-                      <td class="ct-td ct-td--label">{group.joint}</td>
+                      <td class="ct-td ct-td--label">
+                        {group.joint}
+                        {#if group.normal}
+                          <span class="crom-normal">{group.normal}</span>
+                        {/if}
+                      </td>
 
                       {#if group.midline}
                         <!-- Midline movement: left inputs, right dashes -->
@@ -261,7 +293,23 @@
                         </td>
                         <td class="ct-td">
                           <select
-                            class="ct-select crom-select-w"
+                            class="ct-select ct-select--dense crom-ef-w"
+                            value={endFeel[romKey(regionId, group.joint, '')] ?? ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'endFeel',
+                                romKey(regionId, group.joint, ''),
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each END_FEEL_OPTIONS as opt}<option value={opt.value}
+                                >{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense crom-select-w"
                             value={rims[romKey(regionId, group.joint, '')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -275,6 +323,7 @@
                           </select>
                         </td>
                         <td class="ct-td ct-td--empty ct-td--divider">—</td>
+                        <td class="ct-td ct-td--empty">—</td>
                         <td class="ct-td ct-td--empty">—</td>
                         <td class="ct-td ct-td--empty">—</td>
                       {:else}
@@ -313,7 +362,23 @@
                         </td>
                         <td class="ct-td">
                           <select
-                            class="ct-select crom-select-w"
+                            class="ct-select ct-select--dense crom-ef-w"
+                            value={endFeel[romKey(regionId, group.joint, 'L')] ?? ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'endFeel',
+                                romKey(regionId, group.joint, 'L'),
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each END_FEEL_OPTIONS as opt}<option value={opt.value}
+                                >{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense crom-select-w"
                             value={rims[romKey(regionId, group.joint, 'L')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -361,7 +426,23 @@
                         </td>
                         <td class="ct-td">
                           <select
-                            class="ct-select crom-select-w"
+                            class="ct-select ct-select--dense crom-ef-w"
+                            value={endFeel[romKey(regionId, group.joint, 'R')] ?? ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'endFeel',
+                                romKey(regionId, group.joint, 'R'),
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each END_FEEL_OPTIONS as opt}<option value={opt.value}
+                                >{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense crom-select-w"
                             value={rims[romKey(regionId, group.joint, 'R')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -412,7 +493,7 @@
                       {#if group.midline}
                         <td class="ct-td" colspan="2">
                           <select
-                            class="ct-select mmt-select-w"
+                            class="ct-select ct-select--dense mmt-select-w"
                             value={mmt[mmtKey(regionId, group.muscle, '')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -427,7 +508,7 @@
                       {:else}
                         <td class="ct-td">
                           <select
-                            class="ct-select mmt-select-w"
+                            class="ct-select ct-select--dense mmt-select-w"
                             value={mmt[mmtKey(regionId, group.muscle, 'L')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -441,7 +522,7 @@
                         </td>
                         <td class="ct-td">
                           <select
-                            class="ct-select mmt-select-w"
+                            class="ct-select ct-select--dense mmt-select-w"
                             value={mmt[mmtKey(regionId, group.muscle, 'R')] ?? ''}
                             onchange={(e) =>
                               handleInput(
@@ -475,7 +556,7 @@
                       </td>
                       <td class="ct-td">
                         <select
-                          class="ct-select mmt-select-w"
+                          class="ct-select ct-select--dense mmt-select-w"
                           value={mmt[mmtKey(regionId, row.id, 'L')] ?? ''}
                           onchange={(e) =>
                             handleInput(
@@ -489,7 +570,7 @@
                       </td>
                       <td class="ct-td">
                         <select
-                          class="ct-select mmt-select-w"
+                          class="ct-select ct-select--dense mmt-select-w"
                           value={mmt[mmtKey(regionId, row.id, 'R')] ?? ''}
                           onchange={(e) =>
                             handleInput(
@@ -519,6 +600,7 @@
 
         <!-- ═══ Special Tests ═══ -->
         {#if region.specialTests.length > 0}
+          {@const isMidline = isSpineRegion(regionId)}
           <div class="st-section">
             <div class="ct-wrap">
               <table class="ct-table">
@@ -526,7 +608,12 @@
                   <tr>
                     <th class="ct-th ct-th--region">SPECIAL TESTS</th>
                     <th class="ct-th ct-th--group">Purpose</th>
-                    <th class="ct-th ct-th--group">Result</th>
+                    {#if isMidline}
+                      <th class="ct-th ct-th--group">Result</th>
+                    {:else}
+                      <th class="ct-th ct-th--group">Left</th>
+                      <th class="ct-th ct-th--group">Right</th>
+                    {/if}
                     <th class="ct-th ct-th--group">Notes</th>
                   </tr>
                 </thead>
@@ -536,17 +623,56 @@
                     <tr class="ct-row">
                       <td class="ct-td ct-td--label">{st.name}</td>
                       <td class="ct-td st-td--purpose">{st.purpose}</td>
-                      <td class="ct-td">
-                        <select
-                          class="ct-select st-select-w"
-                          value={specialTests[key] ?? ''}
-                          onchange={(e) =>
-                            handleInput('specialTests', key, (e.target as HTMLSelectElement).value)}
-                        >
-                          {#each ST_OPTIONS as opt}<option value={opt.value}>{opt.label}</option
-                            >{/each}
-                        </select>
-                      </td>
+                      {#if isMidline}
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense st-select-w"
+                            value={specialTests[key] ?? ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'specialTests',
+                                key,
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each ST_OPTIONS as opt}<option value={opt.value}>{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                      {:else}
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense st-select-w"
+                            value={specialTests[stKeyBilateral(regionId, st.name, 'L')] ??
+                              specialTests[key] ??
+                              ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'specialTests',
+                                stKeyBilateral(regionId, st.name, 'L'),
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each ST_OPTIONS as opt}<option value={opt.value}>{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                        <td class="ct-td">
+                          <select
+                            class="ct-select ct-select--dense st-select-w"
+                            value={specialTests[stKeyBilateral(regionId, st.name, 'R')] ?? ''}
+                            onchange={(e) =>
+                              handleInput(
+                                'specialTests',
+                                stKeyBilateral(regionId, st.name, 'R'),
+                                (e.target as HTMLSelectElement).value,
+                              )}
+                          >
+                            {#each ST_OPTIONS as opt}<option value={opt.value}>{opt.label}</option
+                              >{/each}
+                          </select>
+                        </td>
+                      {/if}
                       <td class="ct-td">
                         <input
                           type="text"
@@ -653,8 +779,21 @@
     user-select: none;
   }
 
+  .crom-normal {
+    display: block;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--color-neutral-400, #9e9e9e);
+    line-height: 1.1;
+    margin-top: 0.125rem;
+  }
+
   .crom-select-w {
     min-width: 8.5rem;
+  }
+
+  .crom-ef-w {
+    min-width: 6.5rem;
   }
 
   /* ─── MMT section ─── */

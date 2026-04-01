@@ -6,7 +6,7 @@ import { writable, derived, get } from 'svelte/store';
 
 // ─── Types ───
 
-export type DisciplineId = 'pt' | 'dietetics';
+export type DisciplineId = 'pt' | 'ot' | 'slp' | 'nursing' | 'dietetics';
 
 export interface AuthUser {
   identityProvider: string;

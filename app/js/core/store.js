@@ -281,7 +281,7 @@ async function fetchRemoteCases() {
     const res = await fetch('/api/cases');
     if (res.ok) {
       const remoteCases = await res.json();
-      console.log('📡 Fetched remote cases:', Object.keys(remoteCases));
+      debugWarn('📡 Fetched remote cases:', Object.keys(remoteCases));
       // Validate/Migrate remote cases before using
       Object.keys(remoteCases).forEach((id) => {
         if (remoteCases[id] && remoteCases[id].caseObj) {
@@ -460,7 +460,7 @@ export const deleteCase = async (id) => {
       cloudError = errData.error || 'Failed to delete from cloud';
       console.warn('Failed to delete case from cloud:', cloudError);
     } else {
-      console.log('📡 Deleted case from cloud:', id);
+      debugWarn('📡 Deleted case from cloud:', id);
     }
   } catch (e) {
     if (e.message.includes('Permission denied')) {

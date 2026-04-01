@@ -297,9 +297,6 @@ function saveRegistry(registry) {
 
 // ── Cloud sync ─────────────────────────────────────────────────────
 
-/** True once the initial server fetch has completed (success or failure). */
-let _synced = false;
-
 /**
  * Fetch all patients from the API and merge into localStorage.
  * Server records overwrite local records with the same id.
@@ -316,7 +313,6 @@ export async function syncFromServer() {
       local[id] = migrateRecord({ ...blankRecord(), ...rec });
     }
     saveRegistry(local);
-    _synced = true;
     return true;
   } catch {
     return false;

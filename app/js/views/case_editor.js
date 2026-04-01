@@ -216,7 +216,7 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
         if (!sub.patientWeight && meta.weightLbs) sub.patientWeight = meta.weightLbs;
         if (!sub.__vspId && meta.vspId) sub.__vspId = meta.vspId;
       }
-    } catch (_) {
+    } catch {
       /* ignore parse errors */
     }
   }
@@ -348,7 +348,7 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
 
   // Create patient header using modular utility BEFORE it's used
   const headerElements = createPatientHeader(c);
-  const { patientHeader, avatarEl, updatePatientAvatar } = headerElements;
+  const { patientHeader } = headerElements;
   const updatePatientHeader = createPatientHeaderUpdater(c, caseWrapper, headerElements);
 
   const handleProfileSync = (event) => {
@@ -379,7 +379,7 @@ async function renderCaseEditor(app, qs, isFacultyMode) {
         if (incoming.patientInterpreterNeeded != null)
           meta.interpreterNeeded = incoming.patientInterpreterNeeded;
         storage.setItem('patient_' + caseId, JSON.stringify(meta));
-      } catch (_) {
+      } catch {
         /* ignore */
       }
     }

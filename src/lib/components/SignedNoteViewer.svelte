@@ -1,9 +1,12 @@
 <!--
-  SignedNoteViewer — read-only rendering of a signed/locked note.
-  Port of app/js/features/navigation/panels/SignedNoteViewer.js.
+  SignedNoteViewer - read-only rendering of a signed/locked note.
+  Uses the shared note presentation model and shared note renderer.
 -->
 <script lang="ts">
-  import type { Signature, Amendment, NoteData } from '$lib/services/noteLifecycle';
+  import NotePresentationRenderer from '$lib/components/NotePresentationRenderer.svelte';
+  import { buildNoteCssVars } from '$lib/services/noteAppearance';
+  import type { Amendment, NoteData, Signature } from '$lib/services/noteLifecycle';
+  import { buildNotePresentation } from '$lib/services/notePresentation';
 
   interface Props {
     note: NoteData;
@@ -16,309 +19,386 @@
 
   const signature = $derived(note.meta?.signature as Signature | undefined);
   const amendments = $derived((note.amendments ?? []) as Amendment[]);
+  const presentationSections = $derived(buildNotePresentation(note, 'export'));
+  const noteThemeVars = buildNoteCssVars();
 
-  const PT_SECTIONS = ['subjective', 'objective', 'assessment', 'plan', 'billing'] as const;
-  const DIETETICS_SECTIONS = [
-    'nutrition_assessment',
-    'nutrition_diagnosis',
-    'nutrition_intervention',
-    'nutrition_monitoring',
-    'billing',
-  ] as const;
+  const noteHeading = $derived.by(() => {
+    const explicitTitle =
+      typeof note.noteTitle === 'string' && note.noteTitle.trim() ? note.noteTitle.trim() : '';
+    const explicitType =
+      typeof note.noteType === 'string' && note.noteType.trim() ? note.noteType.trim() : '';
+    if (explicitTitle) return explicitTitle;
+    if (explicitType) return explicitType;
+    return 'Clinical Note';
+  });
 
-  const isDietetics = $derived('nutrition_assessment' in note);
-  const sections = $derived(isDietetics ? DIETETICS_SECTIONS : PT_SECTIONS);
+  const noteSubheading = $derived.by(() => {
+    const explicitType =
+      typeof note.noteType === 'string' && note.noteType.trim() ? note.noteType.trim() : '';
+    if (explicitType && explicitType !== noteHeading) return explicitType;
+    if ('nutrition_assessment' in note) return 'Dietetics ADIME Note';
+    return 'Finalized Read-Only Record';
+  });
+
+  const signedAtLabel = $derived.by(() => {
+    const value =
+      signature?.signedAt ??
+      (typeof note.meta?.signedAt === 'string' ? note.meta.signedAt : undefined) ??
+      '';
+    return formatDate(value) || 'Not signed';
+  });
 
   function formatDate(iso: string): string {
-    try {
-      return new Date(iso).toLocaleString();
-    } catch {
-      return iso;
-    }
-  }
-
-  const SECTION_TITLES: Record<string, string> = {
-    subjective: 'Subjective',
-    objective: 'Objective',
-    assessment: 'Assessment',
-    plan: 'Plan',
-    billing: 'Billing',
-    nutrition_assessment: 'Nutrition Assessment',
-    nutrition_diagnosis: 'Nutrition Diagnosis',
-    nutrition_intervention: 'Nutrition Intervention',
-    nutrition_monitoring: 'Nutrition Monitoring',
-  };
-
-  function getSectionTitle(key: string): string {
-    return SECTION_TITLES[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-
-  /** Format a complex object into readable text */
-  function formatObject(obj: Record<string, unknown>): string {
-    return Object.entries(obj)
-      .filter(([, v]) => v !== '' && v !== null && v !== undefined)
-      .map(
-        ([k, v]) => `${formatFieldName(k)}: ${typeof v === 'object' ? formatValue(v) : String(v)}`,
-      )
-      .join(', ');
-  }
-
-  /** Recursively format a value for display */
-  function formatValue(value: unknown): string {
-    if (value == null || value === '') return '';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    if (Array.isArray(value)) {
-      return value
-        .map((item) =>
-          typeof item === 'object' && item
-            ? formatObject(item as Record<string, unknown>)
-            : String(item),
-        )
-        .filter(Boolean)
-        .join('\n');
-    }
-    if (typeof value === 'object') return formatObject(value as Record<string, unknown>);
-    return String(value);
-  }
-
-  /** Render a section's data as readable text */
-  function renderSectionContent(key: string): string {
-    const data = note[key];
-    if (!data || typeof data !== 'object') return '';
-    const entries = Object.entries(data as Record<string, unknown>);
-    return entries
-      .filter(([, v]) => v !== '' && v !== null && v !== undefined)
-      .map(([k, v]) => {
-        if (Array.isArray(v)) {
-          return `${formatFieldName(k)}:\n${formatValue(v)}`;
-        }
-        if (typeof v === 'object') {
-          return `${formatFieldName(k)}: ${formatValue(v)}`;
-        }
-        return `${formatFieldName(k)}: ${v}`;
-      })
-      .join('\n\n');
-  }
-
-  function formatFieldName(key: string): string {
-    return key
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, (s) => s.toUpperCase())
-      .trim();
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString();
   }
 </script>
 
-<div class="signed-note">
-  <div class="signed-note__header">
-    <h2 class="signed-note__title">
-      {isDietetics ? 'Nutrition Care Process Note' : 'Clinical Note'}
-    </h2>
-    {#if patientName}
-      <p class="signed-note__patient">Patient: {patientName}</p>
-    {/if}
-  </div>
-
-  <!-- Note Sections (PT SOAP or Dietetics ADIME) -->
-  {#each sections as sectionKey}
-    {@const content = renderSectionContent(sectionKey)}
-    {#if content}
-      <div class="signed-note__section">
-        <h3 class="signed-note__section-title">{getSectionTitle(sectionKey)}</h3>
-        <pre class="signed-note__content">{content}</pre>
-      </div>
-    {/if}
-  {/each}
-
-  <!-- Signature Block -->
-  {#if signature}
-    <div class="signed-note__signature">
-      <div class="signed-note__sig-line">
-        <span class="signed-note__sig-label">Signed by:</span>
-        <span class="signed-note__sig-value">{signature.name}</span>
-      </div>
-      <div class="signed-note__sig-line">
-        <span class="signed-note__sig-label">Title:</span>
-        <span class="signed-note__sig-value">{signature.title}</span>
-      </div>
-      <div class="signed-note__sig-line">
-        <span class="signed-note__sig-label">Date:</span>
-        <span class="signed-note__sig-value">{formatDate(signature.signedAt)}</span>
-      </div>
-    </div>
-  {/if}
-
-  <!-- Amendments -->
-  {#if amendments.length > 0}
-    <div class="signed-note__amendments">
-      <h3 class="signed-note__amendments-title">Amendment History</h3>
-      {#each amendments as amend, i}
-        <div class="signed-note__amendment">
-          <div class="signed-note__amend-header">Amendment #{i + 1}</div>
-          <p class="signed-note__amend-reason">Reason: {amend.reason}</p>
-          <p class="signed-note__amend-meta">
-            Previous signer: {amend.previousSignature.name} — {formatDate(amend.amendedAt)}
-          </p>
+<div class="signed-note-shell" style={noteThemeVars}>
+  <article class="signed-note-page" aria-label="Signed note">
+    <header class="signed-note-page__header">
+      <div class="signed-note-page__eyebrow">Finalized Clinical Document</div>
+      <div class="signed-note-page__title-row">
+        <div>
+          <h2 class="signed-note-page__title">{noteHeading}</h2>
+          <p class="signed-note-page__subtitle">{noteSubheading}</p>
         </div>
-      {/each}
+        <div class="signed-note-page__status">Read Only</div>
+      </div>
+
+      <div class="signed-note-page__meta">
+        {#if patientName}
+          <div class="signed-note-page__meta-item">
+            <span class="signed-note-page__meta-label">Patient</span>
+            <span class="signed-note-page__meta-value">{patientName}</span>
+          </div>
+        {/if}
+        <div class="signed-note-page__meta-item">
+          <span class="signed-note-page__meta-label">Signed</span>
+          <span class="signed-note-page__meta-value">{signedAtLabel}</span>
+        </div>
+        <div class="signed-note-page__meta-item">
+          <span class="signed-note-page__meta-label">Version</span>
+          <span class="signed-note-page__meta-value"
+            >{signature?.version ?? note.meta?.version ?? 1}</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <div class="signed-note-page__body">
+      {#if presentationSections.length > 0}
+        <NotePresentationRenderer sections={presentationSections} variant="document" />
+      {:else}
+        <p class="signed-note-page__empty">
+          No populated note fields are available for this record.
+        </p>
+      {/if}
+
+      <section class="signed-note-section">
+        <h3 class="signed-note-section__title">Electronic Signature</h3>
+        {#if signature}
+          <div class="signed-note-signature">
+            <div class="signed-note-signature__row">
+              <span class="signed-note-label">Signed By</span>
+              <span class="signed-note-value">{signature.name}</span>
+            </div>
+            <div class="signed-note-signature__row">
+              <span class="signed-note-label">Title</span>
+              <span class="signed-note-value">{signature.title}</span>
+            </div>
+            <div class="signed-note-signature__row">
+              <span class="signed-note-label">Signed At</span>
+              <span class="signed-note-value">{formatDate(signature.signedAt)}</span>
+            </div>
+            {#if signature.licenseType}
+              <div class="signed-note-signature__row">
+                <span class="signed-note-label">License Type</span>
+                <span class="signed-note-value">{signature.licenseType}</span>
+              </div>
+            {/if}
+            {#if signature.licenseNumber}
+              <div class="signed-note-signature__row">
+                <span class="signed-note-label">License Number</span>
+                <span class="signed-note-value">{signature.licenseNumber}</span>
+              </div>
+            {/if}
+            {#if signature.credentials}
+              <div class="signed-note-signature__row">
+                <span class="signed-note-label">Credentials</span>
+                <span class="signed-note-value">{signature.credentials}</span>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <p class="signed-note-page__empty">No electronic signature was recorded for this note.</p>
+        {/if}
+      </section>
+
+      {#if amendments.length > 0}
+        <section class="signed-note-section">
+          <h3 class="signed-note-section__title">Amendment History</h3>
+          <div class="signed-note-amendments">
+            {#each amendments as amend, i}
+              <article class="signed-note-amendment">
+                <div class="signed-note-amendment__title">Amendment {i + 1}</div>
+                <div class="signed-note-amendment__body">
+                  <div class="signed-note-amendment__row">
+                    <span class="signed-note-label">Reason</span>
+                    <span class="signed-note-value">{amend.reason}</span>
+                  </div>
+                  <div class="signed-note-amendment__row">
+                    <span class="signed-note-label">Previous Signer</span>
+                    <span class="signed-note-value">{amend.previousSignature.name}</span>
+                  </div>
+                  <div class="signed-note-amendment__row">
+                    <span class="signed-note-label">Amended At</span>
+                    <span class="signed-note-value">{formatDate(amend.amendedAt)}</span>
+                  </div>
+                </div>
+              </article>
+            {/each}
+          </div>
+        </section>
+      {/if}
+    </div>
+  </article>
+
+  {#if onBack || onAmend}
+    <div class="signed-note-actions">
+      {#if onBack}
+        <button type="button" class="signed-note-button signed-note-button--ghost" onclick={onBack}>
+          Back to Note History
+        </button>
+      {/if}
+      {#if onAmend}
+        <button
+          type="button"
+          class="signed-note-button signed-note-button--primary"
+          onclick={onAmend}
+        >
+          Amend Note
+        </button>
+      {/if}
     </div>
   {/if}
-
-  <!-- Actions -->
-  <div class="signed-note__actions">
-    {#if onBack}
-      <button type="button" class="btn btn--secondary" onclick={onBack}> &larr; Back </button>
-    {/if}
-    {#if onAmend}
-      <button type="button" class="btn btn--primary" onclick={onAmend}> Amend Note </button>
-    {/if}
-  </div>
 </div>
 
 <style>
-  .signed-note {
-    padding: 1.25rem;
-    max-width: 800px;
+  .signed-note-shell {
+    display: grid;
+    gap: 1rem;
+    min-height: 100%;
+    padding-bottom: 0.5rem;
   }
 
-  .signed-note__header {
-    border-bottom: 2px solid var(--color-neutral-200, #e0e0e0);
-    padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
+  .signed-note-page {
+    background: var(--note-page-bg);
+    border: 1px solid var(--note-border-soft);
+    border-radius: var(--note-radius-shell);
+    box-shadow: var(--note-shadow-page);
+    overflow: hidden;
   }
 
-  .signed-note__title {
-    margin: 0;
-    font-size: 1.25rem;
+  .signed-note-page__header {
+    padding: 1.3rem 1.4rem 1rem;
+    border-bottom: 1px solid var(--note-border-soft);
+    background: var(--note-page-header-bg);
+  }
+
+  .signed-note-page__eyebrow {
+    margin-bottom: 0.45rem;
+    font-size: 0.72rem;
     font-weight: 700;
-  }
-
-  .signed-note__patient {
-    margin: 0.25rem 0 0;
-    font-size: 0.875rem;
-    color: var(--color-neutral-500, #9e9e9e);
-  }
-
-  .signed-note__section {
-    margin-bottom: 1.25rem;
-  }
-
-  .signed-note__section-title {
-    margin: 0 0 0.5rem;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--color-neutral-700, #616161);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    color: var(--note-muted-soft);
   }
 
-  .signed-note__content {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-family: inherit;
-    font-size: 0.875rem;
-    line-height: 1.6;
-    margin: 0;
-    padding: 0.75rem;
-    background: var(--color-neutral-50, #fafafa);
-    border-radius: 6px;
-    border: 1px solid var(--color-neutral-100, #f5f5f5);
-  }
-
-  .signed-note__signature {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
-  }
-
-  .signed-note__sig-line {
+  .signed-note-page__title-row {
     display: flex;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    padding: 0.25rem 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
-  .signed-note__sig-label {
-    font-weight: 600;
-    color: var(--color-neutral-600, #757575);
-    min-width: 80px;
-  }
-
-  .signed-note__sig-value {
-    color: var(--color-neutral-800, #424242);
-  }
-
-  .signed-note__amendments {
-    margin: 1rem 0;
-    border-top: 1px solid var(--color-neutral-200, #e0e0e0);
-    padding-top: 1rem;
-  }
-
-  .signed-note__amendments-title {
-    margin: 0 0 0.75rem;
-    font-size: 0.9375rem;
+  .signed-note-page__title {
+    margin: 0;
+    font-size: 1.45rem;
     font-weight: 700;
+    color: var(--note-ink);
   }
 
-  .signed-note__amendment {
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 6px;
+  .signed-note-page__subtitle {
+    margin: 0.22rem 0 0;
+    font-size: 0.92rem;
+    color: var(--note-muted);
   }
 
-  .signed-note__amend-header {
+  .signed-note-page__status {
+    flex-shrink: 0;
+    padding: 0.42rem 0.72rem;
+    border-radius: var(--note-radius-pill);
+    border: 1px solid var(--note-success-border);
+    background: var(--note-success-bg);
+    color: var(--note-accent-dark);
+    font-size: 0.73rem;
     font-weight: 700;
-    font-size: 0.8125rem;
-    margin-bottom: 0.25rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
-  .signed-note__amend-reason {
-    font-size: 0.8125rem;
-    margin: 0.25rem 0;
+  .signed-note-page__meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 1rem;
   }
 
-  .signed-note__amend-meta {
-    font-size: 0.75rem;
-    color: var(--color-neutral-500, #9e9e9e);
-    margin: 0.25rem 0 0;
+  .signed-note-page__meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
   }
 
-  .signed-note__actions {
+  .signed-note-page__meta-label,
+  .signed-note-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--note-muted-soft);
+  }
+
+  .signed-note-page__meta-value,
+  .signed-note-value {
+    font-size: 0.96rem;
+    color: var(--note-ink);
+  }
+
+  .signed-note-page__body {
+    padding: 1.35rem 1.4rem 1.55rem;
+    display: grid;
+    gap: 1.6rem;
+  }
+
+  .signed-note-section__title {
+    margin: 0 0 0.8rem;
+    padding-left: 0.8rem;
+    border-left: 4px solid var(--note-accent);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--note-accent);
+  }
+
+  .signed-note-signature {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem 1.05rem;
+    border: 1px solid var(--note-success-border);
+    border-radius: var(--note-radius-table);
+    background: var(--note-signature-bg);
+  }
+
+  .signed-note-signature__row,
+  .signed-note-amendment__row {
+    display: grid;
+    grid-template-columns: minmax(120px, 160px) 1fr;
+    gap: 0.9rem;
+    align-items: start;
+  }
+
+  .signed-note-amendments {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .signed-note-amendment {
+    border: 1px solid var(--note-warning-border);
+    border-radius: var(--note-radius-table);
+    background: var(--note-warning-bg);
+    overflow: hidden;
+  }
+
+  .signed-note-amendment__title {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--note-warning-border);
+    font-size: 0.83rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #92400e;
+  }
+
+  .signed-note-amendment__body {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.95rem 1rem 1rem;
+  }
+
+  .signed-note-page__empty {
+    margin: 0;
+    color: var(--note-muted-soft);
+    line-height: 1.6;
+  }
+
+  .signed-note-actions {
     display: flex;
     gap: 0.75rem;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-neutral-200, #e0e0e0);
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
   }
 
-  .btn {
-    padding: 0.5rem 1.25rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
+  .signed-note-button {
+    min-height: 2.75rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--note-radius-button);
+    font-size: 0.92rem;
+    font-weight: 700;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
+    transition:
+      background 0.16s ease,
+      border-color 0.16s ease,
+      color 0.16s ease,
+      transform 0.16s ease;
   }
 
-  .btn--secondary {
-    background: var(--color-neutral-100, #f0f0f0);
-    color: var(--color-neutral-700, #616161);
+  .signed-note-button:hover {
+    transform: translateY(-1px);
   }
 
-  .btn--secondary:hover {
-    background: var(--color-neutral-200, #e0e0e0);
+  .signed-note-button--ghost {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--note-border-soft);
+    color: var(--note-ink-muted);
   }
 
-  .btn--primary {
-    background: var(--color-brand-green, #009a44);
-    color: white;
+  .signed-note-button--primary {
+    background: var(--note-accent);
+    color: var(--note-white);
   }
 
-  .btn--primary:hover {
-    background: #007a35;
+  @media (max-width: 760px) {
+    .signed-note-page__title-row,
+    .signed-note-page__meta {
+      grid-template-columns: 1fr;
+      display: grid;
+    }
+
+    .signed-note-page__status {
+      justify-self: start;
+    }
+
+    .signed-note-signature__row,
+    .signed-note-amendment__row {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
   }
 </style>

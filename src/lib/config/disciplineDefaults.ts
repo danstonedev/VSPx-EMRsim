@@ -19,6 +19,24 @@ export const DISCIPLINE_DEFAULTS: Record<DisciplineId, DisciplineDefaults> = {
     defaultEncounter: 'eval',
     noteFormat: 'SOAP',
   },
+  ot: {
+    label: 'Occupational Therapy',
+    abbreviation: 'OT',
+    defaultEncounter: 'eval',
+    noteFormat: 'SOAP',
+  },
+  slp: {
+    label: 'Speech-Language Pathology',
+    abbreviation: 'SLP',
+    defaultEncounter: 'eval',
+    noteFormat: 'SOAP',
+  },
+  nursing: {
+    label: 'Nursing',
+    abbreviation: 'RN',
+    defaultEncounter: 'eval',
+    noteFormat: 'SOAP',
+  },
   dietetics: {
     label: 'Dietetics',
     abbreviation: 'RDN',

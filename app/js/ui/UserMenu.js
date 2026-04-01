@@ -5,7 +5,6 @@
 
 import {
   getCurrentUser,
-  getLoginUrl,
   logout,
   requestFacultyAccess,
   clearUserCache,

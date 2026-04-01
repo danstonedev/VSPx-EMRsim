@@ -82,7 +82,6 @@
         <label class="form-label" for="na-{domain.id}">{domain.label}</label>
         <textarea
           id="na-{domain.id}"
-          class="form-textarea"
           rows="2"
           placeholder={domain.hint}
           value={field(domain.id)}
@@ -103,7 +102,6 @@
         <label class="form-label" for="na-malnutrition">Malnutrition Risk</label>
         <select
           id="na-malnutrition"
-          class="form-select"
           value={field('malnutrition_risk')}
           onchange={(e) => onInput('malnutrition_risk', e)}
         >
@@ -116,7 +114,6 @@
         <label class="form-label" for="na-needs">Estimated Energy / Protein Needs</label>
         <input
           id="na-needs"
-          class="form-input"
           type="text"
           placeholder="e.g. 1800-2000 kcal, 70-85 g protein"
           value={field('estimated_needs')}
@@ -138,7 +135,7 @@
     gap: 0.5rem;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--color-neutral-900, #1a1a1a);
     margin: 0;
   }
 
@@ -155,34 +152,11 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #4a4a4a;
+    color: var(--color-neutral-600, #616161);
     margin-bottom: 0.25rem;
   }
 
-  .form-textarea,
-  .form-input,
-  .form-select {
-    width: 100%;
-    padding: 0.5rem 0.65rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font: inherit;
-    font-size: 0.85rem;
-    color: #1a1a1a;
-    background: #fff;
-    transition: border-color 0.15s;
-    box-sizing: border-box;
-  }
-
-  .form-textarea:focus,
-  .form-input:focus,
-  .form-select:focus {
-    outline: none;
-    border-color: var(--color-brand-green, #009a44);
-    box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.12);
-  }
-
-  .form-textarea {
+  textarea {
     resize: vertical;
     min-height: 3.5rem;
   }

@@ -1,5 +1,11 @@
 // PT-specific code reference data — CPT, ICD-10, and intervention lists
 // Ported from app/js/features/soap/billing/BillingSection.js and plan/TreatmentPlan.js
+//
+// Code vintage: CY2025 CMS Physician Fee Schedule / ICD-10-CM FY2025
+// Last reviewed: 2026-04-01
+// Next review:   After CMS CY2026 PFS final rule (~Nov 2025) and ICD-10-CM FY2026 (~Oct 2025)
+// Source:        AMA CPT codebook; CMS MPFS lookup (https://www.cms.gov/medicare/payment/fee-schedules/physician)
+// NOTE: This is an educational simulator — codes are representative, not claims-grade.
 
 export interface PTIntervention {
   value: string;
@@ -11,6 +17,16 @@ export interface CPTCode {
   value: string;
   label: string;
   description: string;
+  timed: boolean;
+  category:
+    | 'evaluation'
+    | 'therapeutic'
+    | 'modality-supervised'
+    | 'modality-constant'
+    | 'testing'
+    | 'ortho-prosthetic'
+    | 'wound'
+    | 'other';
 }
 
 export interface ICD10Code {
@@ -18,31 +34,6 @@ export interface ICD10Code {
   label: string;
   description: string;
 }
-
-// ─── Frequency / Duration options ───
-
-export const FREQUENCY_OPTIONS = [
-  { value: '', label: 'Select...' },
-  { value: '1x-week', label: '1x/week' },
-  { value: '2x-week', label: '2x/week' },
-  { value: '3x-week', label: '3x/week' },
-  { value: '4x-week', label: '4x/week' },
-  { value: '5x-week', label: '5x/week' },
-  { value: '2x-day', label: '2x/day' },
-  { value: 'prn', label: 'PRN' },
-] as const;
-
-export const DURATION_OPTIONS = [
-  { value: '', label: 'Select...' },
-  { value: '2-weeks', label: '2 weeks' },
-  { value: '4-weeks', label: '4 weeks' },
-  { value: '6-weeks', label: '6 weeks' },
-  { value: '8-weeks', label: '8 weeks' },
-  { value: '12-weeks', label: '12 weeks' },
-  { value: '16-weeks', label: '16 weeks' },
-  { value: '6-months', label: '6 months' },
-  { value: 'ongoing', label: 'Ongoing' },
-] as const;
 
 // ─── PT Interventions (~160) ───
 
@@ -434,213 +425,282 @@ export const PT_INTERVENTIONS: PTIntervention[] = [
 // ─── CPT Codes (38 entries) ───
 
 export const PT_CPT_CODES: CPTCode[] = [
+  // ── Therapeutic Procedures (timed, 15-min) ──
   {
     value: '97110',
     label: '97110 - Therapeutic Exercise',
-    description:
-      'Therapeutic procedure, 1 or more areas, each 15 minutes; therapeutic exercises to develop strength and endurance, range of motion and flexibility',
+    description: 'Therapeutic exercises to develop strength, endurance, ROM, and flexibility',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97112',
     label: '97112 - Neuromuscular Re-education',
     description:
-      'Therapeutic procedure, 1 or more areas, each 15 minutes; neuromuscular reeducation of movement, balance, coordination, kinesthetic sense, posture, and/or proprioception',
+      'Neuromuscular reeducation of movement, balance, coordination, kinesthetic sense, posture, proprioception',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97116',
     label: '97116 - Gait Training',
-    description:
-      'Therapeutic procedure, 1 or more areas, each 15 minutes; gait training (includes stair climbing)',
+    description: 'Gait training (includes stair climbing)',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97140',
     label: '97140 - Manual Therapy',
     description:
-      'Manual therapy techniques (eg, mobilization/manipulation, manual lymphatic drainage, manual traction), 1 or more regions, each 15 minutes',
+      'Manual therapy techniques (mobilization/manipulation, manual lymphatic drainage, manual traction)',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97530',
     label: '97530 - Therapeutic Activities',
-    description:
-      'Therapeutic activities, direct (one-on-one) patient contact (use of dynamic activities to improve functional performance), each 15 minutes',
+    description: 'Dynamic activities to improve functional performance, direct one-on-one contact',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97535',
-    label: '97535 - Self-Care Training',
+    label: '97535 - Self-Care / Home Mgmt Training',
     description:
-      'Self-care/home management training (eg, activities of daily living (ADL) and compensatory training, meal preparation, safety procedures, and instructions in use of assistive technology devices/adaptive equipment) direct one-on-one contact, each 15 minutes',
-  },
-  {
-    value: '97012',
-    label: '97012 - Mechanical Traction',
-    description: 'Application of a modality to 1 or more areas; traction, mechanical',
-  },
-  {
-    value: '97014',
-    label: '97014 - Electrical Stimulation',
-    description:
-      'Application of a modality to 1 or more areas; electrical stimulation (unattended)',
-  },
-  {
-    value: '97035',
-    label: '97035 - Ultrasound',
-    description: 'Application of a modality to 1 or more areas; ultrasound, each 15 minutes',
-  },
-  {
-    value: '97039',
-    label: '97039 - Unlisted Modality',
-    description: 'Unlisted modality (specify type and time if constant attendance)',
-  },
-  {
-    value: '97161',
-    label: '97161 - PT Evaluation Low Complexity',
-    description: 'Physical therapy evaluation: low complexity',
-  },
-  {
-    value: '97162',
-    label: '97162 - PT Evaluation Moderate Complexity',
-    description: 'Physical therapy evaluation: moderate complexity',
-  },
-  {
-    value: '97163',
-    label: '97163 - PT Evaluation High Complexity',
-    description: 'Physical therapy evaluation: high complexity',
-  },
-  {
-    value: '97164',
-    label: '97164 - PT Re-evaluation',
-    description: 'Re-evaluation of physical therapy established plan of care',
-  },
-  {
-    value: '97010',
-    label: '97010 - Hot/Cold Packs',
-    description: 'Application of a modality to 1 or more areas; hot or cold packs',
-  },
-  {
-    value: '97018',
-    label: '97018 - Paraffin Bath',
-    description: 'Application of a modality to 1 or more areas; paraffin bath',
-  },
-  {
-    value: '97022',
-    label: '97022 - Whirlpool',
-    description: 'Application of a modality to 1 or more areas; whirlpool',
-  },
-  {
-    value: '97032',
-    label: '97032 - Electrical Stimulation (Manual)',
-    description:
-      'Application of a modality to 1 or more areas; electrical stimulation (manual), each 15 minutes',
-  },
-  {
-    value: '97033',
-    label: '97033 - Iontophoresis',
-    description: 'Application of a modality to 1 or more areas; iontophoresis, each 15 minutes',
-  },
-  {
-    value: '97034',
-    label: '97034 - Contrast Baths',
-    description: 'Application of a modality to 1 or more areas; contrast baths, each 15 minutes',
+      'ADL and compensatory training, meal preparation, safety procedures, assistive technology instruction',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97113',
     label: '97113 - Aquatic Therapy',
-    description:
-      'Therapeutic procedure, 1 or more areas, each 15 minutes; aquatic therapy with therapeutic exercises',
+    description: 'Aquatic therapy with therapeutic exercises',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97124',
     label: '97124 - Massage',
-    description:
-      'Therapeutic procedure, 1 or more areas, each 15 minutes; massage, including effleurage, petrissage and/or tapotement',
+    description: 'Massage including effleurage, petrissage and/or tapotement',
+    timed: true,
+    category: 'therapeutic',
+  },
+  {
+    value: '97542',
+    label: '97542 - Wheelchair Management',
+    description: 'Wheelchair assessment, fitting, and training',
+    timed: true,
+    category: 'therapeutic',
   },
   {
     value: '97150',
     label: '97150 - Group Therapy',
     description: 'Therapeutic procedure(s), group (2 or more individuals)',
-  },
-  {
-    value: '97542',
-    label: '97542 - Wheelchair Management Training',
-    description: 'Wheelchair management (eg, assessment, fitting, training), each 15 minutes',
-  },
-  {
-    value: '97750',
-    label: '97750 - Physical Performance Test',
-    description:
-      'Physical performance test or measurement (eg, musculoskeletal, functional capacity), with written report, each 15 minutes',
-  },
-  {
-    value: '97755',
-    label: '97755 - Assistive Technology Assessment',
-    description:
-      'Assistive technology assessment, direct one-on-one contact, with written report, each 15 minutes',
-  },
-  {
-    value: '97760',
-    label: '97760 - Orthotic Management and Training',
-    description:
-      'Orthotic(s) management and training, initial orthotic(s) encounter, each 15 minutes',
-  },
-  {
-    value: '97761',
-    label: '97761 - Prosthetic Training',
-    description:
-      'Prosthetic training, upper and/or lower extremity(ies), initial prosthetic(s) encounter, each 15 minutes',
-  },
-  {
-    value: '97763',
-    label: '97763 - Orthotic/Prosthetic Management (Subsequent)',
-    description:
-      'Follow-up orthotic or prosthetic management and patient training for mobility or functional use',
-  },
-  {
-    value: '97016',
-    label: '97016 - Vasopneumatic Device',
-    description:
-      'Application of a modality to 1 or more areas; vasopneumatic devices (eg, compression therapy)',
+    timed: false,
+    category: 'therapeutic',
   },
   {
     value: '97139',
     label: '97139 - Unlisted Therapeutic Procedure',
     description: 'Unlisted therapeutic procedure (specify)',
+    timed: false,
+    category: 'therapeutic',
+  },
+  // ── Evaluations (untimed) ──
+  {
+    value: '97161',
+    label: '97161 - PT Eval: Low Complexity',
+    description: 'Physical therapy evaluation: low complexity',
+    timed: false,
+    category: 'evaluation',
   },
   {
-    value: '97597',
-    label: '97597 - Debridement, Open Wound (first 20 sq cm)',
-    description: 'Debridement, first 20 sq cm or less',
+    value: '97162',
+    label: '97162 - PT Eval: Moderate Complexity',
+    description: 'Physical therapy evaluation: moderate complexity',
+    timed: false,
+    category: 'evaluation',
   },
   {
-    value: '97598',
-    label: '97598 - Debridement, Open Wound (each additional 20 sq cm)',
-    description: 'Debridement, open wound, each additional 20 sq cm',
+    value: '97163',
+    label: '97163 - PT Eval: High Complexity',
+    description: 'Physical therapy evaluation: high complexity',
+    timed: false,
+    category: 'evaluation',
+  },
+  {
+    value: '97164',
+    label: '97164 - PT Re-evaluation',
+    description: 'Re-evaluation of physical therapy established plan of care',
+    timed: false,
+    category: 'evaluation',
+  },
+  // ── Supervised Modalities (untimed) ──
+  {
+    value: '97010',
+    label: '97010 - Hot/Cold Packs',
+    description: 'Application of hot or cold packs',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97012',
+    label: '97012 - Mechanical Traction',
+    description: 'Mechanical traction',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97014',
+    label: '97014 - Electrical Stimulation (Unattended)',
+    description: 'Electrical stimulation (unattended)',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97016',
+    label: '97016 - Vasopneumatic Device',
+    description: 'Vasopneumatic devices (compression therapy)',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97018',
+    label: '97018 - Paraffin Bath',
+    description: 'Paraffin bath',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97022',
+    label: '97022 - Whirlpool',
+    description: 'Whirlpool',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  {
+    value: '97039',
+    label: '97039 - Unlisted Modality',
+    description: 'Unlisted modality (specify type and time if constant attendance)',
+    timed: false,
+    category: 'modality-supervised',
+  },
+  // ── Constant Attendance Modalities (timed, 15-min) ──
+  {
+    value: '97032',
+    label: '97032 - E-Stim (Manual / Attended)',
+    description: 'Electrical stimulation (manual), constant attendance',
+    timed: true,
+    category: 'modality-constant',
+  },
+  {
+    value: '97033',
+    label: '97033 - Iontophoresis',
+    description: 'Iontophoresis, constant attendance',
+    timed: true,
+    category: 'modality-constant',
+  },
+  {
+    value: '97034',
+    label: '97034 - Contrast Baths',
+    description: 'Contrast baths, constant attendance',
+    timed: true,
+    category: 'modality-constant',
+  },
+  {
+    value: '97035',
+    label: '97035 - Ultrasound',
+    description: 'Ultrasound, constant attendance',
+    timed: true,
+    category: 'modality-constant',
+  },
+  // ── Testing & Measurement (timed) ──
+  {
+    value: '97750',
+    label: '97750 - Physical Performance Test',
+    description: 'Physical performance test or measurement with written report',
+    timed: true,
+    category: 'testing',
+  },
+  {
+    value: '97755',
+    label: '97755 - Assistive Technology Assessment',
+    description: 'Assistive technology assessment with written report',
+    timed: true,
+    category: 'testing',
   },
   {
     value: '95831',
     label: '95831 - Muscle Testing, Manual',
-    description:
-      'Muscle testing, manual (separate procedure) with report; extremity (excluding hand) or trunk',
+    description: 'Manual muscle testing with report; extremity (excluding hand) or trunk',
+    timed: false,
+    category: 'testing',
   },
   {
     value: '95852',
     label: '95852 - Range of Motion Measurements',
     description: 'Range of motion measurements and report; each additional joint',
+    timed: false,
+    category: 'testing',
+  },
+  // ── Orthotic / Prosthetic (timed) ──
+  {
+    value: '97760',
+    label: '97760 - Orthotic Mgmt & Training (Initial)',
+    description: 'Orthotic management and training, initial encounter',
+    timed: true,
+    category: 'ortho-prosthetic',
+  },
+  {
+    value: '97761',
+    label: '97761 - Prosthetic Training (Initial)',
+    description: 'Prosthetic training, upper and/or lower extremity, initial encounter',
+    timed: true,
+    category: 'ortho-prosthetic',
+  },
+  {
+    value: '97763',
+    label: '97763 - Orthotic/Prosthetic Mgmt (Subsequent)',
+    description: 'Follow-up orthotic or prosthetic management and patient training',
+    timed: true,
+    category: 'ortho-prosthetic',
   },
   {
     value: '29125',
-    label: '29125 - Short Arm Splint (static)',
+    label: '29125 - Short Arm Splint (Static)',
     description: 'Application of short arm splint (forearm to hand); static',
+    timed: false,
+    category: 'ortho-prosthetic',
   },
   {
     value: '29126',
-    label: '29126 - Short Arm Splint (dynamic)',
+    label: '29126 - Short Arm Splint (Dynamic)',
     description: 'Application of short arm splint (forearm to hand); dynamic',
+    timed: false,
+    category: 'ortho-prosthetic',
+  },
+  // ── Wound Care ──
+  {
+    value: '97597',
+    label: '97597 - Debridement (first 20 sq cm)',
+    description: 'Debridement, open wound, first 20 sq cm or less',
+    timed: false,
+    category: 'wound',
   },
   {
+    value: '97598',
+    label: '97598 - Debridement (each addtl 20 sq cm)',
+    description: 'Debridement, open wound, each additional 20 sq cm',
+    timed: false,
+    category: 'wound',
+  },
+  // ── Other ──
+  {
     value: '95992',
-    label: '95992 - Canalith Repositioning Procedure',
-    description:
-      'Vestibular treatment for BPPV using repositioning maneuvers such as Epley or Semont',
+    label: '95992 - Canalith Repositioning',
+    description: 'Vestibular treatment for BPPV using repositioning maneuvers (Epley, Semont)',
+    timed: false,
+    category: 'other',
   },
 ];
 

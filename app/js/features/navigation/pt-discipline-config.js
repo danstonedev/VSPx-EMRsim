@@ -32,15 +32,6 @@ function getPlanScheduleCompletion(data, section) {
   };
 }
 
-function isPatientProfileComplete(section) {
-  return (
-    isFieldComplete(section?.patientName) &&
-    isFieldComplete(section?.patientBirthday) &&
-    isFieldComplete(section?.patientAge) &&
-    isFieldComplete(section?.patientGender)
-  );
-}
-
 // ── Section definitions ────────────────────────────────────────────
 
 export const ptSections = [

@@ -19,6 +19,7 @@ import {
   type VspPickerOption,
   type VspRecord,
 } from '$lib/services/vspRegistry';
+import { SEED_PATIENTS } from '$lib/config/seedPatients';
 
 const registryState = writable<VspRecord[]>(listPatients());
 const loadingState = writable(false);
@@ -41,6 +42,20 @@ export async function initVspRegistry(): Promise<boolean> {
   loadingState.set(true);
   try {
     const ok = await initRegistry();
+
+    // Upsert seed patients so the registry always has current example data
+    const existing = listPatients();
+    for (const seed of SEED_PATIENTS) {
+      const match = existing.find(
+        (p) => p.firstName === seed.firstName && p.lastName === seed.lastName && p.dob === seed.dob,
+      );
+      if (match) {
+        updateRegistryPatient(match.id, seed);
+      } else {
+        createRegistryPatient(seed);
+      }
+    }
+
     refreshVspRegistry();
     return ok;
   } finally {

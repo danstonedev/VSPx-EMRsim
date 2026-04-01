@@ -310,18 +310,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
 
   // Detect if this patient came from the VSP registry (demographics are canonical)
   const isFromRegistry = !!data.__vspId;
-
-  // Patient profile section with anchor
-  const registryBadge = isFromRegistry
-    ? el('span', { class: 'patient-profile--readonly-badge' }, '\u{1F512} From Registry')
-    : null;
-  const hpiHeader = el(
-    'div',
-    { class: 'section-panel__header' },
-    [el('span', { class: 'section-panel__title' }, 'Patient Profile'), registryBadge].filter(
-      Boolean,
-    ),
-  );
   const patientNameField = inputField({
     label: 'Full Name',
     value: data.patientName,
@@ -557,32 +545,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
   imperialBtn.addEventListener('click', () => switchUnit(false));
   metricBtn.addEventListener('click', () => switchUnit(true));
 
-  const bodyMeasurementsStrip = el('div', { class: 'body-measurements' }, [
-    el('div', { class: 'body-measurements__header' }, [
-      el('span', { class: 'body-measurements__label' }, 'Body Measurements'),
-      el('span', { class: 'body-measurements__toggle' }, [imperialBtn, metricBtn]),
-    ]),
-    el('div', { class: 'body-measurements__strip' }, [
-      el('div', { class: 'body-measurements__group' }, [
-        el('span', { class: 'body-measurements__group-label' }, 'Height'),
-        heightInput,
-        heightUnitEl,
-      ]),
-      el('div', { class: 'body-measurements__divider' }),
-      el('div', { class: 'body-measurements__group' }, [
-        el('span', { class: 'body-measurements__group-label' }, 'Weight'),
-        weightInput,
-        weightUnitEl,
-      ]),
-      el('div', { class: 'body-measurements__divider' }),
-      el('div', { class: 'body-measurements__bmi' }, [
-        el('span', { class: 'body-measurements__group-label' }, 'BMI'),
-        bmiValueEl,
-        bmiBadgeEl,
-      ]),
-    ]),
-  ]);
-
   const patientWorkStatusField = textAreaField({
     label: 'Work Status & Occupation',
     value: data.patientWorkStatusOccupation,
@@ -633,19 +595,6 @@ export function createSubjectiveSection(subjectiveData, onUpdate) {
       }
     });
   }
-
-  const dobAgeRow = el('div', { class: 'patient-profile-inline-row' }, [
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientBirthdayField]),
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientAgeField]),
-  ]);
-  const sexPronounsRow = el('div', { class: 'patient-profile-inline-row' }, [
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientGenderField]),
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientPronounsField]),
-  ]);
-  const languageInterpreterRow = el('div', { class: 'patient-profile-inline-row' }, [
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientLanguageField]),
-    el('div', { class: 'patient-profile-inline-row__cell' }, [patientInterpreterField]),
-  ]);
 
   const interviewQASection = el(
     'div',

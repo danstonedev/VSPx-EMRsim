@@ -7,7 +7,6 @@
 import { regionalAssessments } from '../features/soap/objective/RegionalAssessments.js';
 import { getRimsLabel } from '../features/soap/objective/RimsSection.js';
 import { getPTCPTCodes, getPTICD10Codes } from '../features/soap/billing/BillingSection.js';
-import { resolvePatientProfile, getPatientProfileExportRows } from '../core/patient-profile.js';
 import {
   formatAssessmentScoreSummary,
   getAssessmentDefinition,
@@ -354,7 +353,7 @@ export async function exportToWord(caseData, draft) {
     };
 
     // Helper function to create UND-themed tables with proper formatting
-    // eslint-disable-next-line no-unused-vars
+    // Helper function to create UND-themed tables with proper formatting
     const createFormattedTable = (data, headers = [], columnWidths, alignments = [], opts = {}) => {
       const rows = [];
 
@@ -1706,8 +1705,6 @@ export async function exportToWord(caseData, draft) {
       const ra = obj.regionalAssessments || {};
 
       // Helper to slugify a movement name for PROM row keys
-      const slug = (s) => (s || '').toString().toLowerCase().replace(/\s+/g, '-');
-
       // Build combined reference lists based on selected regions
       const selected =
         Array.isArray(ra.selectedRegions) && ra.selectedRegions.length

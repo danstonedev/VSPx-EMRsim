@@ -6,9 +6,11 @@
  * all subsections, while a progress note shows an abbreviated set.
  */
 
+import type { DisciplineId } from '$lib/stores/auth';
+
 export interface EncounterTemplateConfig {
   id: string;
-  discipline: 'pt' | 'dietetics';
+  discipline: DisciplineId;
   encounterType: string;
   label: string;
   description: string;
@@ -39,7 +41,6 @@ export const ptEvalTemplate: EncounterTemplateConfig = {
     ],
     objective: [
       'vital-signs',
-      'systems-review',
       'communication-cognition',
       'cardiovascular-pulmonary',
       'integumentary',
@@ -156,7 +157,7 @@ export function getEncounterTemplate(templateId: string): EncounterTemplateConfi
 
 /** Look up by discipline + encounter type combo. */
 export function getEncounterTemplateByType(
-  discipline: 'pt' | 'dietetics',
+  discipline: DisciplineId,
   encounterType: string,
 ): EncounterTemplateConfig | null {
   return (
@@ -166,7 +167,7 @@ export function getEncounterTemplateByType(
 }
 
 /** List all templates for a given discipline. */
-export function listEncounterTemplates(discipline?: 'pt' | 'dietetics'): EncounterTemplateConfig[] {
+export function listEncounterTemplates(discipline?: DisciplineId): EncounterTemplateConfig[] {
   if (!discipline) return ALL_TEMPLATES;
   return ALL_TEMPLATES.filter((t) => t.discipline === discipline);
 }

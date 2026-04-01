@@ -111,7 +111,8 @@ export function createChartSidebar({
       } else if (tabId === 'my-notes') {
         renderMyNotes(container, caseObj, caseId);
       } else {
-        container.textContent = 'Coming soon\u2026';
+        container.replaceChildren();
+        console.warn('[ChartSidebar] No renderer registered for tab:', tabId);
       }
     },
     onClose() {

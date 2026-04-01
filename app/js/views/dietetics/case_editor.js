@@ -589,9 +589,6 @@ function renderEditor(wrapper, caseId, query = new URLSearchParams()) {
   let dietDraft = loadDraft(caseId) || createDefaultDraft(caseObj);
   dietDraft = migrateDraft(dietDraft);
 
-  let activeSection = 'nutrition-assessment';
-  let activePtSection = 'subjective';
-  let activeSimplePtSection = 'subjective';
   const isFacultyMode = window.location.hash.startsWith('#/dietetics/instructor/editor');
   const requestedProfession = query.get('profession') || '';
   const requestedTemplateId = query.get('template') || '';

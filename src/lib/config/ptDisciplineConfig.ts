@@ -11,6 +11,7 @@ import {
   type ProgressStatus,
   type SectionData,
 } from '$lib/config/progressUtils';
+import type { SystemState } from '$lib/config/systemsReview';
 
 export interface SectionDef {
   id: string;
@@ -28,7 +29,6 @@ export const ptSections: SectionDef[] = [
 
 export const ptSubsections: Record<string, string[]> = {
   subjective: [
-    'patient-profile',
     'history',
     'interview-qa',
     'pain-assessment',
@@ -37,7 +37,6 @@ export const ptSubsections: Record<string, string[]> = {
   ],
   objective: [
     'vital-signs',
-    'systems-review',
     'inspection-palpation',
     'communication-cognition',
     'cardiovascular-pulmonary',
@@ -66,14 +65,12 @@ export const ptSubsections: Record<string, string[]> = {
 };
 
 export const ptSubsectionLabels: Record<string, string> = {
-  'patient-profile': 'Patient Profile',
   history: 'History',
   'interview-qa': 'Interview Q&A',
   'pain-assessment': 'Symptoms',
   'red-flag-screening': 'Red Flags / Screening',
   'current-medications': 'Medication & Supplements',
   'vital-signs': 'Vital Signs',
-  'systems-review': 'Systems Review',
   'inspection-palpation': 'Inspection & Palpation',
   'communication-cognition': 'Communication / Cognition',
   'cardiovascular-pulmonary': 'Cardiovascular / Pulmonary',
@@ -98,17 +95,66 @@ export const ptSubsectionLabels: Record<string, string> = {
   'orders-referrals': 'Orders & Referrals',
 };
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function getSystemState(section: SectionData, systemId: string): SystemState | null {
+  const systemsReview = asRecord(asRecord(section)?.systemsReview);
+  const state = systemsReview?.[systemId];
+  return (asRecord(state) as SystemState | null) ?? null;
+}
+
+function isDeferredSystemComplete(section: SectionData, systemId: string): boolean {
+  const state = getSystemState(section, systemId);
+  return state?.status === 'wnl' && isFieldComplete(state.deferReason);
+}
+
+function isEveryEnteredRowComplete<T>(value: unknown, isRowComplete: (row: T) => boolean): boolean {
+  if (!Array.isArray(value) || value.length === 0) return false;
+
+  const meaningfulRows = value.filter((row) => hasAnyContent(row));
+  if (meaningfulRows.length === 0) return false;
+  if (meaningfulRows.length !== value.length) return false;
+
+  return meaningfulRows.every((row) => isRowComplete(row as T));
+}
+
+function hasCompleteAssessmentSet(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every(
+      (entry) =>
+        asRecord(entry)?.status === 'complete' &&
+        Number(asRecord(asRecord(entry)?.scores)?.completedItems) ===
+          Number(asRecord(asRecord(entry)?.scores)?.totalItems),
+    )
+  );
+}
+
+function isGoalRowComplete(row: unknown): boolean {
+  const goal = asRecord(row);
+  return isFieldComplete(goal?.goal) && isFieldComplete(goal?.timeframe);
+}
+
+function isPlanInterventionComplete(row: unknown): boolean {
+  const intervention = asRecord(row);
+  return isFieldComplete(intervention?.intervention) && isFieldComplete(intervention?.dosage);
+}
+
+function isTreatmentEntryComplete(row: unknown): boolean {
+  const entry = asRecord(row);
+  return isFieldComplete(entry?.description);
+}
+
+function hasSystemDocumentation(section: SectionData, systemId: string, details: unknown): boolean {
+  if (isDeferredSystemComplete(section, systemId)) return true;
+  return getSystemState(section, systemId)?.status === 'impaired' && hasAnyContent(details);
+}
+
 export const ptDataResolvers: Record<string, (section: SectionData) => unknown> = {
-  'patient-profile': (section) => ({
-    patientName: section?.patientName,
-    patientBirthday: section?.patientBirthday,
-    patientAge: section?.patientAge,
-    patientGender: section?.patientGender,
-    patientGenderIdentityPronouns: section?.patientGenderIdentityPronouns,
-    patientPreferredLanguage: section?.patientPreferredLanguage,
-    patientWorkStatusOccupation: section?.patientWorkStatusOccupation,
-    patientLivingSituationHomeEnvironment: section?.patientLivingSituationHomeEnvironment,
-  }),
   history: (section) => ({
     chiefComplaint: section?.chiefComplaint,
     historyOfPresentIllness: section?.historyOfPresentIllness,
@@ -138,43 +184,58 @@ export const ptDataResolvers: Record<string, (section: SectionData) => unknown> 
     vitals: section?.vitals,
     vitalsSeries: section?.vitalsSeries,
   }),
-  'systems-review': (section) => section?.systemsReview,
   'inspection-palpation': (section) => ({
     inspection: section?.inspection,
     palpation: section?.palpation,
   }),
   'communication-cognition': (section) => ({
+    systemState: getSystemState(section, 'communication'),
+    arousalLevel: section?.arousalLevel,
     orientation: section?.orientation,
+    hearingStatus: section?.hearingStatus,
+    speechStatus: section?.speechStatus,
     memoryAttention: section?.memoryAttention,
     safetyAwareness: section?.safetyAwareness,
     visionPerception: section?.visionPerception,
   }),
   'cardiovascular-pulmonary': (section) => ({
+    systemState: getSystemState(section, 'cardiovascular'),
+    heartSounds: section?.heartSounds,
     auscultation: section?.auscultation,
+    lungAuscultation: section?.lungAuscultation,
+    respiratoryPattern: section?.respiratoryPattern,
     edema: section?.edema,
+    edemaAssessments: section?.edemaAssessments,
     endurance: section?.endurance,
   }),
   integumentary: (section) => ({
+    systemState: getSystemState(section, 'integumentary'),
     skinIntegrity: section?.skinIntegrity,
     colorTemp: section?.colorTemp,
   }),
   musculoskeletal: (section) => ({
+    systemState: getSystemState(section, 'musculoskeletal'),
+    postureAssessment: section?.postureAssessment,
     regionalAssessments: section?.regionalAssessments,
     rom: section?.rom,
     mmt: section?.mmt,
     specialTests: section?.specialTests,
   }),
   neuromuscular: (section) => ({
+    systemState: getSystemState(section, 'neuromuscular'),
     neuro: section?.neuro,
+    neuroscreenData: section?.neuroscreenData,
     tone: section?.tone,
-    cranialNerves: section?.cranialNerves,
+    toneAssessments: section?.toneAssessments,
     coordination: section?.coordination,
     balance: section?.balance,
-    standardizedAssessments: section?.standardizedAssessments,
     functional: section?.functional,
   }),
   'standardized-assessments': (section) => section?.standardizedAssessments,
-  'treatment-performed': (section) => section?.treatmentPerformed,
+  'treatment-performed': (section) => ({
+    interventions: section?.interventions,
+    treatmentPerformed: section?.treatmentPerformed,
+  }),
   'primary-impairments': (section) => section?.primaryImpairments,
   'icf-classification': (section) => ({
     bodyFunctions: section?.bodyFunctions,
@@ -210,7 +271,6 @@ export const ptDataResolvers: Record<string, (section: SectionData) => unknown> 
 type RequirementFn = (data: unknown, section: SectionData) => boolean;
 
 export const ptRequirements: Record<string, RequirementFn> = {
-  'patient-profile': (data) => hasAnyContent(data),
   history: (_data, section) => {
     return (
       isFieldComplete(section?.chiefComplaint) &&
@@ -252,25 +312,74 @@ export const ptRequirements: Record<string, RequirementFn> = {
       : false;
   },
   'vital-signs': (data) => hasAnyContent(data),
-  'systems-review': (data) => isFieldComplete(data),
   'inspection-palpation': (data) => hasAnyContent(data),
-  'communication-cognition': (data) => hasAnyContent(data),
-  'cardiovascular-pulmonary': (data) => hasAnyContent(data),
-  integumentary: (data) => hasAnyContent(data),
-  musculoskeletal: (data) => {
-    const section = data as SectionData;
-    if (!section || typeof section !== 'object') return false;
+  'communication-cognition': (_data, section) => {
+    const details = {
+      arousalLevel: section?.arousalLevel,
+      orientation: section?.orientation,
+      hearingStatus: section?.hearingStatus,
+      speechStatus: section?.speechStatus,
+      memoryAttention: section?.memoryAttention,
+      safetyAwareness: section?.safetyAwareness,
+      visionPerception: section?.visionPerception,
+    };
+    return hasSystemDocumentation(section, 'communication', details);
+  },
+  'cardiovascular-pulmonary': (_data, section) => {
+    const details = {
+      heartSounds: section?.heartSounds,
+      auscultation: section?.auscultation,
+      lungAuscultation: section?.lungAuscultation,
+      respiratoryPattern: section?.respiratoryPattern,
+      edema: section?.edema,
+      edemaAssessments: section?.edemaAssessments,
+      endurance: section?.endurance,
+    };
+    return hasSystemDocumentation(section, 'cardiovascular', details);
+  },
+  integumentary: (_data, section) => {
+    const details = {
+      skinIntegrity: section?.skinIntegrity,
+      colorTemp: section?.colorTemp,
+    };
+    return hasSystemDocumentation(section, 'integumentary', details);
+  },
+  musculoskeletal: (_data, section) => {
+    const regionalAssessments = asRecord(section?.regionalAssessments);
+    const details = {
+      postureAssessment: section?.postureAssessment,
+      arom: regionalAssessments?.arom,
+      prom: regionalAssessments?.prom,
+      rims: regionalAssessments?.rims,
+      endFeel: regionalAssessments?.endFeel,
+      mmt: regionalAssessments?.mmt,
+      specialTests: regionalAssessments?.specialTests,
+    };
+    return hasSystemDocumentation(section, 'musculoskeletal', details);
+  },
+  neuromuscular: (_data, section) => {
+    const details = {
+      neuro: section?.neuro,
+      neuroscreenData: section?.neuroscreenData,
+      tone: section?.tone,
+      toneAssessments: section?.toneAssessments,
+      coordination: section?.coordination,
+      balance: section?.balance,
+      functional: section?.functional,
+    };
+    return hasSystemDocumentation(section, 'neuromuscular', details);
+  },
+  'standardized-assessments': (data) => {
+    return hasCompleteAssessmentSet(data);
+  },
+  'treatment-performed': (data, section) => {
     return (
-      isFieldComplete(section.rom) ||
-      isFieldComplete(section.mmt) ||
-      isFieldComplete(section.specialTests)
+      isEveryEnteredRowComplete(section?.interventions, isTreatmentEntryComplete) ||
+      isFieldComplete(section?.treatmentPerformed) ||
+      isEveryEnteredRowComplete(asRecord(data)?.interventions, isTreatmentEntryComplete) ||
+      isFieldComplete(asRecord(data)?.treatmentPerformed)
     );
   },
-  neuromuscular: (data) => hasAnyContent(data),
-  'standardized-assessments': (data) => {
-    return Array.isArray(data) && data.length > 0;
-  },
-  'treatment-performed': (data) => isFieldComplete(data),
   'primary-impairments': (data, section) => isFieldComplete(section?.primaryImpairments ?? data),
   'icf-classification': (_data, section) =>
     isFieldComplete(section?.bodyFunctions) &&
@@ -283,10 +392,10 @@ export const ptRequirements: Record<string, RequirementFn> = {
     const section = data as SectionData;
     return isFieldComplete(section?.frequency) && isFieldComplete(section?.duration);
   },
-  'goal-setting': (data) => isFieldComplete(data),
+  'goal-setting': (data) => isEveryEnteredRowComplete(data, isGoalRowComplete),
   'treatment-narrative': (data) => hasAnyContent(data),
-  'in-clinic-treatment-plan': (data) => isFieldComplete(data),
-  'hep-plan': (data) => isFieldComplete(data),
+  'in-clinic-treatment-plan': (data) => isEveryEnteredRowComplete(data, isPlanInterventionComplete),
+  'hep-plan': (data) => isEveryEnteredRowComplete(data, isPlanInterventionComplete),
   'patient-education': (data) => isFieldComplete(data),
   'diagnosis-codes': (data) => {
     if (!Array.isArray(data) || data.length === 0) return false;
@@ -302,8 +411,8 @@ export const ptRequirements: Record<string, RequirementFn> = {
   'orders-referrals': (data) => {
     if (!Array.isArray(data) || data.length === 0) return false;
     return data.every(
-      (item: { type: string; details: string }) =>
-        isFieldComplete(item.type) && isFieldComplete(item.details),
+      (item: { type: string; description: string }) =>
+        isFieldComplete(item.type) && isFieldComplete(item.description),
     );
   },
 };

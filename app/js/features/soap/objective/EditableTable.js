@@ -296,27 +296,6 @@ function buildTableElement({
   return el('div', { class: 'table-responsive' }, table);
 }
 
-function buildCompactFooter(showAddButton, compactAddButton, onAdd) {
-  if (!(showAddButton && compactAddButton)) return null;
-  return el(
-    'div',
-    {
-      class: 'combined-neuroscreen-footer d-flex jc-center mb-16',
-    },
-    el(
-      'button',
-      {
-        type: 'button',
-        class: 'compact-add-btn',
-        title: 'Add row',
-        'aria-label': 'Add row',
-        onclick: onAdd,
-      },
-      '+',
-    ),
-  );
-}
-
 /**
  * Creates a standardized editable table with consistent styling and behavior
  * @param {object} config - Table configuration

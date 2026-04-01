@@ -208,7 +208,7 @@ export function createCaseInfoUpdateHandler(options) {
         }
         if (normalizedSex) meta.sex = normalizedSex;
         storageAdapter.setItem('patient_' + caseId, JSON.stringify(meta));
-      } catch (_) {
+      } catch {
         /* ignore */
       }
     }

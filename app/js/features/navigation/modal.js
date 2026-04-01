@@ -13,7 +13,6 @@ function computeAgeFromDob(dobStr) {
   return String(age);
 }
 
-/* eslint-disable-next-line complexity */
 export function openEditCaseModal(caseInfo, onSave) {
   const normalizeSex = (s) => {
     if (!s) return 'unspecified';

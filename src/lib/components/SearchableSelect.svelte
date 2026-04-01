@@ -143,12 +143,20 @@
     width: 100%;
   }
 
+  /* Height, padding, border, focus styles handled by global app.css rules.
+     Only width needed since the input must fill its container. */
+  .searchable-select input {
+    width: 100%;
+  }
+
   .searchable-select__dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    right: 0;
     z-index: 50;
+    min-width: 100%;
+    width: max-content;
+    max-width: min(420px, 90vw);
     max-height: 240px;
     overflow-y: auto;
     background: var(--color-surface, #ffffff);

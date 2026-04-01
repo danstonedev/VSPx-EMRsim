@@ -3,36 +3,53 @@
   Supports PT SOAP and Dietetics ADIME section maps.
 -->
 <script lang="ts">
-  import { noteDraft } from '$lib/stores/noteSession';
+  import { onMount } from 'svelte';
+  import { cubicOut } from 'svelte/easing';
+  import { slide } from 'svelte/transition';
+  import { dieteticsNoteDraft, noteDraft } from '$lib/stores/noteSession';
   import { ptDisciplineConfig } from '$lib/config/ptDisciplineConfig';
   import { dieteticsDisciplineConfig } from '$lib/config/dieteticsDisciplineConfig';
-  import {
-    genericProgressCheck,
-    hasAnyContent,
-    type DisciplineProgressConfig,
-    type ProgressStatus,
-  } from '$lib/config/progressUtils';
+  import { type DisciplineProgressConfig, type ProgressStatus } from '$lib/config/progressUtils';
+  import { buildProgressSummary, type ProgressDraftData } from '$lib/services/progressTracker';
 
   interface Props {
     activeSection: string;
-    mode?: 'pt' | 'dietetics';
-    draft?: Record<string, Record<string, unknown>>;
+    activeSubsection?: string | null;
+    suppressSubsectionMotion?: boolean;
+    mode?: string;
+    draft?: ProgressDraftData;
     onSelectSection?: (sectionId: string) => void;
     onSelectSubsection?: (sectionId: string, subId: string) => void;
   }
 
-  let { activeSection, mode = 'pt', draft, onSelectSection, onSelectSubsection }: Props = $props();
+  let {
+    activeSection,
+    activeSubsection = null,
+    suppressSubsectionMotion = false,
+    mode = 'pt',
+    draft,
+    onSelectSection,
+    onSelectSubsection,
+  }: Props = $props();
 
-  const fallbackDraft = $derived($noteDraft as unknown as Record<string, Record<string, unknown>>);
+  const fallbackDraft = $derived(
+    (mode === 'dietetics' ? $dieteticsNoteDraft : $noteDraft) as unknown as ProgressDraftData,
+  );
   const currentDraft = $derived(draft ?? fallbackDraft);
   const config = $derived<DisciplineProgressConfig>(
     mode === 'dietetics' ? dieteticsDisciplineConfig : ptDisciplineConfig,
   );
+  const progressSummary = $derived(buildProgressSummary(config, currentDraft));
 
+  let isMounted = $state(false);
   let expandedSections = $state<Record<string, boolean>>({});
 
+  onMount(() => {
+    isMounted = true;
+  });
+
   $effect(() => {
-    if (activeSection && !expandedSections[activeSection]) {
+    if (activeSection && expandedSections[activeSection] === undefined) {
       expandedSections = { ...expandedSections, [activeSection]: true };
     }
   });
@@ -41,40 +58,15 @@
     expandedSections = { ...expandedSections, [sectionId]: !expandedSections[sectionId] };
   }
 
-  function getSectionData(sectionId: string): Record<string, unknown> | undefined {
-    const sectionKey = config.sectionKeyMap?.[sectionId] ?? sectionId;
-    return currentDraft[sectionKey];
-  }
-
-  function getSubsectionStatus(subId: string, sectionId: string): ProgressStatus {
-    const sectionData = getSectionData(sectionId);
-    const resolver = config.dataResolvers[subId];
-    const subData = resolver ? resolver(sectionData) : sectionData?.[subId];
-    const requirement = config.requirements[subId];
-
-    if (subData === undefined || subData === null) return 'empty';
-    if (requirement) {
-      return requirement(subData, sectionData)
-        ? 'complete'
-        : hasAnyContent(subData)
-          ? 'partial'
-          : 'empty';
+  function handleSectionClick(sectionId: string, isExpanded: boolean) {
+    onSelectSection?.(sectionId);
+    if (!isExpanded || activeSection === sectionId) {
+      toggleExpand(sectionId);
     }
-    return genericProgressCheck(subData);
-  }
-
-  function getSectionStatus(sectionId: string): ProgressStatus {
-    const subIds = config.subsections[sectionId] ?? [];
-    if (subIds.length === 0) return 'empty';
-
-    const statuses = subIds.map((subId) => getSubsectionStatus(subId, sectionId));
-    if (statuses.every((status) => status === 'complete')) return 'complete';
-    if (statuses.every((status) => status === 'empty')) return 'empty';
-    return 'partial';
   }
 
   function statusClass(status: ProgressStatus): string {
-    return `progress-dot--${status}`;
+    return `status-pill--${status}`;
   }
 
   function statusLabel(status: ProgressStatus): string {
@@ -83,56 +75,33 @@
     return 'Not started';
   }
 
-  const completionPct = $derived.by(() => {
-    let total = 0;
-    let complete = 0;
-    for (const section of config.sections) {
-      const subsectionIds = config.subsections[section.id] ?? [];
-      for (const subId of subsectionIds) {
-        total += 1;
-        const status = getSubsectionStatus(subId, section.id);
-        if (status === 'complete') complete += 1;
-        else if (status === 'partial') complete += 0.5;
-      }
-    }
-    return total > 0 ? Math.round((complete / total) * 100) : 0;
-  });
-
-  const trackerTitle = $derived(mode === 'dietetics' ? 'ADIME Progress' : 'Note Progress');
   const navLabel = $derived(
     mode === 'dietetics' ? 'Dietetics section navigation' : 'Physical therapy section navigation',
   );
 </script>
 
-<div class="sidebar-progress">
-  <div class="sidebar-progress__header">
-    <span class="sidebar-progress__title">{trackerTitle}</span>
-    <span class="sidebar-progress__pct">{completionPct}%</span>
-  </div>
-
-  <div class="sidebar-progress__bar">
-    <div class="sidebar-progress__fill" style="width: {completionPct}%"></div>
-  </div>
-
+<div
+  class="sidebar-progress"
+  class:sidebar-progress--ready={isMounted}
+  class:sidebar-progress--suppress-subsection-motion={suppressSubsectionMotion}
+  aria-busy={!isMounted}
+>
   <nav class="sidebar-progress__sections" aria-label={navLabel}>
-    {#each config.sections as section}
-      {@const status = getSectionStatus(section.id)}
+    {#each progressSummary.sections as section}
       {@const isExpanded = expandedSections[section.id] ?? false}
       {@const isActive = activeSection === section.id}
-      {@const subsectionIds = config.subsections[section.id] ?? []}
 
-      <div class="section-group" class:section-group--active={isActive}>
+      <section
+        class={`section-group section-group--${section.status}`}
+        class:section-group--active={isActive}
+      >
         <button
           class="section-btn"
           class:section-btn--active={isActive}
           type="button"
           aria-expanded={isExpanded}
-          onclick={() => {
-            onSelectSection?.(section.id);
-            if (!isExpanded) toggleExpand(section.id);
-          }}
+          onclick={() => handleSectionClick(section.id, isExpanded)}
         >
-          <span class="progress-dot {statusClass(status)}" aria-label={statusLabel(status)}></span>
           <span class="section-btn__label">{section.label}</span>
           <span
             class="section-btn__chevron"
@@ -143,29 +112,36 @@
           </span>
         </button>
 
-        {#if isExpanded && subsectionIds.length > 0}
-          <ul class="subsection-list" role="list">
-            {#each subsectionIds as subId}
-              {@const subStatus = getSubsectionStatus(subId, section.id)}
-              <li>
-                <button
-                  class="subsection-btn"
-                  type="button"
-                  onclick={() => onSelectSubsection?.(section.id, subId)}
-                >
-                  <span
-                    class="progress-dot progress-dot--sm {statusClass(subStatus)}"
-                    aria-label={statusLabel(subStatus)}
-                  ></span>
-                  <span class="subsection-btn__label">
-                    {config.subsectionLabels[subId] ?? subId}
-                  </span>
-                </button>
-              </li>
-            {/each}
-          </ul>
+        {#if isExpanded && section.subsections.length > 0}
+          <div
+            class="subsection-list-wrap"
+            in:slide={{ duration: 180, easing: cubicOut }}
+            out:slide={{ duration: 140, easing: cubicOut }}
+          >
+            <ul class="subsection-list" role="list">
+              {#each section.subsections as subsection}
+                {@const isActiveSubsection = isActive && activeSubsection === subsection.id}
+                <li>
+                  <button
+                    class="subsection-btn"
+                    class:subsection-btn--active={isActiveSubsection}
+                    type="button"
+                    aria-current={isActiveSubsection ? 'step' : undefined}
+                    onclick={() => onSelectSubsection?.(section.id, subsection.id)}
+                  >
+                    <span class="subsection-btn__label">{subsection.label}</span>
+                    <span
+                      class="status-pill {statusClass(subsection.status)}"
+                      aria-hidden="true"
+                      title={statusLabel(subsection.status)}
+                    ></span>
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          </div>
         {/if}
-      </div>
+      </section>
     {/each}
   </nav>
 </div>
@@ -174,56 +150,40 @@
   .sidebar-progress {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.14s ease;
   }
 
-  .sidebar-progress__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .sidebar-progress__title {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--color-neutral-700, #525252);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .sidebar-progress__pct {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--color-brand-green, #009a44);
-  }
-
-  .sidebar-progress__bar {
-    height: 5px;
-    border-radius: 999px;
-    background: var(--color-neutral-200, #e0e0e0);
-    overflow: hidden;
-  }
-
-  .sidebar-progress__fill {
-    height: 100%;
-    background: linear-gradient(90deg, #009a44, #11b35a);
-    border-radius: 999px;
-    transition: width 0.3s ease;
+  .sidebar-progress--ready {
+    opacity: 1;
   }
 
   .sidebar-progress__sections {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.35rem;
   }
 
   .section-group {
-    border-radius: 10px;
+    position: relative;
+    border: none;
+    border-radius: 8px;
     overflow: hidden;
+    background: transparent;
+    box-shadow: none;
+    transition:
+      background 0.16s ease,
+      border-color 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .section-group::before {
+    content: none;
   }
 
   .section-group--active {
-    background: var(--color-neutral-100, #f5f5f5);
+    background: transparent;
+    box-shadow: none;
   }
 
   .section-btn {
@@ -231,101 +191,166 @@
     align-items: center;
     gap: 0.625rem;
     width: 100%;
-    padding: 0.625rem 0.75rem;
+    padding: 0.65rem 0.75rem;
     border: none;
-    border-radius: 10px;
-    background: transparent;
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(0, 122, 53, 0.5) 0%, rgba(0, 154, 68, 0.5) 100%);
     cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-neutral-700, #525252);
+    color: rgba(255, 255, 255, 0.9);
     text-align: left;
-    transition: background 0.12s;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease,
+      box-shadow 0.12s ease;
   }
 
-  .section-btn:hover {
-    background: var(--color-neutral-200, #e0e0e0);
+  .section-btn:not(.section-btn--active):hover {
+    background: linear-gradient(90deg, rgba(0, 122, 53, 0.75) 0%, rgba(0, 154, 68, 0.75) 100%);
+    box-shadow: none;
   }
 
   .section-btn--active {
-    color: var(--color-neutral-900, #1a1a1a);
+    background: linear-gradient(
+      90deg,
+      var(--color-brand-green-dark, #007a35) 0%,
+      var(--color-brand-green, #009a44) 100%
+    );
+    color: #ffffff;
+    box-shadow: none;
   }
 
   .section-btn__label {
     flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: currentColor;
   }
 
   .section-btn__chevron {
-    font-size: 0.75rem;
-    color: var(--color-neutral-400, #9e9e9e);
-    transition: transform 0.15s ease;
-    transform: rotate(0deg);
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    font-size: 0;
+    line-height: 0;
+    color: currentColor;
+    transition: transform 0.16s ease;
+    overflow: hidden;
+  }
+
+  .section-btn__chevron::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translate(-8%, -8%);
   }
 
   .section-btn__chevron--open {
     transform: rotate(90deg);
   }
 
-  .progress-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 2px solid var(--color-neutral-300, #d4d4d4);
-    background: transparent;
-    transition:
-      background 0.2s,
-      border-color 0.2s;
-  }
-
-  .progress-dot--sm {
-    width: 10px;
-    height: 10px;
-  }
-
-  .progress-dot--partial {
-    border-color: var(--color-brand-orange, #ff671f);
-    background: var(--color-brand-orange, #ff671f);
-  }
-
-  .progress-dot--complete {
-    border-color: var(--color-brand-green, #009a44);
-    background: var(--color-brand-green, #009a44);
-  }
-
-  .progress-dot--empty {
-    border-color: var(--color-neutral-300, #d4d4d4);
-    background: transparent;
-  }
-
   .subsection-list {
-    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.15rem 0.9rem 0.65rem;
+    background: transparent;
+    border-top: none;
     margin: 0;
-    padding: 0 0 0.375rem 1.4rem;
+    list-style: none;
+  }
+
+  .subsection-list-wrap {
+    overflow: hidden;
+    background: transparent;
   }
 
   .subsection-btn {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: space-between;
+    gap: 0.55rem;
     width: 100%;
-    padding: 0.42rem 0.5rem;
+    padding: 0.45rem 0.5rem 0.45rem 0.65rem;
     border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.82rem;
-    color: var(--color-neutral-600, #616161);
-    text-align: left;
     border-radius: 6px;
-    transition: background 0.12s;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, color-mix(in srgb, var(--color-brand-gray, #aeaeae) 70%, white) 86%, white)
+        0%,
+      color-mix(in srgb, var(--color-brand-gray, #aeaeae) 54%, white) 100%
+    );
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: var(--color-neutral-800, #424242);
+    text-align: left;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease,
+      box-shadow 0.12s ease;
   }
 
-  .subsection-btn:hover {
-    background: var(--color-neutral-200, #e0e0e0);
+  .subsection-btn:not(.subsection-btn--active):hover {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, color-mix(in srgb, var(--color-brand-gray, #aeaeae) 76%, white) 92%, white)
+        0%,
+      color-mix(in srgb, var(--color-brand-gray, #aeaeae) 64%, white) 100%
+    );
+    box-shadow: none;
+  }
+
+  .subsection-btn--active {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-brand-gray, #aeaeae) 84%, #999999) 0%,
+      var(--color-brand-gray, #aeaeae) 100%
+    );
+    color: var(--color-neutral-900, #1a1a1a);
+    box-shadow: 0 1px 2px rgba(66, 66, 66, 0.06);
+  }
+
+  .sidebar-progress--suppress-subsection-motion .subsection-btn {
+    transition: none;
   }
 
   .subsection-btn__label {
-    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: currentColor;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: none;
+  }
+
+  .status-pill--complete {
+    background: color-mix(in srgb, var(--color-brand-green, #009a44) 78%, white);
+  }
+
+  .status-pill--partial {
+    background: color-mix(in srgb, var(--color-brand-orange, #ff671f) 86%, white);
+  }
+
+  .status-pill--empty {
+    background: color-mix(in srgb, var(--color-neutral-600, #616161) 16%, transparent);
   }
 </style>

@@ -28,16 +28,65 @@
     label: string;
     unit: string;
     isBp?: boolean;
+    isSpo2?: boolean;
     placeholder?: string;
+    isSelect?: boolean;
+    options?: { value: string; label: string }[];
   }
+
+  const BP_POSITION_OPTIONS = [
+    { value: '', label: '—' },
+    { value: 'sitting', label: 'Sitting' },
+    { value: 'standing', label: 'Standing' },
+    { value: 'supine', label: 'Supine' },
+    { value: 'left-sidelying', label: 'L Sidelying' },
+  ];
+
+  const O2_SOURCE_OPTIONS = [
+    { value: '', label: '—' },
+    { value: 'room-air', label: 'Room Air' },
+    { value: 'nasal-cannula', label: 'Nasal Cannula' },
+    { value: 'simple-mask', label: 'Simple Mask' },
+    { value: 'non-rebreather', label: 'Non-Rebreather' },
+    { value: 'ventilator', label: 'Ventilator' },
+  ];
 
   const VITAL_ROWS: VitalRow[] = [
     { key: 'bp', label: 'Blood Pressure', unit: 'mmHg', isBp: true },
+    {
+      key: 'bpPosition',
+      label: 'BP Position',
+      unit: '',
+      isSelect: true,
+      options: BP_POSITION_OPTIONS,
+    },
     { key: 'hr', label: 'Heart Rate', unit: 'bpm', placeholder: '72' },
     { key: 'rr', label: 'Resp. Rate', unit: 'br/min', placeholder: '16' },
-    { key: 'spo2', label: 'SpO₂', unit: '%', placeholder: '98' },
+    { key: 'spo2', label: 'SpO₂', unit: '%', isSpo2: true, placeholder: '98' },
+    { key: 'o2Source', label: 'O₂ Source', unit: '', isSelect: true, options: O2_SOURCE_OPTIONS },
+    { key: 'o2Rate', label: 'O₂ Rate', unit: 'L/min', placeholder: '2' },
     { key: 'temperature', label: 'Temperature', unit: '°F', placeholder: '98.6' },
-    { key: 'pain', label: 'Pain (0–10)', unit: '', placeholder: '0' },
+    { key: 'pain', label: 'Pain (0–10)', unit: '', placeholder: 'Current pain' },
+    { key: 'rpe', label: 'RPE (6–20)', unit: 'Borg', placeholder: '13' },
+  ];
+
+  // ── Column Presets ──
+
+  interface ColumnPreset {
+    label: string;
+    value: string;
+    bpPosition?: string;
+  }
+
+  const COLUMN_PRESETS: ColumnPreset[] = [
+    { label: 'Custom', value: '' },
+    { label: 'Pre-Treatment', value: 'Pre-Treatment' },
+    { label: 'Post-Treatment', value: 'Post-Treatment' },
+    { label: 'Orthostatic: Supine', value: 'Orthostatic: Supine', bpPosition: 'supine' },
+    { label: 'Orthostatic: Sitting', value: 'Orthostatic: Sitting', bpPosition: 'sitting' },
+    { label: 'Orthostatic: Standing', value: 'Orthostatic: Standing', bpPosition: 'standing' },
+    { label: 'Peak Exertion', value: 'Peak Exertion' },
+    { label: 'Recovery', value: 'Recovery' },
   ];
 
   // ── Actions ──
@@ -48,6 +97,16 @@
       label: '',
       time: '',
       vitals: {},
+    };
+    onUpdate([...series, entry], entry.id);
+  }
+
+  function addPresetColumn(preset: ColumnPreset) {
+    const entry: VitalsEntry = {
+      id: genId(),
+      label: preset.value,
+      time: '',
+      vitals: preset.bpPosition ? { bpPosition: preset.bpPosition } : {},
     };
     onUpdate([...series, entry], entry.id);
   }
@@ -109,12 +168,25 @@
             </th>
           {/each}
           <th class="ct-th vf-add-th">
-            <button
-              type="button"
-              class="ct-btn-add vf-add-btn"
+            <select
+              class="vf-preset-select"
               aria-label="Add measurement column"
-              onclick={addColumn}>+</button
+              onchange={(e) => {
+                const sel = e.target as HTMLSelectElement;
+                const preset = COLUMN_PRESETS.find((p) => p.value === sel.value);
+                if (preset && preset.value) {
+                  addPresetColumn(preset);
+                } else {
+                  addColumn();
+                }
+                sel.value = '__add__';
+              }}
             >
+              <option value="__add__">+ Add</option>
+              {#each COLUMN_PRESETS as preset}
+                <option value={preset.value}>{preset.label}</option>
+              {/each}
+            </select>
           </th>
         </tr>
       </thead>
@@ -159,11 +231,26 @@
                         )}
                     />
                   </div>
+                {:else if row.isSelect && row.options}
+                  <select
+                    class="ct-select ct-select--dense vf-select"
+                    value={getVital(entry, row.key as keyof VitalsRecord)}
+                    onchange={(e) =>
+                      updateVitalField(
+                        entry.id,
+                        row.key as keyof VitalsRecord,
+                        (e.target as HTMLSelectElement).value,
+                      )}
+                  >
+                    {#each row.options as opt}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
                 {:else}
                   <input
                     class="ct-input vf-input"
                     type="text"
-                    inputmode="numeric"
+                    inputmode={row.isSpo2 ? 'numeric' : 'numeric'}
                     placeholder={row.placeholder ?? ''}
                     value={getVital(entry, row.key as keyof VitalsRecord)}
                     onblur={(e) =>
@@ -275,10 +362,16 @@
     text-align: center;
   }
 
-  /* Size override: ct-btn-add is 1.75rem, this component uses 2rem */
-  .vf-add-btn {
-    width: 1.75rem;
-    height: 1.75rem;
+  .vf-preset-select {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.2rem 0.25rem;
+    border: 1px solid var(--color-neutral-300, #d4d4d4);
+    border-radius: 4px;
+    background: var(--color-surface, #ffffff);
+    color: var(--color-brand-green, #009a44);
+    cursor: pointer;
+    min-width: 3.5rem;
   }
 
   /* ─── Body ─── */
@@ -325,12 +418,21 @@
     max-width: 46px;
   }
 
+  .vf-select {
+    width: 100%;
+    max-width: 120px;
+    margin: 0 auto;
+  }
+
   /* BP split pair */
   .vf-bp {
-    display: flex;
+    display: inline-grid;
+    grid-template-columns: 2.875rem auto 2.875rem;
     align-items: center;
     justify-content: center;
-    gap: 0.1875rem;
+    gap: 0.125rem;
+    width: auto;
+    margin: 0 auto;
   }
 
   .vf-bp-slash {
@@ -338,6 +440,7 @@
     color: var(--color-neutral-500, #757575);
     font-size: 0.9375rem;
     flex-shrink: 0;
+    line-height: 1;
   }
 
   .vf-add-spacer {

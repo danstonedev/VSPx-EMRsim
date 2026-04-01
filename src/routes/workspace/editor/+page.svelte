@@ -3,7 +3,9 @@
   Ported from app/js/views/pt_workspace_v2.js
 -->
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, setContext } from 'svelte';
+  import { cubicOut } from 'svelte/easing';
+  import { fade, fly } from 'svelte/transition';
   import { get } from 'svelte/store';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -37,6 +39,12 @@
   import { ptDisciplineConfig } from '$lib/config/ptDisciplineConfig';
   import { dieteticsDisciplineConfig } from '$lib/config/dieteticsDisciplineConfig';
   import { hasAnyContent, type DisciplineProgressConfig } from '$lib/config/progressUtils';
+  import {
+    findTemplate,
+    type SettingId,
+    type VisitTypeId,
+    type ResolvedNoteTemplate,
+  } from '$lib/config/templates';
   import { activeCase, loadActiveCase, clearActiveCase } from '$lib/stores/cases';
   import { activeChartTab, isPanelOpen, closePanel, openTab } from '$lib/stores/ui';
   import {
@@ -74,7 +82,18 @@
   import { resolveCasePatient } from '$lib/stores/vspRegistry';
   import type { VspRecord } from '$lib/services/vspRegistry';
 
+  /** Short discipline labels for display. */
+  const PROFESSIONS_MAP: Record<string, string> = {
+    pt: 'PT',
+    ot: 'OT',
+    slp: 'SLP',
+    nursing: 'Nursing',
+    dietetics: 'Dietetics',
+  };
+
   let activeSection = $state('subjective');
+  let activeSubsection = $state<string | null>(null);
+  let suppressSidebarSubsectionMotion = $state(false);
   let caseLoaded = $state(false);
   let loadError = $state('');
 
@@ -93,6 +112,8 @@
 
   // Amendment state — tracks whether we're amending a previously signed note
   let amendingFromNote = $state<NoteEnvelope | null>(null);
+  let pendingSubsectionScrollTarget = $state<string | null>(null);
+  let pendingSubsectionReleaseTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Load case from URL params
   onMount(() => {
@@ -138,6 +159,7 @@
   });
 
   onDestroy(() => {
+    clearPendingSubsectionScroll();
     if ($isDirty) saveDraftNow();
     clearDraft();
     clearActiveCase();
@@ -162,27 +184,89 @@
     return checkEligibility(wrapper);
   });
 
-  const editorMode = $derived.by(() => {
-    const raw =
-      caseObj?.meta?.profession ??
-      caseObj?.meta?.discipline ??
-      caseObj?.discipline ??
-      $page.url.searchParams.get('discipline') ??
-      $userDiscipline;
-    return String(raw).toLowerCase().includes('diet') ? 'dietetics' : 'pt';
+  const editorMode = $derived.by((): string => {
+    const raw = String(
+      caseObj?.meta?.professionId ??
+        caseObj?.meta?.profession ??
+        caseObj?.meta?.discipline ??
+        caseObj?.discipline ??
+        $page.url.searchParams.get('discipline') ??
+        $userDiscipline ??
+        'pt',
+    ).toLowerCase();
+    if (raw.includes('diet')) return 'dietetics';
+    if (raw === 'ot' || raw.includes('occupational')) return 'ot';
+    if (raw === 'slp' || raw.includes('speech')) return 'slp';
+    if (raw === 'nursing' || raw.includes('nurs')) return 'nursing';
+    return 'pt';
   });
+
+  // ─── Note template resolution ──────────────────────────────────────────
+  // Maps existing encounter/setting strings to the template system's typed IDs.
+
+  const ENCOUNTER_TO_VISIT_TYPE: Record<string, VisitTypeId> = {
+    eval: 'initial-eval',
+    followup: 'follow-up',
+    soap: 'daily-note',
+    discharge: 'discharge-summary',
+    nutrition: 'initial-eval',
+  };
+
+  const SETTING_MAP: Record<string, SettingId> = {
+    outpatient: 'outpatient',
+    inpatient: 'inpatient-acute',
+    'inpatient acute': 'inpatient-acute',
+    'inpatient-acute': 'inpatient-acute',
+    'acute rehab': 'inpatient-rehab',
+    'inpatient rehab': 'inpatient-rehab',
+    'inpatient-rehab': 'inpatient-rehab',
+    irf: 'inpatient-rehab',
+    snf: 'snf',
+    'skilled nursing': 'snf',
+    'home health': 'home-health',
+    'home-health': 'home-health',
+    pediatric: 'pediatric',
+    'acute care': 'acute-care',
+    'acute-care': 'acute-care',
+  };
+
+  const resolvedTemplate = $derived.by((): ResolvedNoteTemplate | null => {
+    // Prefer the discipline stored with the case (professionId) over the user's global discipline
+    const discipline = (editorMode as import('$lib/stores/auth').DisciplineId) ?? $userDiscipline;
+    const rawSetting = (caseObj?.meta?.setting ?? '').toString().toLowerCase();
+    const setting = SETTING_MAP[rawSetting] ?? null;
+    const encounter = $activeCase.encounter ?? 'eval';
+    const visitType = ENCOUNTER_TO_VISIT_TYPE[encounter] ?? null;
+    return findTemplate(discipline, setting, visitType);
+  });
+
+  // Set template into Svelte context for section components.
+  // setContext must be called synchronously during init, so we pass a getter
+  // that always returns the current resolved template.
+  setContext('noteTemplate', () => resolvedTemplate);
+
   const noteTypeLabel = $derived.by(() => {
+    // If we have a resolved template, use its label directly
+    if (resolvedTemplate?.label) return resolvedTemplate.label;
+
+    // Fallback for cases without template resolution
     const encounter = $activeCase.encounter ?? '';
+    const profLabel = PROFESSIONS_MAP[editorMode] ?? editorMode.toUpperCase();
     if (editorMode === 'dietetics') {
       if (encounter === 'nutrition') return 'Dietetics ADIME';
       if (encounter === 'followup') return 'Dietetics Follow-Up';
       return 'Dietetics Note';
     }
-    if (encounter === 'eval') return 'PT Initial Evaluation';
-    if (encounter === 'followup') return 'PT Follow-Up';
-    if (encounter === 'soap') return 'PT SOAP Progress Note';
-    if (encounter === 'discharge') return 'PT Discharge Summary';
+    if (encounter === 'eval') return `${profLabel} Initial Evaluation`;
+    if (encounter === 'followup') return `${profLabel} Follow-Up`;
+    if (encounter === 'soap') return `${profLabel} SOAP Progress Note`;
+    if (encounter === 'discharge') return `${profLabel} Discharge Summary`;
     return 'Clinical Note';
+  });
+  const currentSectionLabel = $derived.by(() => {
+    const sectionConfig =
+      editorMode === 'dietetics' ? dieteticsDisciplineConfig.sections : ptDisciplineConfig.sections;
+    return sectionConfig.find((section) => section.id === activeSection)?.label ?? activeSection;
   });
 
   // ─── Panel data ───────────────────────────────────────────────────────────
@@ -269,16 +353,139 @@
     goto('/workspace/cases');
   }
 
+  function getEditorScrollRoot(): HTMLElement | null {
+    return document.querySelector('.note-editor__body');
+  }
+
+  function clearPendingSubsectionScroll() {
+    pendingSubsectionScrollTarget = null;
+    suppressSidebarSubsectionMotion = false;
+    if (pendingSubsectionReleaseTimer) {
+      clearTimeout(pendingSubsectionReleaseTimer);
+      pendingSubsectionReleaseTimer = null;
+    }
+  }
+
+  function schedulePendingSubsectionRelease(delay = 160) {
+    if (pendingSubsectionReleaseTimer) clearTimeout(pendingSubsectionReleaseTimer);
+    pendingSubsectionReleaseTimer = setTimeout(() => {
+      pendingSubsectionReleaseTimer = null;
+      pendingSubsectionScrollTarget = null;
+      suppressSidebarSubsectionMotion = false;
+    }, delay);
+  }
+
+  function isPendingSubsectionInView(scrollRoot: HTMLElement, subsectionId: string): boolean {
+    const target = scrollRoot.querySelector<HTMLElement>(`[data-subsection="${subsectionId}"]`);
+    if (!target) return true;
+
+    const rootTop = scrollRoot.getBoundingClientRect().top;
+    const targetTop = target.getBoundingClientRect().top;
+    return Math.abs(targetTop - rootTop) <= 24;
+  }
+
+  function getClosestVisibleSubsectionId(scrollRoot: HTMLElement): string | null {
+    const subsectionEls = [...scrollRoot.querySelectorAll<HTMLElement>('[data-subsection]')];
+    if (subsectionEls.length === 0) return null;
+
+    const rootTop = scrollRoot.getBoundingClientRect().top;
+    let closestSubsectionId: string | null = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    for (const subsectionEl of subsectionEls) {
+      const subsectionId = subsectionEl.dataset.subsection;
+      if (!subsectionId) continue;
+
+      const distanceFromFocusLine = Math.abs(
+        subsectionEl.getBoundingClientRect().top - rootTop - 112,
+      );
+
+      if (distanceFromFocusLine < closestDistance) {
+        closestDistance = distanceFromFocusLine;
+        closestSubsectionId = subsectionId;
+      }
+    }
+
+    return closestSubsectionId;
+  }
+
+  function syncActiveSubsectionFromScroll() {
+    const scrollRoot = getEditorScrollRoot();
+    if (!scrollRoot) return;
+
+    if (pendingSubsectionScrollTarget) {
+      if (isPendingSubsectionInView(scrollRoot, pendingSubsectionScrollTarget)) {
+        activeSubsection = pendingSubsectionScrollTarget;
+        schedulePendingSubsectionRelease();
+      }
+      return;
+    }
+
+    const closestSubsectionId = getClosestVisibleSubsectionId(scrollRoot);
+    if (closestSubsectionId !== activeSubsection) {
+      activeSubsection = closestSubsectionId;
+    }
+  }
+
+  $effect(() => {
+    if (!caseLoaded) return;
+
+    activeSection;
+
+    const scrollRoot = getEditorScrollRoot();
+    if (!scrollRoot) return;
+
+    let frameId = 0;
+    const scheduleSync = () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        frameId = 0;
+        syncActiveSubsectionFromScroll();
+      });
+    };
+
+    scheduleSync();
+    scrollRoot.addEventListener('scroll', scheduleSync, { passive: true });
+    window.addEventListener('resize', scheduleSync);
+
+    const observer = new MutationObserver(scheduleSync);
+    observer.observe(scrollRoot, { childList: true, subtree: true });
+
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      observer.disconnect();
+      scrollRoot.removeEventListener('scroll', scheduleSync);
+      window.removeEventListener('resize', scheduleSync);
+    };
+  });
+
   function selectSection(sectionId: string) {
+    clearPendingSubsectionScroll();
     activeSection = sectionId;
+    activeSubsection = null;
+
+    requestAnimationFrame(() => {
+      getEditorScrollRoot()?.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }
 
   function selectSubsection(sectionId: string, subId: string) {
     activeSection = sectionId;
+    activeSubsection = subId;
+    pendingSubsectionScrollTarget = subId;
+    suppressSidebarSubsectionMotion = true;
+    schedulePendingSubsectionRelease(1200);
     // Scroll to subsection after section renders
     requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-subsection="${subId}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const scrollRoot = getEditorScrollRoot();
+      const el = scrollRoot?.querySelector<HTMLElement>(`[data-subsection="${subId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      clearPendingSubsectionScroll();
+      scrollRoot?.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 
@@ -579,8 +786,10 @@
         type: 'success',
         timeout: 3500,
       });
-    } catch {
-      showToast('Signing/export failed. Please try again.', { type: 'error' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[handleSign] export failed:', err);
+      showToast(`Signing/export failed: ${msg}`, { type: 'error', timeout: 12000 });
     } finally {
       isSigning = false;
     }
@@ -651,8 +860,10 @@
         });
         return;
       }
-    } catch {
-      showToast('Export failed. Please try again.', { type: 'error' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[handleExport] export failed:', err);
+      showToast(`Export failed: ${msg}`, { type: 'error', timeout: 12000 });
     } finally {
       isExporting = false;
     }
@@ -723,6 +934,8 @@
         {:else if $activeChartTab === 'current-note'}
           <SidebarProgressTracker
             {activeSection}
+            {activeSubsection}
+            suppressSubsectionMotion={suppressSidebarSubsectionMotion}
             mode={editorMode}
             onSelectSection={selectSection}
             onSelectSubsection={selectSubsection}
@@ -785,7 +998,8 @@
             <span class="note-locked-banner__icon">&#x2714;</span>
             <div class="note-locked-banner__text">
               <strong>Note Signed &amp; Locked</strong>
-              <span>This note has been signed and exported. Open My Notes to view or amend it.</span
+              <span
+                >This note has been signed and exported. Open Note History to view or amend it.</span
               >
             </div>
           </div>
@@ -801,29 +1015,43 @@
         {/if}
         <div class="note-editor" class:note-editor--locked={isNoteLocked}>
           <div class="note-editor__body" tabindex="-1">
-            {#if editorMode === 'dietetics'}
-              {#if activeSection === 'nutrition-assessment'}
-                <NutritionAssessmentSection />
-              {:else if activeSection === 'nutrition-diagnosis'}
-                <NutritionDiagnosisSection />
-              {:else if activeSection === 'nutrition-intervention'}
-                <NutritionInterventionSection />
-              {:else if activeSection === 'nutrition-monitoring'}
-                <NutritionMonitoringSection />
-              {:else if activeSection === 'billing'}
-                <DieteticsBillingSection />
-              {/if}
-            {:else if activeSection === 'subjective'}
-              <SubjectiveSection />
-            {:else if activeSection === 'objective'}
-              <ObjectiveSection />
-            {:else if activeSection === 'assessment'}
-              <AssessmentSection />
-            {:else if activeSection === 'plan'}
-              <PlanSection />
-            {:else if activeSection === 'billing'}
-              <BillingSection />
-            {/if}
+            <div class="note-editor__section-header" aria-live="polite">
+              <h2 class="note-editor__section-title">{currentSectionLabel}</h2>
+            </div>
+
+            <div class="note-editor__content">
+              {#key `${editorMode}:${activeSection}`}
+                <div
+                  class="note-editor__content-pane"
+                  in:fly={{ y: 8, duration: 180, opacity: 0.18, easing: cubicOut }}
+                  out:fade={{ duration: 110 }}
+                >
+                  {#if editorMode === 'dietetics'}
+                    {#if activeSection === 'nutrition-assessment'}
+                      <NutritionAssessmentSection />
+                    {:else if activeSection === 'nutrition-diagnosis'}
+                      <NutritionDiagnosisSection />
+                    {:else if activeSection === 'nutrition-intervention'}
+                      <NutritionInterventionSection />
+                    {:else if activeSection === 'nutrition-monitoring'}
+                      <NutritionMonitoringSection />
+                    {:else if activeSection === 'billing'}
+                      <DieteticsBillingSection />
+                    {/if}
+                  {:else if activeSection === 'subjective'}
+                    <SubjectiveSection />
+                  {:else if activeSection === 'objective'}
+                    <ObjectiveSection />
+                  {:else if activeSection === 'assessment'}
+                    <AssessmentSection />
+                  {:else if activeSection === 'plan'}
+                    <PlanSection />
+                  {:else if activeSection === 'billing'}
+                    <BillingSection />
+                  {/if}
+                </div>
+              {/key}
+            </div>
           </div>
         </div>
       </div>
@@ -897,14 +1125,57 @@
   }
 
   .note-editor__body {
+    --editor-body-pad-top: 1.25rem;
+    --editor-body-pad-x: 1.5rem;
+    --editor-body-pad-bottom: 1.75rem;
     flex: 1;
     min-height: 0;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 252, 252, 1));
     border-radius: 0;
-    padding: 1.25rem 1.5rem 1.75rem;
+    padding: var(--editor-body-pad-top) var(--editor-body-pad-x) var(--editor-body-pad-bottom);
     overflow-y: auto;
     overscroll-behavior: contain;
     box-shadow: none;
+  }
+
+  .note-editor__section-header {
+    position: sticky;
+    top: calc(var(--editor-body-pad-top) * -1);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+    margin: calc(var(--editor-body-pad-top) * -1) calc(var(--editor-body-pad-x) * -1) 0.7rem;
+    padding: 0.55rem var(--editor-body-pad-x) 0.5rem;
+    background: linear-gradient(
+      90deg,
+      var(--color-brand-green-dark, #007a35) 0%,
+      var(--color-brand-green, #009a44) 100%
+    );
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow:
+      0 2px 8px rgba(0, 154, 68, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .note-editor__section-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+
+  .note-editor__content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .note-editor__content-pane {
+    min-width: 0;
+    will-change: transform, opacity;
   }
 
   .btn--primary {
@@ -1004,7 +1275,7 @@
     }
 
     .note-editor__body {
-      padding-inline: 1rem;
+      --editor-body-pad-x: 1rem;
     }
 
     .note-editor {

@@ -18,6 +18,19 @@ import { saveSignedNote, type NoteEnvelope } from '$lib/services/chartRecords';
 import { finalizeDraftSignature, type NoteData, type Signature } from '$lib/services/noteLifecycle';
 import { refreshChartRecords } from '$lib/stores/chartRecords';
 import { normalizeStandardizedAssessments } from '$lib/config/standardizedAssessments';
+import {
+  buildRobertCastellanoPtDemoDraft,
+  isRobertCastellanoDemoPatient,
+} from '$lib/config/demoPtNote';
+import { MED_DB } from '$lib/config/medicationDb';
+import type { MedicationRecord } from '$lib/types/sections';
+import {
+  allergySummary,
+  computeAge,
+  normalizeSex,
+  resolvePatient,
+} from '$lib/services/vspRegistry';
+import type { CaseObj } from '$lib/store';
 import type {
   SubjectiveData,
   ObjectiveData,
@@ -79,9 +92,189 @@ export const isDirty = writable(false);
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * Initialize the note draft from the active case.
- * Merges case encounter seed data with any existing draft.
+ * Look up a medication name in the built-in DB to get its class and clinical alerts.
  */
+function lookupMedDb(name: string): { class: string; alerts: MedicationRecord['alerts'] } {
+  const lower = name.toLowerCase();
+  const match = MED_DB.find(
+    (m) => m.name.toLowerCase() === lower || m.brand.toLowerCase() === lower,
+  );
+  return match ? { class: match.class, alerts: [...match.alerts] } : { class: '', alerts: [] };
+}
+
+/**
+ * Seed structured MedicationRecord[] from the VSP patient record or case history.
+ * Only called when the draft has no medications yet (first load).
+ */
+function seedMedications(caseObj: Record<string, unknown> | undefined): MedicationRecord[] {
+  // Try VSP patient first
+  const vspPatient = resolvePatient(caseObj as CaseObj | undefined);
+  if (vspPatient?.activeMedications?.length) {
+    return vspPatient.activeMedications.map((m) => {
+      const db = lookupMedDb(m.name);
+      return {
+        name: m.name,
+        dose: m.dose ?? '',
+        frequency: m.frequency ?? '',
+        class: db.class,
+        alerts: db.alerts,
+      };
+    });
+  }
+
+  // Fall back to case history strings (e.g. "Lisinopril 10mg QD")
+  const history = (caseObj as Record<string, unknown>)?.history as
+    | Record<string, unknown>
+    | undefined;
+  const historyMeds = (history?.meds as string[] | undefined) ?? [];
+  if (historyMeds.length > 0) {
+    return historyMeds.map((text) => {
+      // Try to extract drug name (first word) for DB lookup
+      const firstName = text.split(/\s+/)[0] ?? text;
+      const db = lookupMedDb(firstName);
+      return {
+        name: text,
+        dose: '',
+        frequency: '',
+        class: db.class,
+        alerts: db.alerts,
+        custom: db.class === '',
+      };
+    });
+  }
+
+  return [];
+}
+
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => (typeof entry === 'string' ? entry.trim() : '')).filter(Boolean);
+}
+
+function buildAgeSexLead(caseObj: CaseObj | undefined): string {
+  const age =
+    asString((caseObj as Record<string, unknown> | undefined)?.patientAge) ||
+    asString((caseObj?.meta as Record<string, unknown> | undefined)?.age);
+  const sex = normalizeSex(
+    asString((caseObj as Record<string, unknown> | undefined)?.patientGender) ||
+      asString((caseObj?.meta as Record<string, unknown> | undefined)?.sex),
+  );
+  const sexLabel = sex && sex !== 'unspecified' ? sex : '';
+  if (age && sexLabel) return `${age}-year-old ${sexLabel}`;
+  if (age) return `${age}-year-old patient`;
+  if (sexLabel) return `${sexLabel} patient`;
+  return 'Patient';
+}
+
+function buildChiefComplaint(
+  caseObj: CaseObj | undefined,
+  vspPatient: ReturnType<typeof resolvePatient>,
+): string {
+  const history = (caseObj as Record<string, unknown> | undefined)?.history as
+    | Record<string, unknown>
+    | undefined;
+  const explicitComplaint = asString(history?.chief_complaint);
+  if (explicitComplaint) return explicitComplaint;
+
+  const candidateDiagnoses = [
+    asString((caseObj as Record<string, unknown> | undefined)?.diagnosis),
+    asString((caseObj?.meta as Record<string, unknown> | undefined)?.diagnosis),
+    ...asStringArray(history?.pmh),
+    ...((vspPatient?.medicalHistory ?? [])
+      .map((entry) => entry.trim())
+      .filter(Boolean) as string[]),
+  ].filter(Boolean);
+
+  if (candidateDiagnoses.length === 0) return '';
+  return `Evaluation related to ${candidateDiagnoses[0]}`;
+}
+
+function buildAdditionalHistory(
+  caseObj: CaseObj | undefined,
+  vspPatient: ReturnType<typeof resolvePatient>,
+): string {
+  const history = (caseObj as Record<string, unknown> | undefined)?.history as
+    | Record<string, unknown>
+    | undefined;
+  const diagnoses = [
+    ...asStringArray(history?.pmh),
+    ...((vspPatient?.medicalHistory ?? [])
+      .map((entry) => entry.trim())
+      .filter(Boolean) as string[]),
+  ];
+  const surgeries = (vspPatient?.surgicalHistory ?? [])
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const allergies = allergySummary(vspPatient);
+  const parts: string[] = [];
+
+  if (diagnoses.length) parts.push(`PMH: ${diagnoses.join('; ')}`);
+  if (surgeries.length) parts.push(`Surgical history: ${surgeries.join('; ')}`);
+  if (allergies && allergies !== 'NKDA') parts.push(`Allergies: ${allergies}`);
+  if (vspPatient?.primaryCareProvider) parts.push(`PCP: ${vspPatient.primaryCareProvider}`);
+
+  return parts.join(' | ');
+}
+
+function seedSubjectiveFromCaseContext(
+  subjective: SubjectiveData,
+  caseObj: CaseObj | undefined,
+): SubjectiveData {
+  const seeded = { ...subjective };
+  const history = (caseObj as Record<string, unknown> | undefined)?.history as
+    | Record<string, unknown>
+    | undefined;
+  const vspPatient = resolvePatient(caseObj);
+
+  if (vspPatient) {
+    if (!seeded.patientName) {
+      seeded.patientName =
+        asString((caseObj as Record<string, unknown> | undefined)?.patientName) ||
+        asString((caseObj?.meta as Record<string, unknown> | undefined)?.patientName);
+    }
+    if (!seeded.patientBirthday) seeded.patientBirthday = vspPatient.dob || '';
+    if (!seeded.patientAge) {
+      const age = computeAge(vspPatient.dob);
+      seeded.patientAge = age != null ? String(age) : '';
+    }
+    if (!seeded.patientGender) seeded.patientGender = normalizeSex(vspPatient.sex) || '';
+    if (!seeded.patientGenderIdentityPronouns)
+      seeded.patientGenderIdentityPronouns = vspPatient.pronouns || '';
+    if (!seeded.patientPreferredLanguage)
+      seeded.patientPreferredLanguage = vspPatient.preferredLanguage || 'English';
+    if (!seeded.patientInterpreterNeeded)
+      seeded.patientInterpreterNeeded = vspPatient.interpreterNeeded ? 'yes' : 'no';
+    if (!seeded.patientHeightFt) seeded.patientHeightFt = vspPatient.heightFt || '';
+    if (!seeded.patientHeightIn) seeded.patientHeightIn = vspPatient.heightIn || '';
+    if (!seeded.patientWeight) seeded.patientWeight = vspPatient.weightLbs || '';
+    if (!seeded.__vspId) seeded.__vspId = vspPatient.id;
+  }
+
+  if (!seeded.chiefComplaint) {
+    seeded.chiefComplaint = buildChiefComplaint(caseObj, vspPatient);
+  }
+
+  if (!seeded.historyOfPresentIllness) {
+    const explicitHpi = asString(history?.hpi);
+    if (explicitHpi) {
+      seeded.historyOfPresentIllness = explicitHpi;
+    } else if (seeded.chiefComplaint) {
+      const lead = buildAgeSexLead(caseObj);
+      seeded.historyOfPresentIllness = `${lead} presents for PT evaluation related to ${seeded.chiefComplaint.toLowerCase()}.`;
+    }
+  }
+
+  if (!seeded.additionalHistory) {
+    seeded.additionalHistory = buildAdditionalHistory(caseObj, vspPatient);
+  }
+
+  return seeded;
+}
+
 export function initDraft(): void {
   const state = get(activeCase);
   const caseObj = state.caseWrapper?.caseObj;
@@ -97,22 +290,55 @@ export function initDraft(): void {
 
   // Merge: existing draft takes priority over seed data
   const existingDraft = (state.draft ?? {}) as Partial<NoteDraft>;
+  const vspPatient = resolvePatient(caseObj as CaseObj | undefined);
+  const demoPtDraft =
+    encounter === 'eval' && vspPatient && isRobertCastellanoDemoPatient(vspPatient)
+      ? buildRobertCastellanoPtDemoDraft(vspPatient)
+      : null;
+
+  const mergedSubjective = seedSubjectiveFromCaseContext(
+    {
+      ...(demoPtDraft?.subjective ?? {}),
+      ...(seed.subjective ?? {}),
+      ...(existingDraft.subjective ?? {}),
+    } as SubjectiveData,
+    caseObj as CaseObj | undefined,
+  );
+
+  // Seed medications from VSP/case history if not already in the draft
+  const existingMeds = (mergedSubjective as SubjectiveData).medications;
+  if (!Array.isArray(existingMeds) || existingMeds.length === 0) {
+    const seeded = seedMedications(caseObj as Record<string, unknown> | undefined);
+    if (seeded.length > 0) {
+      (mergedSubjective as SubjectiveData).medications = seeded;
+    }
+  }
 
   noteDraft.set({
-    subjective: { ...(seed.subjective ?? {}), ...(existingDraft.subjective ?? {}) },
+    subjective: mergedSubjective as SubjectiveData,
     objective: {
+      ...(demoPtDraft?.objective ?? {}),
       ...(seed.objective ?? {}),
       ...(existingDraft.objective ?? {}),
       standardizedAssessments: normalizeStandardizedAssessments(
         ((existingDraft.objective as Record<string, unknown> | undefined)
           ?.standardizedAssessments ??
           (seed.objective as Record<string, unknown> | undefined)?.standardizedAssessments ??
+          demoPtDraft?.objective.standardizedAssessments ??
           []) as unknown[],
       ),
     },
-    assessment: { ...(seed.assessment ?? {}), ...(existingDraft.assessment ?? {}) },
-    plan: { ...(seed.plan ?? {}), ...(existingDraft.plan ?? {}) },
-    billing: { ...(seed.billing ?? {}), ...(existingDraft.billing ?? {}) },
+    assessment: {
+      ...(demoPtDraft?.assessment ?? {}),
+      ...(seed.assessment ?? {}),
+      ...(existingDraft.assessment ?? {}),
+    },
+    plan: { ...(demoPtDraft?.plan ?? {}), ...(seed.plan ?? {}), ...(existingDraft.plan ?? {}) },
+    billing: {
+      ...(demoPtDraft?.billing ?? {}),
+      ...(seed.billing ?? {}),
+      ...(existingDraft.billing ?? {}),
+    },
   });
   isDirty.set(false);
 }

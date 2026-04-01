@@ -845,7 +845,7 @@ function handleBlankCaseRequest(caseId, isFacultyMode) {
       }
       if (meta.sex) patientSex = meta.sex;
     }
-  } catch (_) {
+  } catch {
     /* ignore parse errors */
   }
   const placeholder = {

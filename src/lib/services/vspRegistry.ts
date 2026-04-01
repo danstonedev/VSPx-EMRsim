@@ -544,10 +544,12 @@ export function searchPatients(query: string, limit = 25): VspRecord[] {
 
   const scored = patients
     .map((patient) => {
+      const diagnoses = (patient.medicalHistory ?? []).filter(Boolean);
       const haystack = [
         displayName(patient),
         patient.preferredName,
         patient.mrn,
+        ...diagnoses,
         patient.phone,
         patient.email,
       ]
@@ -559,6 +561,7 @@ export function searchPatients(query: string, limit = 25): VspRecord[] {
       if (displayName(patient).toLowerCase().startsWith(normalized)) score += 5;
       if ((patient.preferredName || '').toLowerCase().startsWith(normalized)) score += 4;
       if ((patient.mrn || '').toLowerCase().startsWith(normalized)) score += 4;
+      if (diagnoses.some((diagnosis) => diagnosis.toLowerCase().startsWith(normalized))) score += 4;
       if (haystack.includes(normalized)) score += 2;
 
       return { patient, score };

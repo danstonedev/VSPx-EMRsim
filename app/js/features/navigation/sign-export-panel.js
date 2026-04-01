@@ -111,7 +111,7 @@ export function render(container, options = {}) {
         if (typeof window.saveDraft === 'function') {
           try {
             window.saveDraft();
-          } catch (_) {
+          } catch {
             /* best-effort */
           }
         }

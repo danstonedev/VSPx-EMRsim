@@ -8,7 +8,7 @@ import {
   getNeuroscreenRegions,
 } from './CombinedNeuroscreenSection.js';
 import { el } from '../../../ui/utils.js';
-import { buildSystemsReview, isSubcatImpaired, isGateOpen } from './SystemsReview.js';
+import { buildSystemsReview, isSubcatImpaired } from './SystemsReview.js';
 import {
   buildTonePanel,
   buildCoordinationPanel,
@@ -402,14 +402,11 @@ export function createObjectiveSection(objectiveData, onUpdate) {
     },
     {
       id: 'standardized-functional',
-      title: 'Standardized Functional Assessment',
+      title: 'Standardized Functional Assessments',
       children: [
         {
           gateId: 'sfa-assessments',
-          check: () =>
-            isGateOpen(data.systemsReview, 'standardizedFunctional') ||
-            (Array.isArray(data.standardizedAssessments) &&
-              data.standardizedAssessments.length > 0),
+          check: () => true,
           build: () =>
             createStandardizedAssessmentsPanel(data.standardizedAssessments || [], (u) =>
               updateField('standardizedAssessments', u),
@@ -736,28 +733,32 @@ function buildVitalsSection(objectiveData, onChange) {
     {
       label: 'Blood Pressure',
       render: (entry) =>
-        el('div', { class: 'combined-neuroscreen-input-group vitals-cell-group' }, [
-          el('input', {
-            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-            placeholder: 'Sys',
-            value: entry.vitals.bpSystolic || '',
-            onfocus: () => {
-              activeEntryId = entry.id;
-            },
-            onblur: (e) => updateVitalField(entry.id, 'bpSystolic', e.target.value),
-          }),
-          el('span', { class: 'text-muted fw-bold' }, '/'),
-          el('input', {
-            class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
-            placeholder: 'Dia',
-            value: entry.vitals.bpDiastolic || '',
-            onfocus: () => {
-              activeEntryId = entry.id;
-            },
-            onblur: (e) => updateVitalField(entry.id, 'bpDiastolic', e.target.value),
-          }),
-          el('span', { class: 'text-muted' }, 'mmHg'),
-        ]),
+        el(
+          'div',
+          { class: 'combined-neuroscreen-input-group vitals-cell-group vitals-cell-group--bp' },
+          [
+            el('input', {
+              class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+              placeholder: 'Sys',
+              value: entry.vitals.bpSystolic || '',
+              onfocus: () => {
+                activeEntryId = entry.id;
+              },
+              onblur: (e) => updateVitalField(entry.id, 'bpSystolic', e.target.value),
+            }),
+            el('span', { class: 'text-muted fw-bold' }, '/'),
+            el('input', {
+              class: 'combined-neuroscreen__input combined-neuroscreen__input--sm',
+              placeholder: 'Dia',
+              value: entry.vitals.bpDiastolic || '',
+              onfocus: () => {
+                activeEntryId = entry.id;
+              },
+              onblur: (e) => updateVitalField(entry.id, 'bpDiastolic', e.target.value),
+            }),
+            el('span', { class: 'text-muted' }, 'mmHg'),
+          ],
+        ),
     },
     {
       label: 'Heart Rate',

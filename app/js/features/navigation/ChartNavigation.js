@@ -2719,16 +2719,16 @@ export function createChartNavigation(config) {
 
           tabIndex: 0,
 
-          'aria-label': 'Case File',
+          'aria-label': 'Shared Case File',
 
           'aria-expanded': String(!caseFileCollapsed),
 
           'aria-controls': 'artifact-block',
 
-          title: 'Toggle Case File',
+          title: 'Toggle Shared Case File',
         },
 
-        'Case File',
+        'Shared Case File',
       ),
     ],
   );

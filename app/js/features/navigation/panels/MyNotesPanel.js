@@ -188,7 +188,7 @@ export function renderMyNotes(container, caseObj, caseId) {
         el('p', { class: 'my-notes__empty-icon' }, ['\u{1F4DD}']),
         el('p', { class: 'my-notes__empty-text' }, ['No notes yet for this case.']),
         el('p', { class: 'my-notes__empty-hint' }, [
-          'Notes appear here once you start documenting in the Current Note tab.',
+          'Notes appear here once you start documenting in the Note Guide tab.',
         ]),
       ]),
     );
@@ -299,7 +299,7 @@ export function renderMyNotes(container, caseObj, caseId) {
 
   container.appendChild(
     el('div', { class: 'my-notes' }, [
-      el('h3', { class: 'my-notes__heading' }, ['My Notes']),
+      el('h3', { class: 'my-notes__heading' }, ['Note History']),
       list,
     ]),
   );
@@ -394,7 +394,7 @@ function beginAmendment(storageKey, data, noteTarget, caseObj, container, caseId
 
       try {
         storage.setItem(storageKey, JSON.stringify(data));
-      } catch (_) {
+      } catch {
         /* best-effort */
       }
 
@@ -437,7 +437,7 @@ function beginAmendment(storageKey, data, noteTarget, caseObj, container, caseId
         delete data.meta.amendingFrom;
         try {
           storage.setItem(storageKey, JSON.stringify(data));
-        } catch (_) {
+        } catch {
           /* best-effort */
         }
         if (isCurrentTarget && window.currentDraft) {

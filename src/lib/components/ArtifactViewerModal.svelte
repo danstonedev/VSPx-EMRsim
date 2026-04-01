@@ -41,6 +41,14 @@
     if (e.key === 'Escape') close();
   }
 
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      close();
+    }
+  }
+
   function formatDate(dateStr: string): string {
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
@@ -60,9 +68,13 @@
   {@const art = cfg.artifact}
   <div
     class="av-overlay"
+    role="button"
+    tabindex="0"
+    aria-label="Close document viewer"
     onclick={(e) => {
       if (e.target === e.currentTarget) close();
     }}
+    onkeydown={handleOverlayKeydown}
   >
     <div class="av-modal" role="dialog" aria-modal="true" aria-labelledby="av-title">
       <div class="av-header">

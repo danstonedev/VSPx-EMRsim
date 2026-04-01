@@ -7,6 +7,7 @@
   import { noteDraft, updateField } from '$lib/stores/noteSession';
   import type { SubjectiveData, QAPair, MedicationRecord } from '$lib/types/sections';
   import CollapsibleSubsection from './CollapsibleSubsection.svelte';
+  import GroupedToggleBoard from './GroupedToggleBoard.svelte';
   import MedicationPanel from './MedicationPanel.svelte';
   import {
     RED_FLAG_CATEGORIES,
@@ -16,51 +17,84 @@
     type RedFlagStatus,
     type RedFlagEntry,
   } from '$lib/config/redFlagCategories';
+  import { useNoteTemplate, isSubsectionVisible } from '$lib/config/templates';
 
-  // ── Patient Profile constants ──
+  const noteTemplate = useNoteTemplate();
 
-  const SEX_OPTIONS = [
-    { value: '', label: 'Select sex' },
-    { value: 'female', label: 'Female' },
-    { value: 'male', label: 'Male' },
+  const ONSET_OPTIONS = [
+    { value: '', label: 'Select onset...' },
+    { value: 'acute', label: 'Acute (< 7 days)' },
+    { value: 'subacute', label: 'Subacute (7 days – 6 weeks)' },
+    { value: 'chronic', label: 'Chronic (> 6 weeks)' },
+    { value: 'insidious', label: 'Insidious / Gradual' },
+    { value: 'recurrent', label: 'Recurrent Episode' },
+  ];
+
+  const MECHANISM_OPTIONS = [
+    { value: '', label: 'Select mechanism...' },
+    { value: 'trauma', label: 'Traumatic Injury' },
+    { value: 'overuse', label: 'Overuse / Repetitive' },
+    { value: 'post-surgical', label: 'Post-Surgical' },
+    { value: 'insidious', label: 'Insidious / No Known Mechanism' },
+    { value: 'fall', label: 'Fall' },
+    { value: 'mva', label: 'Motor Vehicle Accident' },
+    { value: 'sport', label: 'Sport / Athletic Injury' },
+    { value: 'degenerative', label: 'Degenerative / Age-Related' },
     { value: 'other', label: 'Other' },
-    { value: 'unspecified', label: 'Prefer not to say' },
   ];
 
-  const PRONOUNS_OPTIONS = [
-    { value: '', label: 'Select option' },
-    { value: 'Woman (she/her)', label: 'Woman (she/her)' },
-    { value: 'Man (he/him)', label: 'Man (he/him)' },
-    { value: 'Non-binary (they/them)', label: 'Non-binary (they/them)' },
-    { value: 'Trans woman (she/her)', label: 'Trans woman (she/her)' },
-    { value: 'Trans man (he/him)', label: 'Trans man (he/him)' },
-    { value: 'Prefer not to say', label: 'Prefer not to say' },
-    { value: 'Use name only', label: 'Use name only' },
+  const FUNCTIONAL_LIMITATION_CHECKLIST = [
+    'Reaching overhead',
+    'Lifting / carrying',
+    'Walking (community)',
+    'Stairs',
+    'Transfers (sit↔stand)',
+    'Sleeping',
+    'Dressing / grooming',
+    'Sitting tolerance',
+    'Standing tolerance',
+    'Driving',
+    'Work tasks',
+    'Recreational activities',
   ];
 
-  const LANGUAGE_OPTIONS = [
-    '',
-    'English',
-    'Spanish',
-    'French',
-    'German',
-    'Mandarin',
-    'Cantonese',
-    'Vietnamese',
-    'Korean',
-    'Arabic',
-    'Somali',
-    'Hmong',
-    'Russian',
-    'Portuguese',
-    'Tagalog',
-    'Other / Custom',
-  ];
-
-  const INTERPRETER_OPTIONS = [
-    { value: '', label: 'Select option' },
-    { value: 'yes', label: 'Yes' },
-    { value: 'no', label: 'No' },
+  const FUNCTIONAL_LIMITATION_GROUPS = [
+    {
+      id: 'mobility',
+      label: 'Mobility and Transfers',
+      helper: 'How the condition is affecting movement through the environment.',
+      items: ['Walking (community)', 'Stairs', 'Transfers (sit↔stand)', 'Driving'].map((item) => ({
+        value: item,
+        label: item,
+      })),
+    },
+    {
+      id: 'tolerance',
+      label: 'Tolerance and Positioning',
+      helper: 'Endurance, positional comfort, and sustained task limits.',
+      items: ['Sitting tolerance', 'Standing tolerance', 'Sleeping'].map((item) => ({
+        value: item,
+        label: item,
+      })),
+    },
+    {
+      id: 'self-care',
+      label: 'Self-Care and Handling',
+      helper: 'Body care, reaching, and carrying demands.',
+      items: ['Reaching overhead', 'Lifting / carrying', 'Dressing / grooming'].map((item) => ({
+        value: item,
+        label: item,
+      })),
+    },
+    {
+      id: 'life-roles',
+      label: 'Work and Participation',
+      helper: 'School, work, and recreation roles most affected.',
+      items: ['Work tasks', 'Recreational activities'].map((item) => ({
+        value: item,
+        label: item,
+      })),
+    },
   ];
 
   const PAIN_QUALITY_OPTIONS = [
@@ -111,68 +145,6 @@
   function onSelect(key: keyof SubjectiveData, e: Event) {
     const target = e.target as HTMLSelectElement;
     updateField('subjective', key, target.value);
-  }
-
-  // ── Patient Profile helpers ──
-
-  function computeAge(dob: string): string {
-    if (!dob) return '';
-    const birth = new Date(dob);
-    if (isNaN(birth.getTime())) return '';
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
-    return age >= 0 ? String(age) : '';
-  }
-
-  function computeBmi(htFt: string, htIn: string, wtLbs: string): string {
-    const ft = parseFloat(htFt || '0');
-    const inches = parseFloat(htIn || '0');
-    const lbs = parseFloat(wtLbs || '0');
-    const totalInches = ft * 12 + inches;
-    if (totalInches > 0 && lbs > 0) return ((lbs / (totalInches * totalInches)) * 703).toFixed(1);
-    return '';
-  }
-
-  function bmiCategory(bmi: string): { label: string; cls: string } | null {
-    const v = parseFloat(bmi);
-    if (isNaN(v)) return null;
-    if (v < 18.5) return { label: 'Underweight', cls: 'bmi-badge--underweight' };
-    if (v < 25) return { label: 'Normal', cls: 'bmi-badge--normal' };
-    if (v < 30) return { label: 'Overweight', cls: 'bmi-badge--overweight' };
-    return { label: 'Obese', cls: 'bmi-badge--obese' };
-  }
-
-  const profileBmi = $derived(
-    computeBmi(
-      section.patientHeightFt ?? '',
-      section.patientHeightIn ?? '',
-      section.patientWeight ?? '',
-    ),
-  );
-
-  const profileBmiCat = $derived(bmiCategory(profileBmi));
-
-  const derivedAge = $derived(computeAge(section.patientBirthday ?? ''));
-
-  function onDobChange(e: Event) {
-    const val = (e.target as HTMLInputElement).value;
-    updateField('subjective', 'patientBirthday', val);
-    updateField('subjective', 'patientAge', computeAge(val));
-  }
-
-  function onBodyMeasurement(
-    key: 'patientHeightFt' | 'patientHeightIn' | 'patientWeight',
-    e: Event,
-  ) {
-    const val = (e.target as HTMLInputElement).value;
-    updateField('subjective', key, val);
-    // Recompute BMI with the updated value
-    const ft = key === 'patientHeightFt' ? val : (section.patientHeightFt ?? '');
-    const inches = key === 'patientHeightIn' ? val : (section.patientHeightIn ?? '');
-    const lbs = key === 'patientWeight' ? val : (section.patientWeight ?? '');
-    updateField('subjective', 'patientBmi', computeBmi(ft, inches, lbs));
   }
 
   // ── Pain Scale (clickable 0-10) ──
@@ -257,6 +229,19 @@
     return 'rf-btn--unscreened';
   }
 
+  // ── Functional Limitation Checklist ──
+  const funcLimitChecklist = $derived.by((): string[] => {
+    const fl = section.functionalLimitationChecklist;
+    return Array.isArray(fl) ? fl : [];
+  });
+
+  function toggleFuncLimit(item: string) {
+    const updated = funcLimitChecklist.includes(item)
+      ? funcLimitChecklist.filter((f) => f !== item)
+      : [...funcLimitChecklist, item];
+    updateField('subjective', 'functionalLimitationChecklist', updated);
+  }
+
   // ── Medications ──
   const medications = $derived<MedicationRecord[]>(section.medications ?? []);
 
@@ -266,421 +251,320 @@
 </script>
 
 <div class="soap-section soap-subjective">
-  <!-- 0. PATIENT PROFILE -->
-  <CollapsibleSubsection
-    title="Patient Profile"
-    open={!isCollapsed('patient-profile')}
-    onToggle={() => toggleCollapse('patient-profile')}
-    dataSubsection="patient-profile"
-  >
-    <div class="field-row">
-      <label class="field-label">
-        Full Name
-        <input
-          type="text"
-          value={field('patientName')}
-          oninput={(e) => onInput('patientName', e)}
-          placeholder="Patient full name"
-        />
-      </label>
-    </div>
-    <div class="field-row">
-      <label class="field-label">
-        Date of Birth
-        <input
-          type="date"
-          value={field('patientBirthday')}
-          onchange={onDobChange}
-          min="1900-01-01"
-          max={new Date().toISOString().slice(0, 10)}
-        />
-      </label>
-      <label class="field-label field-label--readonly">
-        Age
-        <input
-          type="text"
-          value={derivedAge || field('patientAge')}
-          readonly
-          tabindex="-1"
-          placeholder="auto"
-        />
-      </label>
-      <label class="field-label">
-        Sex
-        <select value={field('patientGender')} onchange={(e) => onSelect('patientGender', e)}>
-          {#each SEX_OPTIONS as opt}
-            <option value={opt.value}>{opt.label}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-    <div class="field-row">
-      <label class="field-label">
-        Gender Identity / Pronouns
-        <select
-          value={field('patientGenderIdentityPronouns')}
-          onchange={(e) => onSelect('patientGenderIdentityPronouns', e)}
-        >
-          {#each PRONOUNS_OPTIONS as opt}
-            <option value={opt.value}>{opt.label}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="field-label">
-        Preferred Language
-        <select
-          value={field('patientPreferredLanguage')}
-          onchange={(e) => onSelect('patientPreferredLanguage', e)}
-        >
-          {#each LANGUAGE_OPTIONS as lang}
-            <option value={lang}>{lang || 'Select language'}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="field-label">
-        Interpreter Needed
-        <select
-          value={field('patientInterpreterNeeded')}
-          onchange={(e) => onSelect('patientInterpreterNeeded', e)}
-        >
-          {#each INTERPRETER_OPTIONS as opt}
-            <option value={opt.value}>{opt.label}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-
-    <div class="profile-divider"></div>
-
-    <div class="field-row">
-      <label class="field-label field-label--compact">
-        Height (ft)
-        <input
-          type="number"
-          value={field('patientHeightFt')}
-          oninput={(e) => onBodyMeasurement('patientHeightFt', e)}
-          placeholder="5"
-          min="0"
-          max="8"
-        />
-      </label>
-      <label class="field-label field-label--compact">
-        Height (in)
-        <input
-          type="number"
-          value={field('patientHeightIn')}
-          oninput={(e) => onBodyMeasurement('patientHeightIn', e)}
-          placeholder="10"
-          min="0"
-          max="11"
-        />
-      </label>
-      <label class="field-label field-label--compact">
-        Weight (lbs)
-        <input
-          type="number"
-          value={field('patientWeight')}
-          oninput={(e) => onBodyMeasurement('patientWeight', e)}
-          placeholder="165"
-          min="0"
-        />
-      </label>
-      <label class="field-label field-label--compact field-label--readonly">
-        BMI
-        <div class="bmi-display">
-          <input type="text" value={profileBmi} readonly tabindex="-1" placeholder="auto" />
-          {#if profileBmiCat}
-            <span class="bmi-badge {profileBmiCat.cls}">{profileBmiCat.label}</span>
-          {/if}
-        </div>
-      </label>
-    </div>
-
-    <div class="profile-divider"></div>
-
-    <label class="field-label">
-      Work Status / Occupation
-      <input
-        type="text"
-        value={field('patientWorkStatusOccupation')}
-        oninput={(e) => onInput('patientWorkStatusOccupation', e)}
-        placeholder="e.g. Full-time office worker, retired, student"
-      />
-    </label>
-    <label class="field-label">
-      Living Situation / Home Environment
-      <textarea
-        rows="2"
-        value={field('patientLivingSituationHomeEnvironment')}
-        oninput={(e) => onInput('patientLivingSituationHomeEnvironment', e)}
-        placeholder="e.g. Lives alone in 2-story home, 5 steps to enter, no railing"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Social Support
-      <textarea
-        rows="2"
-        value={field('patientSocialSupport')}
-        oninput={(e) => onInput('patientSocialSupport', e)}
-        placeholder="e.g. Spouse available for assistance, daughter lives nearby"
-      ></textarea>
-    </label>
-  </CollapsibleSubsection>
-
   <!-- 1. HISTORY -->
-  <CollapsibleSubsection
-    title="History"
-    open={!isCollapsed('history')}
-    onToggle={() => toggleCollapse('history')}
-    dataSubsection="history"
-  >
-    <label class="field-label">
-      Chief Complaint
-      <textarea
-        rows="2"
-        value={field('chiefComplaint')}
-        oninput={(e) => onInput('chiefComplaint', e)}
-        placeholder="Primary reason for referral or visit in the patient's own words (e.g., 'Right shoulder pain limiting overhead activities for 3 weeks')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      History of Present Illness
-      <textarea
-        rows="2"
-        value={field('historyOfPresentIllness')}
-        oninput={(e) => onInput('historyOfPresentIllness', e)}
-        placeholder="Onset, mechanism of injury, duration, progression, prior treatment. Include 24-hour symptom pattern and current functional status."
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Functional Limitations
-      <textarea
-        rows="2"
-        value={field('functionalLimitations')}
-        oninput={(e) => onInput('functionalLimitations', e)}
-        placeholder="Specific ADL, IADL, work, and recreational tasks the patient reports difficulty with (e.g., 'Unable to reach overhead, difficulty sleeping on affected side')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Prior Level of Function
-      <textarea
-        rows="2"
-        value={field('priorLevel')}
-        oninput={(e) => onInput('priorLevel', e)}
-        placeholder="Baseline functional level prior to current episode (e.g., 'Independent with all ADLs, walks 2 miles daily, works full-time as mechanic')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Patient Goals
-      <textarea
-        rows="2"
-        value={field('patientGoals')}
-        oninput={(e) => onInput('patientGoals', e)}
-        placeholder="Patient-stated goals in their own words (e.g., 'Return to playing tennis, sleep through the night without pain')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Additional History
-      <textarea
-        rows="2"
-        value={field('additionalHistory')}
-        oninput={(e) => onInput('additionalHistory', e)}
-        placeholder="Past medical/surgical history, comorbidities, relevant social history (e.g., 'Hx of rotator cuff repair 2019 R shoulder, HTN, DM Type 2')"
-      ></textarea>
-    </label>
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'subjective', 'history')}
+    <CollapsibleSubsection
+      title="History"
+      open={!isCollapsed('history')}
+      onToggle={() => toggleCollapse('history')}
+      dataSubsection="history"
+    >
+      <label class="field-label">
+        Chief Complaint
+        <textarea
+          rows="2"
+          value={field('chiefComplaint')}
+          oninput={(e) => onInput('chiefComplaint', e)}
+          placeholder="Primary reason for referral or visit in the patient's own words (e.g., 'Right shoulder pain limiting overhead activities for 3 weeks')"
+        ></textarea>
+      </label>
+
+      <div class="field-row">
+        <label class="field-label">
+          Onset / Acuity
+          <select value={field('onset')} onchange={(e) => onSelect('onset', e)}>
+            {#each ONSET_OPTIONS as opt}
+              <option value={opt.value}>{opt.label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="field-label">
+          Mechanism of Injury
+          <select value={field('mechanism')} onchange={(e) => onSelect('mechanism', e)}>
+            {#each MECHANISM_OPTIONS as opt}
+              <option value={opt.value}>{opt.label}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
+
+      <label class="field-label">
+        History of Present Illness
+        <textarea
+          rows="2"
+          value={field('historyOfPresentIllness')}
+          oninput={(e) => onInput('historyOfPresentIllness', e)}
+          placeholder="Duration, progression, prior treatment. Include 24-hour symptom pattern and current functional status."
+        ></textarea>
+      </label>
+
+      <GroupedToggleBoard
+        label="Functional Limitations"
+        helper="Choose the common activities the patient is already struggling with, then add specifics below."
+        groups={FUNCTIONAL_LIMITATION_GROUPS}
+        selected={funcLimitChecklist}
+        onToggle={toggleFuncLimit}
+        selectedLabel="Selected activity limits"
+        emptyLabel="No common functional limits selected yet."
+      />
+      <label class="field-label">
+        Functional Limitation Details
+        <textarea
+          rows="2"
+          value={field('functionalLimitations')}
+          oninput={(e) => onInput('functionalLimitations', e)}
+          placeholder="Additional details about functional limitations (e.g., 'Unable to reach overhead, difficulty sleeping on affected side')"
+        ></textarea>
+      </label>
+
+      <label class="field-label">
+        Prior Level of Function
+        <textarea
+          rows="2"
+          value={field('priorLevel')}
+          oninput={(e) => onInput('priorLevel', e)}
+          placeholder="Baseline functional level prior to current episode (e.g., 'Independent with all ADLs, walks 2 miles daily, works full-time as mechanic')"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Patient Goals
+        <textarea
+          rows="2"
+          value={field('patientGoals')}
+          oninput={(e) => onInput('patientGoals', e)}
+          placeholder="Patient-stated goals in their own words (e.g., 'Return to playing tennis, sleep through the night without pain')"
+        ></textarea>
+      </label>
+
+      <label class="field-label">
+        Past Medical History
+        <textarea
+          rows="2"
+          value={field('pastMedicalHistory')}
+          oninput={(e) => onInput('pastMedicalHistory', e)}
+          placeholder="Relevant comorbidities: HTN, DM, cardiac, neurological, rheumatologic conditions..."
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Surgical History
+        <textarea
+          rows="2"
+          value={field('surgicalHistory')}
+          oninput={(e) => onInput('surgicalHistory', e)}
+          placeholder="Prior surgeries with dates (e.g., 'R rotator cuff repair 2019, L TKA 2021')"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Social History
+        <textarea
+          rows="2"
+          value={field('socialHistory')}
+          oninput={(e) => onInput('socialHistory', e)}
+          placeholder="Living situation, occupation, activity level, support system, relevant habits..."
+        ></textarea>
+      </label>
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- 2. INTERVIEW Q&A -->
-  <CollapsibleSubsection
-    title="Interview Q&A"
-    open={!isCollapsed('interview-qa')}
-    onToggle={() => toggleCollapse('interview-qa')}
-    dataSubsection="interview-qa"
-  >
-    {#if qaItems.length > 0}
-      <div class="qa-items">
-        {#each qaItems as qa, i}
-          <div class="qa-pair">
-            <div class="qa-pair__header">
-              <span class="qa-pair__num">Q{i + 1}</span>
-              <button
-                type="button"
-                class="qa-pair__remove"
-                aria-label="Remove Q&A pair {i + 1}"
-                onclick={() => removeQAPair(i)}>✕</button
-              >
+  {#if isSubsectionVisible(noteTemplate, 'subjective', 'interview-qa')}
+    <CollapsibleSubsection
+      title="Interview Q&A"
+      open={!isCollapsed('interview-qa')}
+      onToggle={() => toggleCollapse('interview-qa')}
+      dataSubsection="interview-qa"
+    >
+      {#if qaItems.length > 0}
+        <div class="qa-items">
+          {#each qaItems as qa, i}
+            <div class="qa-pair">
+              <div class="qa-pair__header">
+                <span class="qa-pair__num">Q{i + 1}</span>
+                <button
+                  type="button"
+                  class="qa-pair__remove"
+                  aria-label="Remove Q&A pair {i + 1}"
+                  onclick={() => removeQAPair(i)}>✕</button
+                >
+              </div>
+              <label class="field-label">
+                Question
+                <input
+                  type="text"
+                  value={qa.question}
+                  oninput={(e) => onQAInput(i, 'question', e)}
+                  placeholder="What question was asked?"
+                />
+              </label>
+              <label class="field-label">
+                Response
+                <textarea
+                  rows="2"
+                  value={qa.response}
+                  oninput={(e) => onQAInput(i, 'response', e)}
+                  placeholder="Patient's response..."
+                ></textarea>
+              </label>
             </div>
-            <label class="field-label">
-              Question
-              <input
-                type="text"
-                value={qa.question}
-                oninput={(e) => onQAInput(i, 'question', e)}
-                placeholder="What question was asked?"
-              />
-            </label>
-            <label class="field-label">
-              Response
-              <textarea
-                rows="2"
-                value={qa.response}
-                oninput={(e) => onQAInput(i, 'response', e)}
-                placeholder="Patient's response..."
-              ></textarea>
-            </label>
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <p class="empty-hint">No interview questions recorded yet.</p>
-    {/if}
-    <button type="button" class="btn-add" onclick={addQAPair}>+ Add Q&A Pair</button>
-  </CollapsibleSubsection>
+          {/each}
+        </div>
+      {:else}
+        <p class="empty-hint">No interview questions recorded yet.</p>
+      {/if}
+      <button type="button" class="btn-add" onclick={addQAPair}>+ Add Q&A Pair</button>
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- 3. PAIN ASSESSMENT (clickable 0-10, quality/pattern dropdowns) -->
-  <CollapsibleSubsection
-    title="Pain Assessment"
-    open={!isCollapsed('pain-assessment')}
-    onToggle={() => toggleCollapse('pain-assessment')}
-    dataSubsection="pain-assessment"
-  >
-    <label class="field-label">
-      Location
-      <input
-        type="text"
-        value={field('painLocation')}
-        oninput={(e) => onInput('painLocation', e)}
-        placeholder="e.g. Right shoulder, anterior/lateral"
-      />
-    </label>
-
-    <!-- Clickable pain scale 0-10 -->
-    <fieldset class="pain-scale-field">
-      <legend class="pain-scale-label">Pain Scale (0–10)</legend>
-      <div class="pain-scale-row" role="radiogroup" aria-label="Pain intensity scale 0-10">
-        {#each Array(11) as _, n}
-          <button
-            type="button"
-            class="pain-scale-btn"
-            class:pain-scale-btn--selected={painScaleValue === n}
-            style={painScaleValue === n
-              ? `background: ${painScaleColor(n)}; color: white; border-color: ${painScaleColor(n)};`
-              : ''}
-            role="radio"
-            aria-checked={painScaleValue === n}
-            aria-label="Pain level {n}"
-            onclick={() => setPainScale(n)}>{n}</button
-          >
-        {/each}
-      </div>
-      {#if painScaleValue >= 0}
-        <span class="pain-scale-readout">{painScaleValue}/10</span>
-      {/if}
-    </fieldset>
-
-    <div class="field-row">
+  {#if isSubsectionVisible(noteTemplate, 'subjective', 'pain-assessment')}
+    <CollapsibleSubsection
+      title="Pain Assessment"
+      open={!isCollapsed('pain-assessment')}
+      onToggle={() => toggleCollapse('pain-assessment')}
+      dataSubsection="pain-assessment"
+    >
       <label class="field-label">
-        Quality
-        <select value={field('painQuality')} onchange={(e) => onSelect('painQuality', e)}>
-          {#each PAIN_QUALITY_OPTIONS as opt}
-            <option value={opt}>{opt || 'Select quality…'}</option>
-          {/each}
-        </select>
+        Location
+        <input
+          type="text"
+          value={field('painLocation')}
+          oninput={(e) => onInput('painLocation', e)}
+          placeholder="e.g. Right shoulder, anterior/lateral"
+        />
       </label>
-      <label class="field-label">
-        Pattern
-        <select value={field('painPattern')} onchange={(e) => onSelect('painPattern', e)}>
-          {#each PAIN_PATTERN_OPTIONS as opt}
-            <option value={opt}>{opt || 'Select pattern…'}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
 
-    <label class="field-label">
-      Aggravating Factors
-      <textarea
-        rows="2"
-        value={field('aggravatingFactors')}
-        oninput={(e) => onInput('aggravatingFactors', e)}
-        placeholder="Movements, positions, or activities that increase symptoms (e.g., 'Overhead reaching, lying on R side, lifting >10 lbs')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Easing Factors
-      <textarea
-        rows="2"
-        value={field('easingFactors')}
-        oninput={(e) => onInput('easingFactors', e)}
-        placeholder="Movements, positions, or modalities that decrease symptoms (e.g., 'Rest, ice, NSAIDs, arm supported at side')"
-      ></textarea>
-    </label>
-  </CollapsibleSubsection>
-
-  <!-- 4. RED FLAG SCREENING (categorized, 3-state cycling) -->
-  <CollapsibleSubsection
-    title="Red Flag Screening"
-    open={!isCollapsed('red-flag-screening')}
-    onToggle={() => toggleCollapse('red-flag-screening')}
-    dataSubsection="red-flag-screening"
-  >
-    {#snippet titleExtra()}
-      {#if presentCount > 0}
-        <span class="rf-badge">{presentCount}</span>
-      {/if}
-    {/snippet}
-    <p class="rf-instructions">
-      Click status button to cycle: <span class="rf-legend rf-legend--unscreened">?</span> Not
-      Screened → <span class="rf-legend rf-legend--denied">−</span> Denied →
-      <span class="rf-legend rf-legend--present">+</span> Present
-    </p>
-
-    {#each RED_FLAG_CATEGORIES as cat}
-      <fieldset class="rf-category">
-        <legend class="rf-category__legend">{cat.label}</legend>
-        {#each getItemsForCategory(cat.id) as flag}
-          <div class="rf-item">
+      <!-- Clickable pain scale 0-10 -->
+      <fieldset class="pain-scale-field">
+        <legend class="pain-scale-label">Pain Scale (0–10)</legend>
+        <div class="pain-scale-row" role="radiogroup" aria-label="Pain intensity scale 0-10">
+          {#each Array(11) as _, n}
             <button
               type="button"
-              class="rf-status-btn {statusClass(flag.status)}"
-              aria-label="{flag.item}: {flag.status}"
-              onclick={() => cycleRedFlagStatus(flag.id)}>{statusLabel(flag.status)}</button
+              class="pain-scale-btn"
+              class:pain-scale-btn--selected={painScaleValue === n}
+              style={painScaleValue === n
+                ? `background: ${painScaleColor(n)}; color: white; border-color: ${painScaleColor(n)};`
+                : ''}
+              role="radio"
+              aria-checked={painScaleValue === n}
+              aria-label="Pain level {n}"
+              onclick={() => setPainScale(n)}>{n}</button
             >
-            <span class="rf-item__label">{flag.item}</span>
-            {#if flag.status === 'present'}
-              <input
-                type="text"
-                class="rf-item__note"
-                placeholder="Note…"
-                value={flag.note ?? ''}
-                oninput={(e) => onRedFlagNote(flag.id, e)}
-              />
-            {/if}
-          </div>
-        {/each}
+          {/each}
+        </div>
+        {#if painScaleValue >= 0}
+          <span class="pain-scale-readout">{painScaleValue}/10</span>
+        {/if}
       </fieldset>
-    {/each}
 
-    <label class="field-label" style="margin-top: 0.75rem;">
-      Additional Notes
-      <textarea
-        rows="2"
-        value={field('redFlags')}
-        oninput={(e) => onInput('redFlags', e)}
-        placeholder="Additional red flag screening notes..."
-      ></textarea>
-    </label>
-  </CollapsibleSubsection>
+      <div class="field-row">
+        <label class="field-label">
+          Quality
+          <select value={field('painQuality')} onchange={(e) => onSelect('painQuality', e)}>
+            {#each PAIN_QUALITY_OPTIONS as opt}
+              <option value={opt}>{opt || 'Select quality…'}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="field-label">
+          Pattern
+          <select value={field('painPattern')} onchange={(e) => onSelect('painPattern', e)}>
+            {#each PAIN_PATTERN_OPTIONS as opt}
+              <option value={opt}>{opt || 'Select pattern…'}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
+
+      <label class="field-label">
+        Aggravating Factors
+        <textarea
+          rows="2"
+          value={field('aggravatingFactors')}
+          oninput={(e) => onInput('aggravatingFactors', e)}
+          placeholder="Movements, positions, or activities that increase symptoms (e.g., 'Overhead reaching, lying on R side, lifting >10 lbs')"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Easing Factors
+        <textarea
+          rows="2"
+          value={field('easingFactors')}
+          oninput={(e) => onInput('easingFactors', e)}
+          placeholder="Movements, positions, or modalities that decrease symptoms (e.g., 'Rest, ice, NSAIDs, arm supported at side')"
+        ></textarea>
+      </label>
+    </CollapsibleSubsection>
+  {/if}
+
+  <!-- 4. RED FLAG SCREENING (categorized, 3-state cycling) -->
+  {#if isSubsectionVisible(noteTemplate, 'subjective', 'red-flag-screening')}
+    <CollapsibleSubsection
+      title="Red Flag Screening"
+      open={!isCollapsed('red-flag-screening')}
+      onToggle={() => toggleCollapse('red-flag-screening')}
+      dataSubsection="red-flag-screening"
+    >
+      {#snippet titleExtra()}
+        {#if presentCount > 0}
+          <span class="rf-badge">{presentCount}</span>
+        {/if}
+      {/snippet}
+      <p class="rf-instructions">
+        Click status button to cycle: <span class="rf-legend rf-legend--unscreened">?</span> Not
+        Screened → <span class="rf-legend rf-legend--denied">−</span> Denied →
+        <span class="rf-legend rf-legend--present">+</span> Present
+      </p>
+
+      {#each RED_FLAG_CATEGORIES as cat}
+        <fieldset class="rf-category">
+          <legend class="rf-category__legend">{cat.label}</legend>
+          {#each getItemsForCategory(cat.id) as flag}
+            <div class="rf-item">
+              <button
+                type="button"
+                class="rf-status-btn {statusClass(flag.status)}"
+                aria-label="{flag.item}: {flag.status}"
+                onclick={() => cycleRedFlagStatus(flag.id)}>{statusLabel(flag.status)}</button
+              >
+              <span class="rf-item__label">{flag.item}</span>
+              {#if flag.status === 'present'}
+                <input
+                  type="text"
+                  class="rf-item__note"
+                  placeholder="Note…"
+                  value={flag.note ?? ''}
+                  oninput={(e) => onRedFlagNote(flag.id, e)}
+                />
+              {/if}
+            </div>
+          {/each}
+        </fieldset>
+      {/each}
+
+      <label class="field-label" style="margin-top: 0.75rem;">
+        Additional Notes
+        <textarea
+          rows="2"
+          value={field('redFlags')}
+          oninput={(e) => onInput('redFlags', e)}
+          placeholder="Additional red flag screening notes..."
+        ></textarea>
+      </label>
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- 5. MEDICATION & SUPPLEMENTS (searchable DB) -->
-  <CollapsibleSubsection
-    title="Medication & Supplements"
-    open={!isCollapsed('current-medications')}
-    onToggle={() => toggleCollapse('current-medications')}
-    dataSubsection="current-medications"
-  >
-    <MedicationPanel {medications} onUpdate={onMedsUpdate} />
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'subjective', 'current-medications')}
+    <CollapsibleSubsection
+      title="Medication & Supplements"
+      open={!isCollapsed('current-medications')}
+      onToggle={() => toggleCollapse('current-medications')}
+      dataSubsection="current-medications"
+    >
+      <MedicationPanel {medications} onUpdate={onMedsUpdate} />
+    </CollapsibleSubsection>
+  {/if}
 </div>
 
 <style>
@@ -961,71 +845,6 @@
   .btn-add:hover {
     background: var(--color-neutral-50, #fafafa);
     border-color: var(--color-brand-green, #009a44);
-  }
-
-  /* Patient profile */
-  .field-label--compact {
-    flex: 0 0 auto;
-    min-width: 80px;
-    max-width: 110px;
-  }
-
-  .field-label--compact input {
-    text-align: center;
-  }
-
-  .field-label--readonly input {
-    background: var(--color-neutral-50, #fafafa);
-    color: var(--color-neutral-500, #737373);
-    font-weight: 600;
-    cursor: default;
-  }
-
-  .profile-divider {
-    height: 1px;
-    background: var(--color-neutral-100, #f5f5f5);
-    margin: 0.75rem 0;
-  }
-
-  .bmi-display {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .bmi-display input {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .bmi-badge {
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 0.125rem 0.375rem;
-    border-radius: 4px;
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-  }
-
-  .bmi-badge--underweight {
-    background: #e3f2fd;
-    color: #1565c0;
-  }
-
-  .bmi-badge--normal {
-    background: #e8f5e9;
-    color: #2e7d32;
-  }
-
-  .bmi-badge--overweight {
-    background: #fff3e0;
-    color: #e65100;
-  }
-
-  .bmi-badge--obese {
-    background: #fce4ec;
-    color: #c62828;
   }
 
   @media (max-width: 640px) {

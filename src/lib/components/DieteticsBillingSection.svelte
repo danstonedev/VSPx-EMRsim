@@ -55,12 +55,7 @@
     <div class="inline-row">
       <div class="inline-row__cell">
         <label class="form-label" for="db-cpt">CPT Code</label>
-        <select
-          id="db-cpt"
-          class="form-select"
-          value={field('cpt_code')}
-          onchange={(e) => onInput('cpt_code', e)}
-        >
+        <select id="db-cpt" value={field('cpt_code')} onchange={(e) => onInput('cpt_code', e)}>
           {#each MNT_CPT_CODES as opt}
             <option value={opt.value}>{opt.label}</option>
           {/each}
@@ -70,7 +65,6 @@
         <label class="form-label" for="db-units">Units</label>
         <input
           id="db-units"
-          class="form-input"
           type="number"
           placeholder="Number of 15-min units"
           value={field('units')}
@@ -84,7 +78,6 @@
         <label class="form-label" for="db-time">Time (minutes)</label>
         <input
           id="db-time"
-          class="form-input"
           type="number"
           placeholder="Total face-to-face time"
           value={field('time_minutes')}
@@ -95,7 +88,6 @@
         <label class="form-label" for="db-icd10">ICD-10 Diagnosis Codes</label>
         <input
           id="db-icd10"
-          class="form-input"
           type="text"
           placeholder="e.g. E11.65, E44.0"
           value={field('diagnosis_codes')}
@@ -115,7 +107,6 @@
       <label class="form-label" for="db-justification">Justification</label>
       <textarea
         id="db-justification"
-        class="form-textarea"
         rows="2"
         placeholder="Medical necessity statement supporting the nutrition intervention"
         value={field('justification')}
@@ -136,7 +127,7 @@
     gap: 0.5rem;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--color-neutral-900, #1a1a1a);
     margin: 0;
   }
 
@@ -148,34 +139,11 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #4a4a4a;
+    color: var(--color-neutral-600, #616161);
     margin-bottom: 0.25rem;
   }
 
-  .form-textarea,
-  .form-input,
-  .form-select {
-    width: 100%;
-    padding: 0.5rem 0.65rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font: inherit;
-    font-size: 0.85rem;
-    color: #1a1a1a;
-    background: #fff;
-    transition: border-color 0.15s;
-    box-sizing: border-box;
-  }
-
-  .form-textarea:focus,
-  .form-input:focus,
-  .form-select:focus {
-    outline: none;
-    border-color: var(--color-brand-green, #009a44);
-    box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.12);
-  }
-
-  .form-textarea {
+  textarea {
     resize: vertical;
     min-height: 3rem;
   }

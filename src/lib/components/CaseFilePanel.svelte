@@ -47,7 +47,7 @@
 </script>
 
 <div class="casefile">
-  <h2 class="casefile__title">Case File</h2>
+  <h2 class="casefile__title">Shared Case File</h2>
 
   {#if entries.length === 0}
     <p class="casefile__empty">No documents in the case file yet.</p>
@@ -143,8 +143,24 @@
 
   .casefile__chevron {
     transition: transform 0.2s ease;
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    font-size: 0;
+    line-height: 0;
     color: var(--color-neutral-400, #9e9e9e);
+    overflow: hidden;
+  }
+
+  .casefile__chevron::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translate(-8%, -8%);
   }
 
   .casefile__chevron--open {

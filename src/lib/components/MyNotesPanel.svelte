@@ -56,7 +56,7 @@
 </script>
 
 <div class="my-notes">
-  <h2 class="my-notes__title">My Notes</h2>
+  <h2 class="my-notes__title">Note History</h2>
 
   <!-- Drafts -->
   {#if drafts.length > 0}

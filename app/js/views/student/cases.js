@@ -1,6 +1,6 @@
 import { route } from '../../core/router.js';
 import { navigate as urlNavigate } from '../../core/url.js';
-import { createCaseBadge, createAuthorBadge } from '../../ui/CaseBadge.js';
+import { createCaseBadge } from '../../ui/CaseBadge.js';
 async function _listCaseSummaries(opts) {
   const store = await import('../../core/store.js');
   if (typeof store.listCaseSummaries === 'function') {

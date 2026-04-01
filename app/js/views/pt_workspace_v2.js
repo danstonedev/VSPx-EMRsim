@@ -488,8 +488,8 @@ export async function renderPtWorkspaceV2(wrapper, query, isFacultyMode = false)
     if (activeWorkspaceTab === 'case-file') {
       contextPane.appendChild(
         createWorkspaceStagePlaceholder({
-          eyebrow: 'Case File',
-          title: 'Case File is active in the chart panel',
+          eyebrow: 'Shared Case File',
+          title: 'Shared Case File is active in the chart panel',
           copy: 'Use the left workspace panel to review artifacts, filed notes, and supporting documents for this patient.',
         }),
       );
@@ -501,7 +501,7 @@ export async function renderPtWorkspaceV2(wrapper, query, isFacultyMode = false)
       createWorkspaceStagePlaceholder({
         eyebrow: 'Workspace',
         title: 'Choose a chart section to continue',
-        copy: 'Select Patient Profile, Current Note, My Notes, or Case File from the rail to continue working in this chart.',
+        copy: 'Select Patient Profile, Note Guide, Note History, or Shared Case File from the rail to continue working in this chart.',
       }),
     );
     mainStage.replaceChildren(contextPane);

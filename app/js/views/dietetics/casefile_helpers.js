@@ -5,7 +5,6 @@ import {
   getCaseFileEntryMeta,
   getCaseFileTypeLabel,
 } from '../../core/casefile-repository.js';
-import { finalizeDraftSignature } from '../../core/noteLifecycle.js';
 
 export function getArtifactTypeLabel(type) {
   return getCaseFileTypeLabel({ type });

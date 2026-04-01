@@ -8,8 +8,15 @@ export interface NeuroscreenItem {
   reflex: string | null;
 }
 
+export interface NeuroscreenColumnLabels {
+  sensory: string;
+  motor: string;
+  reflex: string;
+}
+
 export interface NeuroscreenRegion {
   name: string;
+  columnLabels: NeuroscreenColumnLabels;
   items: NeuroscreenItem[];
 }
 
@@ -42,6 +49,7 @@ export const REFLEX_OPTIONS = [
 export const NEURO_REGIONS: Record<string, NeuroscreenRegion> = {
   'lower-extremity': {
     name: 'Lower Extremity',
+    columnLabels: { sensory: 'Dermatome', motor: 'Myotome', reflex: 'Reflex' },
     items: [
       { level: 'L1', reflex: null },
       { level: 'L2', reflex: null },
@@ -54,6 +62,7 @@ export const NEURO_REGIONS: Record<string, NeuroscreenRegion> = {
   },
   'upper-extremity': {
     name: 'Upper Extremity',
+    columnLabels: { sensory: 'Dermatome', motor: 'Myotome', reflex: 'Reflex' },
     items: [
       { level: 'C1–C4', reflex: null },
       { level: 'C5', reflex: 'Biceps' },
@@ -64,6 +73,7 @@ export const NEURO_REGIONS: Record<string, NeuroscreenRegion> = {
   },
   'cranial-nerves': {
     name: 'Cranial Nerves',
+    columnLabels: { sensory: 'Sensory', motor: 'Motor', reflex: 'Reflex' },
     items: [
       { level: 'CN I', reflex: null },
       { level: 'CN II, III', reflex: 'Pupillary' },

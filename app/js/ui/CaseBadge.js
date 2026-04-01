@@ -94,7 +94,7 @@ export function createAuthorBadge(authorName, createdAt = null) {
         day: 'numeric',
       });
       parts.push(` on ${formatted}`);
-    } catch (e) {
+    } catch {
       // Invalid date, skip
     }
   }

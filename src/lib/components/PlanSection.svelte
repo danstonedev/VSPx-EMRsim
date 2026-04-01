@@ -5,15 +5,19 @@
 <script lang="ts">
   import { noteDraft, updateField } from '$lib/stores/noteSession';
   import CollapsibleSubsection from './CollapsibleSubsection.svelte';
-  import SearchableSelect from './SearchableSelect.svelte';
+  import { useNoteTemplate, isSubsectionVisible } from '$lib/config/templates';
+  import GroupedToggleBoard from './GroupedToggleBoard.svelte';
+  import InterventionTable from './inputs/InterventionTable.svelte';
   import { createDragReorder } from '$lib/utils/dragReorder';
+  import { PT_INTERVENTIONS, scoreIntervention } from '$lib/config/ptCodes';
   import {
     FREQUENCY_OPTIONS,
     DURATION_OPTIONS,
-    PT_INTERVENTIONS,
-    scoreIntervention,
-  } from '$lib/config/ptCodes';
+    MODALITY_CATALOG,
+  } from '$lib/config/interventionCatalog';
   import type { PlanData, PlanGoal, PlanIntervention } from '$lib/types/sections';
+
+  const noteTemplate = useNoteTemplate();
 
   const section = $derived($noteDraft.plan);
 
@@ -29,20 +33,8 @@
 
   // ─── Collapsible state ───
 
-  const MODALITY_OPTIONS = [
-    'Ultrasound',
-    'Electrical Stimulation (NMES/TENS)',
-    'Iontophoresis',
-    'Hot Pack / Moist Heat',
-    'Cold Pack / Cryotherapy',
-    'Paraffin',
-    'Mechanical Traction',
-    'Laser Therapy',
-    'Biofeedback',
-    'Whirlpool / Hydrotherapy',
-    'Fluidotherapy',
-    'Phonophoresis',
-  ];
+  // TODO: derive discipline from session context once multi-discipline routing is wired
+  const MODALITY_OPTIONS = MODALITY_CATALOG['pt'];
 
   let openSubs = $state<Record<string, boolean>>({
     schedule: true,
@@ -89,6 +81,113 @@
     { value: 'personal', label: 'Personal Factors' },
   ];
 
+  const GOAL_TYPE_OPTIONS = [
+    { value: '', label: 'Type…' },
+    { value: 'stg', label: 'STG' },
+    { value: 'ltg', label: 'LTG' },
+  ];
+
+  const GOAL_STATUS_OPTIONS = [
+    { value: '', label: 'Status…' },
+    { value: 'not-started', label: 'Not Started' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'met', label: 'Met' },
+    { value: 'not-met', label: 'Not Met' },
+    { value: 'modified', label: 'Modified' },
+  ];
+
+  const EDUCATION_TOPICS = [
+    'Home exercise program',
+    'Activity modification',
+    'Body mechanics / ergonomics',
+    'Fall prevention',
+    'Disease process education',
+    'Pain neuroscience education',
+    'Precautions / contraindications',
+    'Expected recovery timeline',
+    'When to contact provider',
+    'Caregiver training',
+    'Equipment / DME use',
+    'Adherence strategies',
+  ];
+
+  const MODALITY_GROUPS = [
+    {
+      id: 'thermal-hydro',
+      label: 'Thermal and Hydrotherapy',
+      helper: 'Heat, cold, and immersion-based symptom modulation.',
+      items: [
+        'Hot Pack / Moist Heat',
+        'Cold Pack / Cryotherapy',
+        'Paraffin',
+        'Whirlpool / Hydrotherapy',
+        'Fluidotherapy',
+      ].map((item) => ({ value: item, label: item })),
+    },
+    {
+      id: 'electro',
+      label: 'Electrotherapy and Feedback',
+      helper: 'Neuromuscular activation, pain modulation, and cueing tools.',
+      items: ['Electrical Stimulation (NMES/TENS)', 'Biofeedback'].map((item) => ({
+        value: item,
+        label: item,
+      })),
+    },
+    {
+      id: 'mechanical',
+      label: 'Mechanical and Tissue Loading',
+      helper: 'Mechanical, acoustic, and tissue-specific adjuncts.',
+      items: ['Ultrasound', 'Mechanical Traction', 'Laser Therapy', 'Phonophoresis'].map(
+        (item) => ({ value: item, label: item }),
+      ),
+    },
+    {
+      id: 'delivery',
+      label: 'Medication Delivery',
+      helper: 'Adjuncts used to deliver medication through the skin.',
+      items: ['Iontophoresis'].map((item) => ({ value: item, label: item })),
+    },
+  ];
+
+  const EDUCATION_TOPIC_GROUPS = [
+    {
+      id: 'home-program',
+      label: 'Home Program and Adherence',
+      helper: 'What the patient needs in order to carry the plan outside the clinic.',
+      items: ['Home exercise program', 'Adherence strategies', 'Expected recovery timeline'].map(
+        (item) => ({ value: item, label: item }),
+      ),
+    },
+    {
+      id: 'self-management',
+      label: 'Self-Management and Mechanics',
+      helper: 'How the patient should move, load, or interpret symptoms day to day.',
+      items: [
+        'Activity modification',
+        'Body mechanics / ergonomics',
+        'Pain neuroscience education',
+        'Disease process education',
+      ].map((item) => ({ value: item, label: item })),
+    },
+    {
+      id: 'safety',
+      label: 'Safety and Equipment',
+      helper: 'Precautions, escalation points, and equipment use.',
+      items: [
+        'Fall prevention',
+        'Precautions / contraindications',
+        'When to contact provider',
+        'Equipment / DME use',
+      ].map((item) => ({ value: item, label: item })),
+    },
+    {
+      id: 'support',
+      label: 'Support System',
+      helper: 'Teaching that involves family, caregivers, or helpers.',
+      items: ['Caregiver training'].map((item) => ({ value: item, label: item })),
+    },
+  ];
+
   function onGoalInput(index: number, e: Event) {
     const val = (e.target as HTMLTextAreaElement).value;
     const updated = [...goals];
@@ -107,6 +206,20 @@
     const val = (e.target as HTMLSelectElement).value;
     const updated = [...goals];
     updated[index] = { ...updated[index], icfDomain: val };
+    updateGoals(updated);
+  }
+
+  function onGoalType(index: number, e: Event) {
+    const val = (e.target as HTMLSelectElement).value;
+    const updated = [...goals];
+    updated[index] = { ...updated[index], goalType: val };
+    updateGoals(updated);
+  }
+
+  function onGoalStatus(index: number, e: Event) {
+    const val = (e.target as HTMLSelectElement).value;
+    const updated = [...goals];
+    updated[index] = { ...updated[index], status: val };
     updateGoals(updated);
   }
 
@@ -155,38 +268,6 @@
     updateField('plan', 'inClinicInterventions', [...items]);
   }
 
-  function addInClinic() {
-    updateInClinic([...inClinic, { intervention: '', dosage: '' }]);
-  }
-
-  function removeInClinic(index: number) {
-    updateInClinic(inClinic.filter((_, i) => i !== index));
-  }
-
-  function onInClinicIntervention(index: number, value: string) {
-    const updated = [...inClinic];
-    updated[index] = { ...updated[index], intervention: value };
-    updateInClinic(updated);
-  }
-
-  function onInClinicDosage(index: number, e: Event) {
-    const val = (e.target as HTMLTextAreaElement).value;
-    const updated = [...inClinic];
-    updated[index] = { ...updated[index], dosage: val };
-    updateInClinic(updated);
-  }
-
-  // ─── In-Clinic drag-reorder ───
-
-  let inClinicDragIdx = $state<number | null>(null);
-  const icDrag = createDragReorder(
-    () => inClinic,
-    updateInClinic,
-    (index) => {
-      inClinicDragIdx = index;
-    },
-  );
-
   // ─── HEP Interventions ───
 
   const hepItems = $derived.by((): PlanIntervention[] => {
@@ -198,388 +279,277 @@
     updateField('plan', 'hepInterventions', [...items]);
   }
 
-  function addHep() {
-    updateHep([...hepItems, { intervention: '', dosage: '' }]);
+  // ─── Education Topics Checklist ───
+
+  const educationTopics = $derived.by((): string[] => {
+    const et = section.educationTopics;
+    return Array.isArray(et) ? et : [];
+  });
+
+  function toggleEducationTopic(topic: string) {
+    const updated = educationTopics.includes(topic)
+      ? educationTopics.filter((t) => t !== topic)
+      : [...educationTopics, topic];
+    updateField('plan', 'educationTopics', updated);
   }
-
-  function removeHep(index: number) {
-    updateHep(hepItems.filter((_, i) => i !== index));
-  }
-
-  function onHepIntervention(index: number, value: string) {
-    const updated = [...hepItems];
-    updated[index] = { ...updated[index], intervention: value };
-    updateHep(updated);
-  }
-
-  function onHepDosage(index: number, e: Event) {
-    const val = (e.target as HTMLTextAreaElement).value;
-    const updated = [...hepItems];
-    updated[index] = { ...updated[index], dosage: val };
-    updateHep(updated);
-  }
-
-  // ─── HEP drag-reorder ───
-
-  let hepDragIdx = $state<number | null>(null);
-  const hepDrag = createDragReorder(
-    () => hepItems,
-    updateHep,
-    (index) => {
-      hepDragIdx = index;
-    },
-  );
 </script>
 
 <div class="soap-section soap-plan">
   <!-- Visit Parameters -->
-  <CollapsibleSubsection
-    title="Visit Parameters"
-    open={openSubs.schedule}
-    onToggle={() => toggle('schedule')}
-    dataSubsection="visit-parameters"
-  >
-    <div class="field-row">
-      <label class="field-label field-label--select">
-        Frequency
-        <select value={field('frequency')} onchange={(e) => onInput('frequency', e)}>
-          {#each FREQUENCY_OPTIONS as opt}
-            <option value={opt.value}>{opt.label}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="field-label field-label--select">
-        Duration
-        <select value={field('duration')} onchange={(e) => onInput('duration', e)}>
-          {#each DURATION_OPTIONS as opt}
-            <option value={opt.value}>{opt.label}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'visit-parameters')}
+    <CollapsibleSubsection
+      title="Visit Parameters"
+      open={openSubs.schedule}
+      onToggle={() => toggle('schedule')}
+      dataSubsection="visit-parameters"
+    >
+      <div class="field-row">
+        <label class="field-label field-label--select">
+          Frequency
+          <select value={field('frequency')} onchange={(e) => onInput('frequency', e)}>
+            {#each FREQUENCY_OPTIONS as opt}
+              <option value={opt.value}>{opt.label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="field-label field-label--select">
+          Duration
+          <select value={field('duration')} onchange={(e) => onInput('duration', e)}>
+            {#each DURATION_OPTIONS as opt}
+              <option value={opt.value}>{opt.label}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- Goals -->
-  <CollapsibleSubsection
-    title="SMART Goals"
-    open={openSubs.goals}
-    onToggle={() => toggle('goals')}
-    dataSubsection="goal-setting"
-  >
-    {#if goals.length > 0}
-      <div class="goal-list">
-        {#each goals as entry, i (i)}
-          <div
-            class="goal-row"
-            class:goal-row--dragging={goalDragIdx === i}
-            draggable="false"
-            role="listitem"
-            ondragover={(e) => goalDrag.dragOver(e)}
-            ondrop={(e) => goalDrag.drop(i, e)}
-          >
-            <button
-              type="button"
-              class="goal-row__handle ct-drag-handle"
-              draggable="true"
-              aria-label="Drag to reorder goal {i + 1}"
-              tabindex="-1"
-              ondragstart={(e) => goalDrag.dragStart(i, e)}
-              ondragend={goalDrag.dragEnd}>⠿</button
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'goal-setting')}
+    <CollapsibleSubsection
+      title="SMART Goals"
+      open={openSubs.goals}
+      onToggle={() => toggle('goals')}
+      dataSubsection="goal-setting"
+    >
+      {#if goals.length > 0}
+        <div class="goal-list">
+          {#each goals as entry, i (i)}
+            <div
+              class="goal-row"
+              class:goal-row--dragging={goalDragIdx === i}
+              draggable="false"
+              role="listitem"
+              ondragover={(e) => goalDrag.dragOver(e)}
+              ondrop={(e) => goalDrag.drop(i, e)}
             >
-            <div class="goal-row__body">
-              <textarea
-                class="goal-row__input"
-                rows="2"
-                value={entry.goal}
-                oninput={(e) => onGoalInput(i, e)}
-                placeholder="SMART goal: specific, measurable, achievable, relevant, time-bound (e.g., 'Pt will achieve 150° shoulder flexion AROM for overhead reaching within 4 weeks')"
-              ></textarea>
-              <div class="goal-row__meta">
-                <select
-                  class="goal-row__select"
-                  value={entry.timeframe}
-                  onchange={(e) => onGoalTimeframe(i, e)}
-                  aria-label="Goal {i + 1} timeframe"
-                >
-                  {#each TIMEFRAME_OPTIONS as opt}
-                    <option value={opt.value}>{opt.label}</option>
-                  {/each}
-                </select>
-                <select
-                  class="goal-row__select"
-                  value={entry.icfDomain}
-                  onchange={(e) => onGoalIcfDomain(i, e)}
-                  aria-label="Goal {i + 1} ICF domain"
-                >
-                  {#each ICF_DOMAIN_OPTIONS as opt}
-                    <option value={opt.value}>{opt.label}</option>
-                  {/each}
-                </select>
+              <button
+                type="button"
+                class="goal-row__handle ct-drag-handle"
+                draggable="true"
+                aria-label="Drag to reorder goal {i + 1}"
+                tabindex="-1"
+                ondragstart={(e) => goalDrag.dragStart(i, e)}
+                ondragend={goalDrag.dragEnd}>⠿</button
+              >
+              <div class="goal-row__body">
+                <textarea
+                  class="goal-row__input"
+                  rows="2"
+                  value={entry.goal}
+                  oninput={(e) => onGoalInput(i, e)}
+                  placeholder="SMART goal: specific, measurable, achievable, relevant, time-bound (e.g., 'Pt will achieve 150° shoulder flexion AROM for overhead reaching within 4 weeks')"
+                ></textarea>
+                <div class="goal-row__meta">
+                  <select
+                    class="goal-row__select goal-row__select--narrow"
+                    value={entry.goalType ?? ''}
+                    onchange={(e) => onGoalType(i, e)}
+                    aria-label="Goal {i + 1} type"
+                  >
+                    {#each GOAL_TYPE_OPTIONS as opt}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
+                  <select
+                    class="goal-row__select"
+                    value={entry.timeframe}
+                    onchange={(e) => onGoalTimeframe(i, e)}
+                    aria-label="Goal {i + 1} timeframe"
+                  >
+                    {#each TIMEFRAME_OPTIONS as opt}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
+                  <select
+                    class="goal-row__select"
+                    value={entry.icfDomain}
+                    onchange={(e) => onGoalIcfDomain(i, e)}
+                    aria-label="Goal {i + 1} ICF domain"
+                  >
+                    {#each ICF_DOMAIN_OPTIONS as opt}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
+                  <select
+                    class="goal-row__select"
+                    value={entry.status ?? ''}
+                    onchange={(e) => onGoalStatus(i, e)}
+                    aria-label="Goal {i + 1} status"
+                  >
+                    {#each GOAL_STATUS_OPTIONS as opt}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
+                </div>
               </div>
+              <button
+                type="button"
+                class="goal-row__remove ct-btn-remove"
+                onclick={() => removeGoal(i)}
+                aria-label="Remove goal {i + 1}">×</button
+              >
             </div>
-            <button
-              type="button"
-              class="goal-row__remove ct-btn-remove"
-              onclick={() => removeGoal(i)}
-              aria-label="Remove goal {i + 1}">×</button
-            >
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <p class="ct-empty-hint">No goals added yet.</p>
-    {/if}
-    <button type="button" class="btn-add" onclick={addGoal}>+ Add Goal</button>
-  </CollapsibleSubsection>
+          {/each}
+        </div>
+      {:else}
+        <p class="ct-empty-hint">No goals added yet.</p>
+      {/if}
+      <button type="button" class="btn-add" onclick={addGoal}>+ Add Goal</button>
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- Treatment Narrative -->
-  <CollapsibleSubsection
-    title="Treatment Narrative"
-    open={openSubs.narrative}
-    onToggle={() => toggle('narrative')}
-    dataSubsection="treatment-narrative"
-  >
-    <label class="field-label">
-      Treatment Plan / Approach
-      <textarea
-        rows="2"
-        value={field('treatmentPlan')}
-        oninput={(e) => onInput('treatmentPlan', e)}
-        placeholder="Overall approach and clinical rationale linking impairments to interventions (e.g., 'Address ROM deficits through joint mobilization, strengthen rotator cuff via progressive resistance')"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Therapeutic Exercise Focus
-      <textarea
-        rows="2"
-        value={field('exerciseFocus')}
-        oninput={(e) => onInput('exerciseFocus', e)}
-        placeholder="e.g. Rotator cuff strengthening, scapular stabilization, core activation"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Exercise Prescription (FITT)
-      <textarea
-        rows="2"
-        value={field('exercisePrescription')}
-        oninput={(e) => onInput('exercisePrescription', e)}
-        placeholder="FITT parameters: Frequency (3x/week), Intensity (moderate RPE 4-6), Time (30 min), Type (strengthening, stretching, aerobic)"
-      ></textarea>
-    </label>
-    <label class="field-label">
-      Manual Therapy
-      <textarea
-        rows="2"
-        value={field('manualTherapy')}
-        oninput={(e) => onInput('manualTherapy', e)}
-        placeholder="e.g. Joint mobilization (grade III GH), soft tissue mobilization to upper trap, myofascial release"
-      ></textarea>
-    </label>
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'treatment-narrative')}
+    <CollapsibleSubsection
+      title="Treatment Narrative"
+      open={openSubs.narrative}
+      onToggle={() => toggle('narrative')}
+      dataSubsection="treatment-narrative"
+    >
+      <label class="field-label">
+        Treatment Plan / Approach
+        <textarea
+          rows="2"
+          value={field('treatmentPlan')}
+          oninput={(e) => onInput('treatmentPlan', e)}
+          placeholder="Overall approach and clinical rationale linking impairments to interventions (e.g., 'Address ROM deficits through joint mobilization, strengthen rotator cuff via progressive resistance')"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Therapeutic Exercise Focus
+        <textarea
+          rows="2"
+          value={field('exerciseFocus')}
+          oninput={(e) => onInput('exerciseFocus', e)}
+          placeholder="e.g. Rotator cuff strengthening, scapular stabilization, core activation"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Exercise Prescription (FITT)
+        <textarea
+          rows="2"
+          value={field('exercisePrescription')}
+          oninput={(e) => onInput('exercisePrescription', e)}
+          placeholder="FITT parameters: Frequency (3x/week), Intensity (moderate RPE 4-6), Time (30 min), Type (strengthening, stretching, aerobic)"
+        ></textarea>
+      </label>
+      <label class="field-label">
+        Manual Therapy
+        <textarea
+          rows="2"
+          value={field('manualTherapy')}
+          oninput={(e) => onInput('manualTherapy', e)}
+          placeholder="e.g. Joint mobilization (grade III GH), soft tissue mobilization to upper trap, myofascial release"
+        ></textarea>
+      </label>
 
-    <div class="modalities-group">
-      <span class="field-label" style="margin-bottom: 0.25rem;">Physical Modalities</span>
-      <div class="modalities-grid">
-        {#each MODALITY_OPTIONS as mod}
-          <label class="modality-check">
-            <input
-              type="checkbox"
-              checked={modalities.includes(mod)}
-              onchange={() => toggleModality(mod)}
-            />
-            <span>{mod}</span>
-          </label>
-        {/each}
-      </div>
-    </div>
-  </CollapsibleSubsection>
+      <GroupedToggleBoard
+        label="Physical Modalities"
+        helper="Group modalities by treatment intent so the student can find the right adjunct faster."
+        groups={MODALITY_GROUPS}
+        selected={modalities}
+        onToggle={toggleModality}
+        selectedLabel="Modalities already planned"
+        emptyLabel="No modalities selected yet."
+      />
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- In-Clinic Treatment Plan -->
-  <CollapsibleSubsection
-    title="In-Clinic Treatment Plan"
-    open={openSubs.inClinic}
-    onToggle={() => toggle('inClinic')}
-    dataSubsection="in-clinic-treatment-plan"
-  >
-    <table class="ct-table intervention-table">
-      <colgroup>
-        <col style="width: 2rem;" />
-        <col />
-        <col style="width: 10rem;" />
-        <col style="width: 3.75rem;" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="ct-th ct-th--region" style="width:2rem"></th>
-          <th class="ct-th">Intervention</th>
-          <th class="ct-th">Dose</th>
-          <th class="ct-th ct-th--actions">
-            <button
-              type="button"
-              class="ct-btn-add"
-              onclick={addInClinic}
-              aria-label="Add intervention">+</button
-            >
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each inClinic as entry, idx (idx)}
-          <tr
-            class="ct-row"
-            class:ct-row--dragging={inClinicDragIdx === idx}
-            ondragover={(e) => {
-              e.preventDefault();
-            }}
-            ondrop={(e) => icDrag.drop(idx, e)}
-          >
-            <td class="drag-handle-cell">
-              <button
-                type="button"
-                class="ct-drag-handle"
-                draggable="true"
-                aria-label="Drag to reorder intervention {idx + 1}"
-                tabindex="-1"
-                ondragstart={(e) => icDrag.dragStart(idx, e)}
-                ondragend={() => {
-                  icDrag.dragEnd();
-                }}>⠿</button
-              >
-            </td>
-            <td>
-              <SearchableSelect
-                value={entry.intervention}
-                placeholder="Search or type intervention..."
-                items={PT_INTERVENTIONS}
-                scoreFn={scoreIntervention}
-                onSelect={(v) => onInClinicIntervention(idx, v)}
-              />
-            </td>
-            <td>
-              <textarea
-                rows="1"
-                class="dose-input"
-                value={entry.dosage}
-                oninput={(e) => onInClinicDosage(idx, e)}
-                placeholder="e.g., 3×10, 30s hold"
-              ></textarea>
-            </td>
-            <td class="action-col">
-              <button
-                type="button"
-                class="ct-btn-remove"
-                onclick={() => removeInClinic(idx)}
-                aria-label="Remove intervention">×</button
-              >
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    {#if inClinic.length === 0}
-      <p class="ct-empty-hint">No interventions added yet.</p>
-      <button type="button" class="btn-add" onclick={addInClinic}>+ Add Intervention</button>
-    {/if}
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'in-clinic-treatment-plan')}
+    <CollapsibleSubsection
+      title="In-Clinic Treatment Plan"
+      open={openSubs.inClinic}
+      onToggle={() => toggle('inClinic')}
+      dataSubsection="in-clinic-treatment-plan"
+    >
+      <InterventionTable
+        items={inClinic}
+        onUpdate={updateInClinic}
+        interventionLabel="Intervention"
+        dosageLabel="Dose"
+        interventionPlaceholder="Search or type intervention..."
+        dosagePlaceholder="e.g., 3×10, 30s hold"
+        emptyLabel="No interventions added yet."
+        addLabel="Add Intervention"
+        library={PT_INTERVENTIONS}
+        scoreFn={scoreIntervention}
+      />
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- Home Exercise Program -->
-  <CollapsibleSubsection
-    title="Home Exercise Program (HEP)"
-    open={openSubs.hep}
-    onToggle={() => toggle('hep')}
-    dataSubsection="hep-plan"
-  >
-    <table class="ct-table intervention-table">
-      <colgroup>
-        <col style="width: 2rem;" />
-        <col />
-        <col style="width: 10rem;" />
-        <col style="width: 3.75rem;" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="ct-th ct-th--region" style="width:2rem"></th>
-          <th class="ct-th">Exercise / Activity</th>
-          <th class="ct-th">Dose / Frequency</th>
-          <th class="ct-th ct-th--actions">
-            <button type="button" class="ct-btn-add" onclick={addHep} aria-label="Add HEP exercise"
-              >+</button
-            >
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each hepItems as entry, idx (idx)}
-          <tr
-            class="ct-row"
-            class:ct-row--dragging={hepDragIdx === idx}
-            ondragover={(e) => {
-              e.preventDefault();
-            }}
-            ondrop={(e) => hepDrag.drop(idx, e)}
-          >
-            <td class="drag-handle-cell">
-              <button
-                type="button"
-                class="ct-drag-handle"
-                draggable="true"
-                aria-label="Drag to reorder exercise {idx + 1}"
-                tabindex="-1"
-                ondragstart={(e) => hepDrag.dragStart(idx, e)}
-                ondragend={() => {
-                  hepDrag.dragEnd();
-                }}>⠿</button
-              >
-            </td>
-            <td>
-              <SearchableSelect
-                value={entry.intervention}
-                placeholder="Search or type exercise..."
-                items={PT_INTERVENTIONS}
-                scoreFn={scoreIntervention}
-                onSelect={(v) => onHepIntervention(idx, v)}
-              />
-            </td>
-            <td>
-              <textarea
-                rows="1"
-                class="dose-input"
-                value={entry.dosage}
-                oninput={(e) => onHepDosage(idx, e)}
-                placeholder="e.g., 3×10, 1×/day"
-              ></textarea>
-            </td>
-            <td class="action-col">
-              <button
-                type="button"
-                class="ct-btn-remove"
-                onclick={() => removeHep(idx)}
-                aria-label="Remove exercise">×</button
-              >
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-    {#if hepItems.length === 0}
-      <p class="ct-empty-hint">No exercises added yet.</p>
-      <button type="button" class="btn-add" onclick={addHep}>+ Add Exercise</button>
-    {/if}
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'hep-plan')}
+    <CollapsibleSubsection
+      title="Home Exercise Program (HEP)"
+      open={openSubs.hep}
+      onToggle={() => toggle('hep')}
+      dataSubsection="hep-plan"
+    >
+      <InterventionTable
+        items={hepItems}
+        onUpdate={updateHep}
+        interventionLabel="Exercise / Activity"
+        dosageLabel="Dose / Frequency"
+        interventionPlaceholder="Search or type exercise..."
+        dosagePlaceholder="e.g., 3×10, 1×/day"
+        emptyLabel="No exercises added yet."
+        addLabel="Add Exercise"
+        library={PT_INTERVENTIONS}
+        scoreFn={scoreIntervention}
+      />
+    </CollapsibleSubsection>
+  {/if}
 
   <!-- Patient Education -->
-  <CollapsibleSubsection
-    title="Patient Education"
-    open={openSubs.education}
-    onToggle={() => toggle('education')}
-    dataSubsection="patient-education"
-  >
-    <textarea
-      rows="2"
-      value={field('patientEducation')}
-      oninput={(e) => onInput('patientEducation', e)}
-      placeholder="Topics covered with patient: activity modification, precautions, expected recovery timeline, adherence strategies, when to contact provider"
-    ></textarea>
-  </CollapsibleSubsection>
+  {#if isSubsectionVisible(noteTemplate, 'plan', 'patient-education')}
+    <CollapsibleSubsection
+      title="Patient Education"
+      open={openSubs.education}
+      onToggle={() => toggle('education')}
+      dataSubsection="patient-education"
+    >
+      <GroupedToggleBoard
+        label="Topics Covered"
+        helper="Organize education by what the patient is being asked to understand, do, or monitor."
+        groups={EDUCATION_TOPIC_GROUPS}
+        selected={educationTopics}
+        onToggle={toggleEducationTopic}
+        selectedLabel="Education already covered"
+        emptyLabel="No education topics selected yet."
+      />
+      <label class="field-label">
+        Education Notes
+        <textarea
+          rows="2"
+          value={field('patientEducation')}
+          oninput={(e) => onInput('patientEducation', e)}
+          placeholder="Additional details, patient response to education, handouts provided, demonstrated understanding..."
+        ></textarea>
+      </label>
+    </CollapsibleSubsection>
+  {/if}
 </div>
 
 <style>
@@ -704,31 +674,9 @@
     background: #fef2f2;
   }
 
-  /* ─── Intervention tables ─── */
-
-  .intervention-table {
-    table-layout: fixed;
-  }
-
-  .intervention-table tbody td {
-    padding: 0.375rem 0.5rem;
-    border-bottom: 1px solid var(--color-neutral-150, #eeeeee);
-    vertical-align: top;
-  }
-
-  .drag-handle-cell {
-    text-align: center;
-    vertical-align: middle;
-  }
-
-  .dose-input {
-    width: 100%;
-    resize: vertical;
-  }
-
-  .action-col {
-    text-align: center;
-    width: 3.75rem;
+  .goal-row__select--narrow {
+    flex: 0 0 auto;
+    min-width: 70px;
   }
 
   .btn-add {
@@ -746,33 +694,5 @@
   .btn-add:hover {
     background: var(--color-neutral-50, #fafafa);
     border-color: var(--color-brand-green, #009a44);
-  }
-
-  /* Modalities */
-  .modalities-group {
-    margin-top: 0.75rem;
-  }
-
-  .modalities-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0.25rem 1rem;
-  }
-
-  .modality-check {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.8125rem;
-    color: var(--color-neutral-700, #424242);
-    cursor: pointer;
-    padding: 0.25rem 0;
-  }
-
-  .modality-check input[type='checkbox'] {
-    accent-color: var(--color-brand-green, #009a44);
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
   }
 </style>

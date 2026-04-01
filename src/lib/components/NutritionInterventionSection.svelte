@@ -62,12 +62,7 @@
     <div class="inline-row">
       <div class="inline-row__cell">
         <label class="form-label" for="ni-strategy">Intervention Strategy</label>
-        <select
-          id="ni-strategy"
-          class="form-select"
-          value={field('strategy')}
-          onchange={(e) => onInput('strategy', e)}
-        >
+        <select id="ni-strategy" value={field('strategy')} onchange={(e) => onInput('strategy', e)}>
           {#each INTERVENTION_STRATEGIES as opt}
             <option value={opt.value}>{opt.label}</option>
           {/each}
@@ -77,7 +72,6 @@
         <label class="form-label" for="ni-diet-order">Diet Order / Prescription</label>
         <input
           id="ni-diet-order"
-          class="form-input"
           type="text"
           placeholder="e.g. Regular diet, 2g Na restriction, Carb-controlled"
           value={field('diet_order')}
@@ -90,7 +84,6 @@
       <label class="form-label" for="ni-goals">Nutrition Goals</label>
       <textarea
         id="ni-goals"
-        class="form-textarea"
         rows="2"
         placeholder="Measurable goals related to the nutrition diagnosis"
         value={field('goals')}
@@ -109,7 +102,6 @@
       <label class="form-label" for="ni-education">Education Topics</label>
       <textarea
         id="ni-education"
-        class="form-textarea"
         rows="2"
         placeholder="Topics covered, materials provided, patient understanding..."
         value={field('education_topics')}
@@ -121,7 +113,6 @@
       <label class="form-label" for="ni-counseling">Counseling Notes</label>
       <textarea
         id="ni-counseling"
-        class="form-textarea"
         rows="2"
         placeholder="Behavioral strategies, motivational interviewing notes..."
         value={field('counseling_notes')}
@@ -140,7 +131,6 @@
       <label class="form-label" for="ni-coordination">Coordination of Care</label>
       <textarea
         id="ni-coordination"
-        class="form-textarea"
         rows="2"
         placeholder="Referrals, communication with RN/MD/pharmacy/dietary staff"
         value={field('coordination')}
@@ -161,7 +151,7 @@
     gap: 0.5rem;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--color-neutral-900, #1a1a1a);
     margin: 0;
   }
 
@@ -173,34 +163,11 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #4a4a4a;
+    color: var(--color-neutral-600, #616161);
     margin-bottom: 0.25rem;
   }
 
-  .form-textarea,
-  .form-input,
-  .form-select {
-    width: 100%;
-    padding: 0.5rem 0.65rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font: inherit;
-    font-size: 0.85rem;
-    color: #1a1a1a;
-    background: #fff;
-    transition: border-color 0.15s;
-    box-sizing: border-box;
-  }
-
-  .form-textarea:focus,
-  .form-input:focus,
-  .form-select:focus {
-    outline: none;
-    border-color: var(--color-brand-green, #009a44);
-    box-shadow: 0 0 0 2px rgba(0, 154, 68, 0.12);
-  }
-
-  .form-textarea {
+  textarea {
     resize: vertical;
     min-height: 3rem;
   }

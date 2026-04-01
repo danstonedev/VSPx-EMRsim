@@ -269,6 +269,16 @@
     color: rgba(255, 255, 255, 0.72);
   }
 
+  .patient-header__status--locked {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.15);
+  }
+
+  .patient-header__status--amending {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+  }
+
   .patient-header__actions {
     display: flex;
     align-items: center;

@@ -20,12 +20,17 @@ describe('vsp registry integration helpers', () => {
     );
   });
 
-  it('searches patients by name and mrn', () => {
-    const sarah = createPatient({ firstName: 'Sarah', lastName: 'Mitchell' });
+  it('searches patients by name, mrn, and diagnoses', () => {
+    const sarah = createPatient({
+      firstName: 'Sarah',
+      lastName: 'Mitchell',
+      medicalHistory: ['Chronic obstructive pulmonary disease', 'Hypertension'],
+    });
     createPatient({ firstName: 'Jordan', lastName: 'Vale' });
 
     expect(searchPatients('sarah')[0]?.id).toBe(sarah.id);
     expect(searchPatients(sarah.mrn)[0]?.id).toBe(sarah.id);
+    expect(searchPatients('pulmonary')[0]?.id).toBe(sarah.id);
   });
 
   it('builds picker options with summary metadata', () => {

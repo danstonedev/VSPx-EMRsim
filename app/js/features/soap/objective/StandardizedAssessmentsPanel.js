@@ -1,6 +1,5 @@
 import { el } from '../../../ui/utils.js';
 import { textAreaField } from '../../../ui/form-components.js';
-import { buildBrandedModal, closeBrandedModal, openBrandedModal } from '../../../ui/ModalShell.js';
 import { subsectionPanel } from './GatedPanels.js';
 import {
   createAssessmentInstance,
@@ -36,13 +35,44 @@ function createInfoTip(text, label) {
       'aria-label': label || text,
       'data-tip': text,
     },
-    '?',
+    'i',
   );
 }
 
-function createScoreRadioGroup({ definition, assessment, item, scoreDescriptions, onScoreChange }) {
-  const scoreValues = getScoreOptions(definition);
-  const current = assessment.responses?.[item.id];
+function isNumericType(definition) {
+  return definition.measurementType === 'timed' || definition.measurementType === 'distance';
+}
+
+function getStatusLabel(assessment) {
+  if (!assessment) return 'Not started';
+  return assessment.status === 'complete' ? 'Complete' : 'In progress';
+}
+
+function getStatusClass(assessment) {
+  if (!assessment) return 'is-idle';
+  return assessment.status === 'complete' ? 'is-complete' : 'is-progress';
+}
+
+function getMetricLabel(assessment) {
+  if (!assessment) return '';
+  if (assessment.status === 'complete') {
+    return (
+      formatAssessmentScoreSummary(assessment) ||
+      `${assessment.scores.total}/${assessment.scores.max}`
+    );
+  }
+  if ((assessment.scores?.completedItems || 0) > 0) {
+    return `Score ${assessment.scores.total}/${assessment.scores.max}`;
+  }
+  if ((assessment.notes || '').trim()) {
+    return 'Notes added';
+  }
+  return '';
+}
+
+function createScoreChipGroup({ definition, assessment, item, onScoreChange }) {
+  const scoreDescriptions = getScoreDescriptionMap(definition);
+  const current = assessment?.responses?.[item.id];
   const currentScore =
     current === '' || current === null || current === undefined ? null : Number(current);
   const itemRubric = definition?.itemRubrics?.[item.id];
@@ -52,47 +82,33 @@ function createScoreRadioGroup({ definition, assessment, item, scoreDescriptions
     'aria-label': `${item.label} score selection`,
   });
 
-  scoreValues.forEach((score) => {
-    const isChecked = currentScore === score;
+  getScoreOptions(definition).forEach((score) => {
     const specific = itemRubric?.scores?.[score];
     const fallback = scoreDescriptions[String(score)] || '';
     const desc = specific || fallback;
     const tip = desc ? `Score ${score}: ${desc}` : `Score ${score}`;
-    const chip = el(
-      'button',
-      {
-        type: 'button',
-        class: `std-score-chip std-tip-target ${isChecked ? 'is-active' : ''}`,
-        'data-tip': tip,
-        'aria-pressed': isChecked ? 'true' : 'false',
-        'aria-label': `${item.label} score ${score}${isChecked ? ', selected' : ''}`,
-        onClick: () => {
-          const shouldClear = chip.getAttribute('aria-pressed') === 'true';
-          const nextValue = shouldClear ? '' : score;
+    const isChecked = currentScore === score;
 
-          group.querySelectorAll('.std-score-chip').forEach((button) => {
-            button.setAttribute('aria-pressed', 'false');
-            button.classList.remove('is-active');
-          });
-
-          if (!shouldClear) {
-            chip.setAttribute('aria-pressed', 'true');
-            chip.classList.add('is-active');
-          }
-
-          onScoreChange(item.id, nextValue);
+    group.appendChild(
+      el(
+        'button',
+        {
+          type: 'button',
+          class: `std-score-chip std-tip-target ${isChecked ? 'is-active' : ''}`,
+          'data-tip': tip,
+          'aria-pressed': isChecked ? 'true' : 'false',
+          'aria-label': `${item.label} score ${score}${isChecked ? ', selected' : ''}`,
+          onClick: () => onScoreChange(item.id, score),
         },
-      },
-      el('span', { class: 'std-score-chip__text' }, String(score)),
+        el('span', { class: 'std-score-chip__text' }, String(score)),
+      ),
     );
-    group.appendChild(chip);
   });
 
   return group;
 }
 
-function createInstrumentTable(definition, assessment, onScoreChange) {
-  const scoreDescriptions = getScoreDescriptionMap(definition);
+function createInstrumentTable({ definition, assessment, onScoreChange, onNumericBlur }) {
   const table = el('table', { class: 'std-assessment-table' });
   const thead = el('thead', { class: 'std-assessment-table__head' }, [
     el('tr', { class: 'std-assessment-table__row std-assessment-table__row--head' }, [
@@ -115,353 +131,298 @@ function createInstrumentTable(definition, assessment, onScoreChange) {
     ]),
   ]);
   const tbody = el('tbody', { class: 'std-assessment-table__body' });
-  const title = assessment.title || definition.name;
+  const title = assessment?.title || definition.name;
 
   for (const item of definition.items || []) {
-    const score = assessment.responses?.[item.id];
     const itemRubric = definition?.itemRubrics?.[item.id];
-    const cue = itemRubric?.instructions || itemRubric?.focus || '';
-    const hasScore =
-      score !== '' && score !== null && score !== undefined && Number.isFinite(Number(score));
-    const row = el('tr', { class: `std-assessment-table__row ${hasScore ? 'is-scored' : ''}` }, [
-      el(
-        'td',
-        {
-          class:
-            'std-assessment-table__cell std-assessment-table__cell--item std-assessment-item-cell',
-        },
-        [
-          el('div', { class: 'std-assessment-item-wrap' }, [
-            el('span', { class: 'std-assessment-item-label' }, item.label),
-            createInfoTip(cue, `Instructions for ${item.label}`),
-          ]),
-        ],
-      ),
-      el('td', { class: 'std-assessment-table__cell std-assessment-table__cell--score' }, [
-        createScoreRadioGroup({
+    const cue = itemRubric?.instructions || '';
+    const currentValue = assessment?.responses?.[item.id];
+
+    const scoreCell = isNumericType(definition)
+      ? (() => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'decimal';
+          input.className = 'form-input form-input--normal std-assessment-numeric';
+          input.placeholder = definition.unit || '';
+          input.setAttribute('aria-label', item.label);
+          input.value =
+            currentValue === '' || currentValue === undefined || currentValue === null
+              ? ''
+              : String(currentValue);
+          input.addEventListener('blur', (event) => onNumericBlur(item.id, event.target.value));
+          return el('div', { class: 'std-assessment-numeric-wrap' }, [
+            input,
+            definition.unit ? el('span', { class: 'std-assessment-unit' }, definition.unit) : null,
+          ]);
+        })()
+      : createScoreChipGroup({
           definition,
           assessment,
           item,
-          scoreDescriptions,
           onScoreChange,
-        }),
+        });
+
+    tbody.appendChild(
+      el('tr', { class: 'std-assessment-table__row' }, [
+        el(
+          'td',
+          {
+            class:
+              'std-assessment-table__cell std-assessment-table__cell--item std-assessment-item-cell',
+          },
+          [
+            el('div', { class: 'std-assessment-item-wrap' }, [
+              el('span', { class: 'std-assessment-item-label' }, item.label),
+              createInfoTip(cue, `Instructions for ${item.label}`),
+            ]),
+          ],
+        ),
+        el('td', { class: 'std-assessment-table__cell std-assessment-table__cell--score' }, [
+          scoreCell,
+        ]),
       ]),
-    ]);
-    tbody.appendChild(row);
+    );
   }
 
   table.append(el('caption', { class: 'sr-only' }, `${title} detailed item scoring`), thead, tbody);
   return el('div', { class: 'std-assessment-table-wrap' }, [table]);
 }
 
-function createAssessmentModal({ assessment, definition, onClose, onUpdate }) {
-  const dialogId = `std-assessment-dialog-${assessment.id}`;
-  const titleId = `${dialogId}-title`;
-  const scoreId = `${dialogId}-score`;
-  const helpId = `${dialogId}-help`;
-  let workingAssessment = assessment;
+function createAssessmentCard({
+  definition,
+  assessment,
+  expanded,
+  onToggle,
+  onReset,
+  onScoreChange,
+  onNumericBlur,
+  onNotesChange,
+}) {
+  const metricLabel = getMetricLabel(assessment);
+  const summaryChildren = [
+    el(
+      'span',
+      {
+        class: `std-assessment-pill ${getStatusClass(assessment)}`,
+      },
+      getStatusLabel(assessment),
+    ),
+  ];
 
-  const scoreSummaryText = el(
-    'p',
-    { id: scoreId, class: 'std-assessment-modal__score text-secondary fs-14' },
-    `Current score: ${formatAssessmentScoreSummary(assessment) || 'Not yet scored'}`,
-  );
-
-  function commitWorkingAssessment(updated, afterUpdate) {
-    workingAssessment = updated;
-    onUpdate(updated, (normalized) => {
-      if (normalized) workingAssessment = normalized;
-      if (afterUpdate) afterUpdate(normalized);
-    });
+  if (assessment && metricLabel) {
+    summaryChildren.push(el('span', { class: 'std-assessment-pill is-score' }, metricLabel));
   }
 
-  const footerCloseButton = el(
-    'button',
-    {
-      type: 'button',
-      class: 'btn btn--sm secondary',
-      onClick: onClose,
-    },
-    'Close',
-  );
-  const modal = buildBrandedModal({
-    title: assessment.title || definition.name,
-    titleId,
-    headerLead: el('div', { class: 'std-assessment-modal__heading' }, [
-      el(
-        'h4',
-        { id: titleId, class: 'std-assessment-modal__title' },
-        assessment.title || definition.name,
-      ),
-      scoreSummaryText,
-    ]),
-    overlayClass: 'std-assessment-modal-overlay',
-    contentClass: 'std-assessment-modal popup-card-base',
-    headerClass: 'std-assessment-modal__header',
-    bodyClass: 'std-assessment-modal__body',
-    footerClass: 'std-assessment-modal__actions',
-    closeButtonClass: 'std-assessment-close-btn',
-    showCloseButton: false,
-    contentTag: 'section',
-    closeLabel: `Close ${assessment.title || definition.name} details`,
-    bodyChildren: [
-      el(
-        'p',
-        { id: helpId, class: 'text-secondary fs-14 std-assessment-inline-help' },
-        'Select a score chip for each item. Hover or focus score chips and info icons for just-in-time rubric cues.',
-      ),
-      createInstrumentTable(definition, assessment, (itemId, next) => {
-        const updated = {
-          ...workingAssessment,
-          responses: {
-            ...(workingAssessment.responses || {}),
-            [itemId]: next === '' ? '' : Number(next),
-          },
-        };
-        commitWorkingAssessment(updated, (normalized) => {
-          scoreSummaryText.textContent = `Current score: ${formatAssessmentScoreSummary(normalized) || 'Not yet scored'}`;
-        });
-      }),
-      el('div', { class: 'std-assessment-modal__meta' }, [
-        textAreaField({
-          label: 'Notes',
-          value: assessment.notes || '',
-          onChange: (value) => {
-            const updated = { ...workingAssessment, notes: value };
-            commitWorkingAssessment(updated);
-          },
-          rows: 1,
-          hint: 'Only documented assessment data is exported. In-app tips are for guidance only.',
-        }),
-      ]),
-    ],
-    footerChildren: [footerCloseButton],
-    onRequestClose: onClose,
-  });
-
-  modal.card.id = dialogId;
-  modal.card.setAttribute('aria-describedby', scoreId);
-  return { overlay: modal.overlay, closeButton: footerCloseButton };
-}
-
-function createAssessmentCard(assessment, definitionsByKey, onOpenDetails, onRemove) {
-  const definition = definitionsByKey[assessment.instrumentKey];
-  const title = assessment.title || definition?.name || 'Standardized Assessment';
-  const statusText = assessment.status === 'complete' ? 'Complete' : 'In Progress';
-  const scoreSummary = formatAssessmentScoreSummary(assessment);
-  const completedItems = assessment.scores?.completedItems || 0;
-  const totalItems = assessment.scores?.totalItems || 0;
-
-  const header = el('div', { class: 'std-assessment-card__header' }, [
-    el('h5', { class: 'std-assessment-card__title' }, title),
-    el(
-      'button',
-      {
-        type: 'button',
-        class: 'btn btn--sm secondary',
-        onClick: onRemove,
-        title: `Remove ${title}`,
-        'aria-label': `Remove ${title}`,
-      },
-      'Remove',
-    ),
-  ]);
-
-  const summaryLine = el(
-    'div',
-    { class: 'std-assessment-summary', role: 'status', 'aria-live': 'polite' },
-    [
+  if (assessment && assessment.scores?.totalItems) {
+    summaryChildren.push(
       el(
         'span',
-        {
-          class: `std-assessment-pill ${
-            assessment.status === 'complete' ? 'is-complete' : 'is-progress'
-          }`,
-        },
-        statusText,
+        { class: 'std-assessment-pill is-count' },
+        `${assessment.scores.completedItems}/${assessment.scores.totalItems} items`,
       ),
-      scoreSummary
-        ? el('span', { class: 'std-assessment-pill is-score' }, `Score ${scoreSummary}`)
-        : null,
-      totalItems
-        ? el(
-            'span',
-            { class: 'std-assessment-pill is-count' },
-            `${completedItems}/${totalItems} items`,
-          )
-        : null,
-    ].filter(Boolean),
+    );
+  }
+
+  summaryChildren.push(
+    el(
+      'span',
+      {
+        class: `std-assessment-chevron ${expanded ? 'is-open' : ''}`,
+        'aria-hidden': 'true',
+      },
+      '▾',
+    ),
   );
 
-  const metaLine = [
-    assessment.assessor ? `Assessor: ${assessment.assessor}` : null,
-    assessment.performedAt ? `Date: ${assessment.performedAt}` : null,
-  ]
-    .filter(Boolean)
-    .join(' | ');
-
-  return el('div', { class: 'gated-card std-assessment-card' }, [
-    header,
-    summaryLine,
-    metaLine ? el('p', { class: 'text-secondary fs-14 std-assessment-meta-line' }, metaLine) : null,
+  const header = el('div', { class: 'std-assessment-card__header' }, [
     el(
       'button',
       {
         type: 'button',
-        class: 'btn btn--sm secondary std-assessment-open-btn',
-        onClick: onOpenDetails,
-        'aria-label': `Open ${title} detailed scoring`,
+        class: 'std-assessment-card__toggle',
+        'aria-expanded': expanded ? 'true' : 'false',
+        'aria-controls': `std-assessment-details-${definition.key}`,
+        onClick: onToggle,
       },
-      'Open Detailed Scoring',
+      [
+        el('div', { class: 'std-assessment-card__identity' }, [
+          el('span', { class: 'std-assessment-card__title' }, definition.name),
+          el('span', { class: 'std-assessment-card__subtitle' }, definition.instructions),
+        ]),
+        el(
+          'div',
+          { class: 'std-assessment-summary', role: 'status', 'aria-live': 'polite' },
+          summaryChildren,
+        ),
+      ],
     ),
+    assessment
+      ? el(
+          'button',
+          {
+            type: 'button',
+            class: 'btn btn--sm secondary std-assessment-reset-btn',
+            onClick: onReset,
+            'aria-label': `Reset ${definition.name}`,
+          },
+          'Reset',
+        )
+      : null,
+  ]);
+
+  const detailAssessment = assessment || createAssessmentInstance(definition.key);
+  const detailsBody = el('div', { class: 'std-assessment-details__body' }, [
+    el('div', { class: 'std-assessment-details__lead' }, [
+      el(
+        'p',
+        { class: 'text-secondary fs-14 std-assessment-inline-help' },
+        isNumericType(definition)
+          ? 'Enter measured values for each item to save this instrument to the note.'
+          : 'Select a score chip for each item. Hover or focus score chips and info icons for just-in-time rubric cues.',
+      ),
+      assessment
+        ? el('div', { class: 'std-assessment-live-summary' }, [
+            el('div', { class: 'std-assessment-live-summary__label' }, 'Live Summary'),
+            el(
+              'div',
+              { class: 'std-assessment-live-summary__value' },
+              formatAssessmentScoreSummary(assessment) ||
+                `${assessment.scores?.total || 0}/${assessment.scores?.max || 0}`,
+            ),
+          ])
+        : null,
+    ]),
+    createInstrumentTable({
+      definition,
+      assessment: detailAssessment,
+      onScoreChange,
+      onNumericBlur,
+    }),
+    textAreaField({
+      label: 'Notes',
+      value: assessment?.notes || '',
+      onChange: onNotesChange,
+      rows: 2,
+      className: 'std-assessment-notes',
+      hint: 'Only documented assessment data is exported. In-app tips are for guidance only.',
+    }),
+  ]);
+
+  const details = el(
+    'div',
+    {
+      id: `std-assessment-details-${definition.key}`,
+      class: `std-assessment-details ${expanded ? 'is-open' : ''}`,
+    },
+    [detailsBody],
+  );
+  details.hidden = !expanded;
+
+  return el('div', { class: 'gated-card std-assessment-card std-assessment-card--modern' }, [
+    header,
+    details,
   ]);
 }
 
 export function createStandardizedAssessmentsPanel(inputData, onChange) {
-  const definitions = listAssessmentDefinitions();
-  const definitionsByKey = Object.fromEntries(definitions.map((d) => [d.key, d]));
-  let selectedInstrumentKey = definitions[0]?.key || '';
+  const definitions = listAssessmentDefinitions().filter(
+    (definition) => Array.isArray(definition.disciplines) && definition.disciplines.includes('pt'),
+  );
+  const definitionOrder = new Map(definitions.map((definition, index) => [definition.key, index]));
   let assessments = normalizeStandardizedAssessments(inputData);
-  let activeModalCleanup = null;
+  const expandedKeys = {};
 
-  const cardsContainer = el('div', { class: 'gated-stack' });
-  const sectionContent = el('div', { class: 'subsection-panel__content' });
+  const cardsContainer = el('div', { class: 'gated-stack std-assessment-list' });
+
+  function getAssessmentByKey(key) {
+    return assessments.find((assessment) => assessment.instrumentKey === key) || null;
+  }
 
   function commit(nextAssessments) {
-    assessments = normalizeStandardizedAssessments(nextAssessments);
+    const dedupedByKey = new Map();
+    normalizeStandardizedAssessments(nextAssessments).forEach((assessment) => {
+      dedupedByKey.set(assessment.instrumentKey, assessment);
+    });
+
+    assessments = [...dedupedByKey.values()].sort((a, b) => {
+      const aIndex = definitionOrder.get(a.instrumentKey) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = definitionOrder.get(b.instrumentKey) ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
+    });
+
     onChange(assessments);
     renderCards();
   }
 
-  function closeActiveModal() {
-    if (!activeModalCleanup) return;
-    activeModalCleanup();
-    activeModalCleanup = null;
+  function upsertAssessment(key, updater) {
+    const current = getAssessmentByKey(key) || createAssessmentInstance(key);
+    if (!current) return;
+    const next = assessments.filter((assessment) => assessment.instrumentKey !== key);
+    commit([...next, updater(current)]);
   }
 
-  function openDetailsModal(index) {
-    closeActiveModal();
-    const current = assessments[index];
-    if (!current) return;
-    const definition = definitionsByKey[current.instrumentKey];
-    if (!definition) return;
-
-    const previousFocus = document.activeElement;
-    const { overlay, closeButton } = createAssessmentModal({
-      assessment: current,
-      definition,
-      onClose: () => closeActiveModal(),
-      onUpdate: (updated, afterUpdate) => {
-        const next = [...assessments];
-        next[index] = updated;
-        const normalizedNext = normalizeStandardizedAssessments(next);
-        const normalizedItem = normalizedNext[index];
-        assessments = normalizedNext;
-        onChange(assessments);
-        renderCards();
-        if (afterUpdate && normalizedItem) afterUpdate(normalizedItem);
-      },
-    });
-
-    const keyHandler = (event) => {
-      if (event.key === 'Escape') closeActiveModal();
-    };
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) closeActiveModal();
-    });
-    document.addEventListener('keydown', keyHandler);
-    openBrandedModal(
-      { overlay, card: overlay.querySelector('.popup-card-base') },
-      { focusTarget: closeButton, focusDelay: 0 },
-    );
-
-    activeModalCleanup = () => {
-      document.removeEventListener('keydown', keyHandler);
-      closeBrandedModal(
-        { overlay, card: overlay.querySelector('.popup-card-base') },
-        {
-          cleanup: () => {
-            if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
-          },
-        },
-      );
-    };
+  function resetAssessment(key) {
+    commit(assessments.filter((assessment) => assessment.instrumentKey !== key));
   }
 
   function renderCards() {
     cardsContainer.replaceChildren();
-    if (!assessments.length) {
-      cardsContainer.appendChild(
-        el(
-          'p',
-          { class: 'text-secondary fs-14' },
-          'No standardized functional assessments added yet.',
-        ),
-      );
-      return;
-    }
 
-    assessments.forEach((assessment, index) => {
+    definitions.forEach((definition) => {
+      const assessment = getAssessmentByKey(definition.key);
+
       cardsContainer.appendChild(
-        createAssessmentCard(
+        createAssessmentCard({
+          definition,
           assessment,
-          definitionsByKey,
-          () => openDetailsModal(index),
-          () => {
-            if (activeModalCleanup) closeActiveModal();
-            const next = assessments.filter((_, i) => i !== index);
-            commit(next);
+          expanded: Boolean(expandedKeys[definition.key]),
+          onToggle: () => {
+            expandedKeys[definition.key] = !expandedKeys[definition.key];
+            renderCards();
           },
-        ),
+          onReset: () => resetAssessment(definition.key),
+          onScoreChange: (itemId, score) => {
+            upsertAssessment(definition.key, (current) => {
+              const currentValue = current.responses?.[itemId];
+              const nextValue = currentValue === score ? '' : score;
+              return {
+                ...current,
+                responses: {
+                  ...(current.responses || {}),
+                  [itemId]: nextValue,
+                },
+              };
+            });
+          },
+          onNumericBlur: (itemId, raw) => {
+            if (!assessment && !String(raw || '').trim()) return;
+
+            upsertAssessment(definition.key, (current) => {
+              const trimmed = String(raw || '').trim();
+              const parsed = trimmed === '' ? '' : Number.parseFloat(trimmed);
+              const value = Number.isFinite(parsed) ? parsed : '';
+              return {
+                ...current,
+                responses: {
+                  ...(current.responses || {}),
+                  [itemId]: value,
+                },
+              };
+            });
+          },
+          onNotesChange: (notes) => {
+            if (!assessment && !String(notes || '').trim()) return;
+            upsertAssessment(definition.key, (current) => ({ ...current, notes }));
+          },
+        }),
       );
     });
   }
 
-  const selectId = 'standardized-assessment-instrument';
-  const instrumentSelect = el('select', {
-    id: selectId,
-    class: 'combined-neuroscreen__input',
-    'aria-describedby': 'standardized-assessment-help',
-  });
-  definitions.forEach((definition) => {
-    instrumentSelect.appendChild(el('option', { value: definition.key }, definition.name));
-  });
-  instrumentSelect.addEventListener('change', (event) => {
-    selectedInstrumentKey = event.target.value;
-  });
-
-  const addButton = el(
-    'button',
-    {
-      type: 'button',
-      class: 'btn btn--sm secondary',
-      onClick: () => {
-        const newAssessment = createAssessmentInstance(selectedInstrumentKey);
-        if (!newAssessment) return;
-        commit([...assessments, newAssessment]);
-      },
-    },
-    'Add Assessment',
-  );
-
-  sectionContent.append(
-    el('div', { class: 'std-assessment-toolbar' }, [
-      el('div', { class: 'gated-metric std-assessment-instrument' }, [
-        el('label', { class: 'gated-metric__label', for: selectId }, 'Instrument'),
-        instrumentSelect,
-      ]),
-      el('div', { class: 'std-assessment-actions' }, [addButton]),
-    ]),
-    el(
-      'p',
-      { id: 'standardized-assessment-help', class: 'text-secondary fs-14 std-assessment-help' },
-      'Open detailed scoring to use fast score chips with inline tips.',
-    ),
-    cardsContainer,
-  );
-
   renderCards();
+
   return subsectionPanel('standardized-assessments', 'Standardized Functional Assessments', [
-    el('div', { class: 'std-assessment-panel' }, [sectionContent]),
+    el('div', { class: 'std-assessment-panel' }, [cardsContainer]),
   ]);
 }

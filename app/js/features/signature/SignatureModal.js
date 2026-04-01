@@ -142,7 +142,7 @@ export function openSignatureDialog({ onSigned, existingSignature } = {}) {
     };
 
     // UI Loading state
-    const submitBtn = formEl.querySelector('.primary');
+    const submitBtn = form.querySelector('.primary');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Generating...';

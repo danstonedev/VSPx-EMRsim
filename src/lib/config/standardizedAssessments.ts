@@ -42,12 +42,23 @@ export interface AssessmentInstance {
   assessor: string;
 }
 
+/**
+ * measurementType controls which UI the panel renders:
+ * - 'ordinal-scale': Score chip grid per item (BERG, LEFS, NDI, ODI, ABC, FIM)
+ * - 'timed': Single time input (mm:ss.ms) with interpretation bands (TUG, 10MWT)
+ * - 'distance': Single distance input (meters) with interpretation bands (6MWT)
+ */
+export type MeasurementType = 'ordinal-scale' | 'timed' | 'distance';
+
 export interface AssessmentDefinition {
   key: string;
   version: number;
   name: string;
   disciplines: string[];
+  measurementType: MeasurementType;
   instructions: string;
+  /** Unit label for timed/distance types (e.g., "seconds", "meters") */
+  unit?: string;
   scoringGuide: RubricScaleEntry[];
   scoreRange: ScoreRange;
   maxScore: number;
@@ -249,6 +260,7 @@ const STANDARDIZED_ASSESSMENT_DEFINITIONS: Record<string, AssessmentDefinition> 
     version: 1,
     name: 'Berg Balance Scale',
     disciplines: ['pt', 'ot'],
+    measurementType: 'ordinal-scale',
     instructions:
       'Assess 14 functional balance tasks using standardized setup and cues. Score each item from 0 to 4, then sum for a total out of 56.',
     scoringGuide: [
@@ -270,6 +282,302 @@ const STANDARDIZED_ASSESSMENT_DEFINITIONS: Record<string, AssessmentDefinition> 
       if (total >= 45) return 'Low fall risk';
       if (total >= 41) return 'Increased fall risk';
       return 'High fall risk';
+    },
+  },
+
+  // ── Timed Measures ──────────────────────────────────────────────────────
+
+  'timed-up-and-go': {
+    key: 'timed-up-and-go',
+    version: 1,
+    name: 'Timed Up and Go (TUG)',
+    disciplines: ['pt', 'ot'],
+    measurementType: 'timed',
+    unit: 'seconds',
+    instructions:
+      'Patient sits in a standard arm chair, stands up, walks 3 meters at a comfortable pace, turns, walks back, and sits down. Time with a stopwatch from "Go" until seated.',
+    scoringGuide: [
+      { score: '<10', description: 'Freely mobile; low fall risk.' },
+      { score: '10–19', description: 'Mostly independent; some fall risk.' },
+      { score: '20–29', description: 'Variable mobility; moderate fall risk.' },
+      { score: '≥30', description: 'Impaired mobility; high fall risk.' },
+    ],
+    scoreRange: { min: 0, max: 999 },
+    maxScore: 0,
+    items: [{ id: 'time', label: 'Time (seconds)' }],
+    rubricScale: [],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      if (total <= 0) return '';
+      if (total < 10) return 'Freely mobile — low fall risk';
+      if (total < 20) return 'Mostly independent — some fall risk';
+      if (total < 30) return 'Variable mobility — moderate fall risk';
+      return 'Impaired mobility — high fall risk';
+    },
+  },
+
+  '10-meter-walk-test': {
+    key: '10-meter-walk-test',
+    version: 1,
+    name: '10-Meter Walk Test (10MWT)',
+    disciplines: ['pt'],
+    measurementType: 'timed',
+    unit: 'seconds',
+    instructions:
+      'Mark a 10-meter walkway with 2-meter acceleration and deceleration zones. Time the middle 6 meters. Perform at both comfortable and fast speeds. Gait speed (m/s) = 6 / time.',
+    scoringGuide: [
+      { score: '>1.0 m/s', description: 'Community ambulatory.' },
+      { score: '0.6–1.0 m/s', description: 'Limited community ambulation.' },
+      { score: '<0.6 m/s', description: 'Household ambulator.' },
+    ],
+    scoreRange: { min: 0, max: 999 },
+    maxScore: 0,
+    items: [
+      { id: 'comfortable_time', label: 'Comfortable speed (seconds)' },
+      { id: 'fast_time', label: 'Fast speed (seconds)' },
+    ],
+    rubricScale: [],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      // total is comfortable_time; compute gait speed from 6m distance
+      if (total <= 0) return '';
+      const speed = 6 / total;
+      const s = speed.toFixed(2);
+      if (speed > 1.0) return `${s} m/s — community ambulatory`;
+      if (speed >= 0.6) return `${s} m/s — limited community ambulation`;
+      return `${s} m/s — household ambulator`;
+    },
+  },
+
+  // ── Distance Measures ───────────────────────────────────────────────────
+
+  '6-minute-walk-test': {
+    key: '6-minute-walk-test',
+    version: 1,
+    name: '6-Minute Walk Test (6MWT)',
+    disciplines: ['pt'],
+    measurementType: 'distance',
+    unit: 'meters',
+    instructions:
+      'Patient walks as far as possible in 6 minutes on a flat, hard surface (30-meter corridor preferred). Record total distance, rest breaks, vitals pre/post, RPE, and assistive device.',
+    scoringGuide: [
+      { score: '>400m', description: 'Functional community ambulation.' },
+      { score: '300–400m', description: 'Limited community ambulation.' },
+      { score: '<300m', description: 'Significant functional limitation.' },
+    ],
+    scoreRange: { min: 0, max: 9999 },
+    maxScore: 0,
+    items: [
+      { id: 'distance', label: 'Distance (meters)' },
+      { id: 'rest_breaks', label: 'Rest breaks (#)' },
+    ],
+    rubricScale: [],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      if (total <= 0) return '';
+      if (total > 400) return `${total}m — functional community ambulation`;
+      if (total >= 300) return `${total}m — limited community ambulation`;
+      return `${total}m — significant functional limitation`;
+    },
+  },
+
+  // ── Ordinal-Scale Questionnaires ────────────────────────────────────────
+
+  'lower-extremity-functional-scale': {
+    key: 'lower-extremity-functional-scale',
+    version: 1,
+    name: 'Lower Extremity Functional Scale (LEFS)',
+    disciplines: ['pt', 'ot'],
+    measurementType: 'ordinal-scale',
+    instructions:
+      'Patient rates 20 activities from 0 (extreme difficulty) to 4 (no difficulty). Total = sum of all items (max 80). MCID = 9 points.',
+    scoringGuide: [
+      { score: '4', description: 'No difficulty.' },
+      { score: '3', description: 'A little bit of difficulty.' },
+      { score: '2', description: 'Moderate difficulty.' },
+      { score: '1', description: 'Quite a bit of difficulty.' },
+      { score: '0', description: 'Extreme difficulty / unable.' },
+    ],
+    scoreRange: { min: 0, max: 4 },
+    maxScore: 80,
+    items: [
+      { id: 'usual_work', label: 'Usual work, housework, school' },
+      { id: 'usual_hobbies', label: 'Usual hobbies, recreation, sports' },
+      { id: 'in_out_bath', label: 'Getting into / out of bath' },
+      { id: 'walk_blocks', label: 'Walking between rooms' },
+      { id: 'put_shoes', label: 'Putting on shoes / socks' },
+      { id: 'squatting', label: 'Squatting' },
+      { id: 'lift_bag', label: 'Lifting object from floor (e.g., bag of groceries)' },
+      { id: 'light_activities', label: 'Performing light activities around home' },
+      { id: 'heavy_activities', label: 'Performing heavy activities around home' },
+      { id: 'get_car', label: 'Getting into / out of car' },
+      { id: 'walk_2_blocks', label: 'Walking 2 blocks' },
+      { id: 'walk_mile', label: 'Walking a mile' },
+      { id: 'stairs_10', label: 'Going up / down 10 stairs' },
+      { id: 'standing_1hr', label: 'Standing for 1 hour' },
+      { id: 'sitting_1hr', label: 'Sitting for 1 hour' },
+      { id: 'running', label: 'Running on even ground' },
+      { id: 'running_uneven', label: 'Running on uneven ground' },
+      { id: 'sharp_turns', label: 'Making sharp turns while running fast' },
+      { id: 'hopping', label: 'Hopping' },
+      { id: 'rolling_over', label: 'Rolling over in bed' },
+    ],
+    rubricScale: [
+      { score: '4', description: 'No difficulty.' },
+      { score: '3', description: 'A little bit of difficulty.' },
+      { score: '2', description: 'Moderate difficulty.' },
+      { score: '1', description: 'Quite a bit of difficulty.' },
+      { score: '0', description: 'Extreme difficulty or unable to perform.' },
+    ],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      const pct = Math.round((total / 80) * 100);
+      if (total >= 73) return `${total}/80 (${pct}%) — minimal to no functional limitation`;
+      if (total >= 47) return `${total}/80 (${pct}%) — moderate functional limitation`;
+      return `${total}/80 (${pct}%) — significant functional limitation`;
+    },
+  },
+
+  'neck-disability-index': {
+    key: 'neck-disability-index',
+    version: 1,
+    name: 'Neck Disability Index (NDI)',
+    disciplines: ['pt'],
+    measurementType: 'ordinal-scale',
+    instructions:
+      'Patient rates 10 items from 0 (no disability) to 5 (complete disability). Total = sum (max 50). Expressed as percentage. MCID = 5 points (10%).',
+    scoringGuide: [
+      { score: '0', description: 'No disability.' },
+      { score: '1', description: 'Mild difficulty.' },
+      { score: '2', description: 'Moderate difficulty.' },
+      { score: '3', description: 'Fairly severe difficulty.' },
+      { score: '4', description: 'Very severe difficulty.' },
+      { score: '5', description: 'Complete disability.' },
+    ],
+    scoreRange: { min: 0, max: 5 },
+    maxScore: 50,
+    items: [
+      { id: 'pain_intensity', label: 'Pain intensity' },
+      { id: 'personal_care', label: 'Personal care (washing, dressing)' },
+      { id: 'lifting', label: 'Lifting' },
+      { id: 'reading', label: 'Reading' },
+      { id: 'headaches', label: 'Headaches' },
+      { id: 'concentration', label: 'Concentration' },
+      { id: 'work', label: 'Work' },
+      { id: 'driving', label: 'Driving' },
+      { id: 'sleeping', label: 'Sleeping' },
+      { id: 'recreation', label: 'Recreation' },
+    ],
+    rubricScale: [
+      { score: '0', description: 'No problem / no pain.' },
+      { score: '1', description: 'Slight problem / mild pain.' },
+      { score: '2', description: 'Moderate problem.' },
+      { score: '3', description: 'Fairly severe problem.' },
+      { score: '4', description: 'Very severe problem.' },
+      { score: '5', description: 'Cannot do at all / worst imaginable.' },
+    ],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      const pct = Math.round((total / 50) * 100);
+      if (pct <= 8) return `${total}/50 (${pct}%) — no disability`;
+      if (pct <= 28) return `${total}/50 (${pct}%) — mild disability`;
+      if (pct <= 48) return `${total}/50 (${pct}%) — moderate disability`;
+      if (pct <= 68) return `${total}/50 (${pct}%) — severe disability`;
+      return `${total}/50 (${pct}%) — complete disability`;
+    },
+  },
+
+  'oswestry-disability-index': {
+    key: 'oswestry-disability-index',
+    version: 1,
+    name: 'Oswestry Disability Index (ODI)',
+    disciplines: ['pt'],
+    measurementType: 'ordinal-scale',
+    instructions:
+      'Patient rates 10 items from 0 (no disability) to 5 (complete disability). Total = sum (max 50). Expressed as percentage. MCID = 6 points (12%).',
+    scoringGuide: [
+      { score: '0', description: 'No difficulty.' },
+      { score: '1', description: 'Slight difficulty.' },
+      { score: '2', description: 'Moderate difficulty.' },
+      { score: '3', description: 'Fairly severe difficulty.' },
+      { score: '4', description: 'Very severe difficulty.' },
+      { score: '5', description: 'Complete disability.' },
+    ],
+    scoreRange: { min: 0, max: 5 },
+    maxScore: 50,
+    items: [
+      { id: 'pain_intensity', label: 'Pain intensity' },
+      { id: 'personal_care', label: 'Personal care' },
+      { id: 'lifting', label: 'Lifting' },
+      { id: 'walking', label: 'Walking' },
+      { id: 'sitting', label: 'Sitting' },
+      { id: 'standing', label: 'Standing' },
+      { id: 'sleeping', label: 'Sleeping' },
+      { id: 'social_life', label: 'Social life' },
+      { id: 'travelling', label: 'Travelling' },
+      { id: 'employment', label: 'Employment / homemaking' },
+    ],
+    rubricScale: [
+      { score: '0', description: 'No problem at all.' },
+      { score: '1', description: 'Slight difficulty, no treatment needed.' },
+      { score: '2', description: 'Moderate difficulty.' },
+      { score: '3', description: 'Fairly severe difficulty.' },
+      { score: '4', description: 'Very severe difficulty.' },
+      { score: '5', description: 'Worst possible / unable to do.' },
+    ],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      const pct = Math.round((total / 50) * 100);
+      if (pct <= 20) return `${total}/50 (${pct}%) — minimal disability`;
+      if (pct <= 40) return `${total}/50 (${pct}%) — moderate disability`;
+      if (pct <= 60) return `${total}/50 (${pct}%) — severe disability`;
+      if (pct <= 80) return `${total}/50 (${pct}%) — crippled`;
+      return `${total}/50 (${pct}%) — bed-bound or exaggerating`;
+    },
+  },
+
+  'abc-scale': {
+    key: 'abc-scale',
+    version: 1,
+    name: 'Activities-specific Balance Confidence (ABC) Scale',
+    disciplines: ['pt', 'ot'],
+    measurementType: 'ordinal-scale',
+    instructions:
+      'Patient rates confidence (0–100%) for 16 activities. Average all items. Scores reported as percentage (0–100%). Enter whole-number confidence for each item.',
+    scoringGuide: [
+      { score: '>80%', description: 'High level of physical functioning.' },
+      { score: '50–80%', description: 'Moderate level of physical functioning.' },
+      { score: '<50%', description: 'Low level of physical functioning.' },
+    ],
+    scoreRange: { min: 0, max: 100 },
+    maxScore: 100,
+    items: [
+      { id: 'walk_house', label: 'Walk around the house' },
+      { id: 'stairs_up_down', label: 'Walk up or down stairs' },
+      { id: 'bend_pick', label: 'Bend over and pick up a slipper' },
+      { id: 'reach_shelf', label: 'Reach for a small can off a shelf at eye level' },
+      { id: 'reach_tiptoe', label: 'Stand on tiptoes and reach for something above head' },
+      { id: 'stand_chair', label: 'Stand on a chair and reach for something' },
+      { id: 'sweep_floor', label: 'Sweep the floor' },
+      { id: 'walk_parked_car', label: 'Walk outside to a nearby car' },
+      { id: 'get_in_car', label: 'Get into or out of a car' },
+      { id: 'walk_parking', label: 'Walk across a parking lot' },
+      { id: 'walk_ramp', label: 'Walk up or down a ramp' },
+      { id: 'walk_crowd', label: 'Walk in a crowded mall' },
+      { id: 'bumped', label: 'Bumped into by people while walking' },
+      { id: 'escalator_hold', label: 'Step on/off an escalator holding rail' },
+      { id: 'escalator_parcels', label: 'Step on/off an escalator holding parcels' },
+      { id: 'icy_sidewalk', label: 'Walk outside on icy sidewalks' },
+    ],
+    rubricScale: [],
+    itemRubrics: {},
+    interpret: (total: number) => {
+      // total is sum; average = total / 16
+      const avg = total / 16;
+      const pct = Math.round(avg);
+      if (avg > 80) return `${pct}% average — high physical functioning`;
+      if (avg >= 50) return `${pct}% average — moderate physical functioning`;
+      return `${pct}% average — low physical functioning`;
     },
   },
 };

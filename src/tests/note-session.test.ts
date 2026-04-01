@@ -106,6 +106,175 @@ describe('noteSession store', () => {
     expect(get(isDirty)).toBe(false);
   });
 
+  it('initDraft seeds registry-linked PT notes with patient history when subjective is blank', async () => {
+    vi.resetModules();
+    vi.doMock('$lib/stores/cases', () => {
+      const { writable } = require('svelte/store');
+      const activeCase = writable({
+        caseId: 'registry-case',
+        encounter: 'eval',
+        caseWrapper: {
+          caseObj: {
+            patientAge: '61',
+            patientGender: 'male',
+            meta: { vspId: 'vsp_123', patientName: 'James Rivera', sex: 'male' },
+            history: {},
+            encounters: { eval: {} },
+          },
+        },
+        draft: { subjective: {} },
+      });
+      return {
+        activeCase,
+        saveActiveDraft: vi.fn(),
+      };
+    });
+    vi.doMock('$lib/services/vspRegistry', () => ({
+      resolvePatient: vi.fn(() => ({
+        id: 'vsp_123',
+        dob: '1965-07-23',
+        sex: 'male',
+        pronouns: 'he/him',
+        preferredLanguage: 'English',
+        interpreterNeeded: false,
+        heightFt: '5',
+        heightIn: '10',
+        weightLbs: '212',
+        primaryCareProvider: 'Dr. Michael Okafor',
+        medicalHistory: ['Lumbar spinal stenosis', 'Chronic low back pain'],
+        surgicalHistory: ['L4-L5 laminectomy (2024)'],
+        allergies: [
+          { name: 'Codeine', type: 'Medication', severity: 'Moderate', reaction: 'Nausea' },
+        ],
+        activeMedications: [{ name: 'Gabapentin', dose: '300 mg', frequency: 'TID', route: 'PO' }],
+      })),
+      normalizeSex: vi.fn((value: string) => {
+        const normalized = String(value || '').toLowerCase();
+        if (normalized === 'male' || normalized === 'm') return 'male';
+        if (normalized === 'female' || normalized === 'f') return 'female';
+        return 'unspecified';
+      }),
+      computeAge: vi.fn(() => 61),
+      allergySummary: vi.fn(() => 'Codeine'),
+    }));
+
+    const noteSession = await import('$lib/stores/noteSession');
+    noteSession.clearDraft();
+    noteSession.initDraft();
+    const draft = get(noteSession.noteDraft);
+
+    expect(draft.subjective.chiefComplaint).toContain('Lumbar spinal stenosis');
+    expect(draft.subjective.historyOfPresentIllness).toContain('presents for PT evaluation');
+    expect(draft.subjective.additionalHistory).toContain('PMH: Lumbar spinal stenosis');
+    expect(draft.subjective.additionalHistory).toContain(
+      'Surgical history: L4-L5 laminectomy (2024)',
+    );
+    expect(draft.subjective.additionalHistory).toContain('Allergies: Codeine');
+    expect(draft.subjective.medications).toHaveLength(1);
+    expect(draft.subjective.__vspId).toBe('vsp_123');
+    vi.resetModules();
+  });
+
+  it('initDraft layers the full demo note for Robert Castellano even when an older draft is sparse', async () => {
+    vi.resetModules();
+    vi.doMock('$lib/stores/cases', () => {
+      const { writable } = require('svelte/store');
+      const activeCase = writable({
+        caseId: 'demo-case',
+        encounter: 'eval',
+        caseWrapper: {
+          caseObj: {
+            patientAge: '67',
+            patientGender: 'male',
+            meta: { vspId: 'vsp_demo_robert', patientName: 'Robert Castellano', sex: 'male' },
+            history: {},
+            encounters: { eval: {} },
+          },
+        },
+        draft: {
+          subjective: {
+            patientName: 'Robert Castellano',
+          },
+        },
+      });
+      return {
+        activeCase,
+        saveActiveDraft: vi.fn(),
+      };
+    });
+    vi.doMock('$lib/services/vspRegistry', () => ({
+      resolvePatient: vi.fn(() => ({
+        id: 'vsp_demo_robert',
+        mrn: 'VSP-42652635',
+        firstName: 'Robert',
+        middleName: 'James',
+        lastName: 'Castellano',
+        preferredName: 'Bob',
+        dob: '1958-04-12',
+        sex: 'male',
+        genderIdentity: 'man',
+        pronouns: 'he/him',
+        race: 'White',
+        ethnicity: 'Not Hispanic or Latino',
+        maritalStatus: 'Married',
+        preferredLanguage: 'English',
+        interpreterNeeded: false,
+        heightFt: '5',
+        heightIn: '10',
+        weightLbs: '214',
+        bloodType: 'A+',
+        phone: '(701) 555-0147',
+        email: 'rcastellano@email.com',
+        addressStreet: '2418 University Ave',
+        addressCity: 'Grand Forks',
+        addressState: 'ND',
+        addressZip: '58203',
+        emergencyContactName: 'Linda Castellano',
+        emergencyContactRelationship: 'Spouse',
+        emergencyContactPhone: '(701) 555-0193',
+        insuranceProvider: 'Blue Cross Blue Shield of North Dakota',
+        insurancePolicyNumber: 'BCBS-88421076',
+        insuranceGroupNumber: 'GRP-4420',
+        allergies: [{ name: 'Penicillin', type: 'Drug', severity: 'Moderate', reaction: 'Rash' }],
+        medicalHistory: [
+          'Lumbar degenerative disc disease L4-L5',
+          'Osteoarthritis bilateral knees',
+        ],
+        surgicalHistory: ['Right total knee arthroplasty (2024-01-15)'],
+        activeMedications: [
+          { name: 'Metformin', dose: '1000mg', frequency: 'BID', route: 'PO' },
+          { name: 'Lisinopril', dose: '20mg', frequency: 'QD', route: 'PO' },
+          { name: 'Gabapentin', dose: '300mg', frequency: 'TID', route: 'PO' },
+        ],
+        codeStatus: 'Full Code',
+        primaryCareProvider: 'Dr. Sarah Lindgren, MD',
+        createdAt: '2026-03-30T00:00:00.000Z',
+        updatedAt: '2026-03-30T00:00:00.000Z',
+      })),
+      normalizeSex: vi.fn((value: string) => {
+        const normalized = String(value || '').toLowerCase();
+        if (normalized === 'male' || normalized === 'm') return 'male';
+        if (normalized === 'female' || normalized === 'f') return 'female';
+        return 'unspecified';
+      }),
+      computeAge: vi.fn(() => 67),
+      allergySummary: vi.fn(() => 'Penicillin'),
+      displayName: vi.fn(() => 'Robert James Castellano'),
+    }));
+
+    const noteSession = await import('$lib/stores/noteSession');
+    noteSession.clearDraft();
+    noteSession.initDraft();
+    const draft = get(noteSession.noteDraft);
+
+    expect(draft.subjective.chiefComplaint).toContain('Right knee');
+    expect(draft.objective.standardizedAssessments).toHaveLength(1);
+    expect(draft.plan.frequency).toBe('2x-week');
+    expect(draft.billing.diagnosisCodes).toHaveLength(3);
+    expect(draft.subjective.patientName).toBe('Robert Castellano');
+    vi.resetModules();
+  });
+
   it('initDraft preserves standardized assessments from an existing draft', async () => {
     vi.resetModules();
     vi.doMock('$lib/stores/cases', () => {

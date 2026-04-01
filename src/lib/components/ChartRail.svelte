@@ -4,19 +4,13 @@
 -->
 <script lang="ts">
   import { activeChartTab, toggleTab, type ChartTab } from '$lib/stores/ui';
+  import { getChartTabs } from '$lib/config/chartTabs';
 
-  interface Tab {
-    id: ChartTab;
-    label: string;
-    icon: string;
-  }
-
-  const tabs: Tab[] = [
-    { id: 'current-note', label: 'Note Guide', icon: 'note_add' },
-    { id: 'patient-summary', label: 'Chart Summary', icon: 'person' },
-    { id: 'my-notes', label: 'Note History', icon: 'library_books' },
-    { id: 'case-file', label: 'Shared File', icon: 'folder' },
-  ];
+  const tabs = getChartTabs(1).map((tab) => ({
+    id: tab.id as ChartTab,
+    label: tab.label,
+    icon: tab.materialIcon,
+  }));
 
   function handleKeydown(e: KeyboardEvent, idx: number) {
     let next = idx;
@@ -39,6 +33,7 @@
     <button
       class="chart-rail__tab"
       class:chart-rail__tab--active={$activeChartTab === tab.id}
+      id={`chart-tab-${tab.id}`}
       role="tab"
       aria-selected={$activeChartTab === tab.id}
       tabindex={$activeChartTab === tab.id || (i === 0 && !$activeChartTab) ? 0 : -1}
@@ -96,7 +91,7 @@
     opacity: 0.98;
   }
 
-  .chart-rail__tab:hover {
+  .chart-rail__tab:not(.chart-rail__tab--active):hover {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
     box-shadow:
@@ -141,7 +136,8 @@
     letter-spacing: 0.015em;
     text-align: center;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

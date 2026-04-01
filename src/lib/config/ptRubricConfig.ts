@@ -81,7 +81,7 @@ const ptEvalCriteria: RubricCriterion[] = [
     description: 'All APTA systems addressed (add or defer) with rationale for impaired systems.',
     maxPoints: 4,
     sectionId: 'objective',
-    subsectionId: 'systems-review',
+    subsectionId: 'communication-cognition',
     category: 'Clinical Reasoning',
   },
   {

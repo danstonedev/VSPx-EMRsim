@@ -78,15 +78,19 @@ export const DEFER_REASONS = [
   { value: 'other-provider', label: 'Assessed by other provider' },
 ];
 
+/** Systems that default to "Add" (impaired) so their content is visible on new notes. */
+const DEFAULT_OPEN_SYSTEMS = new Set(['musculoskeletal', 'neuromuscular']);
+
 export function createDefaultSystemsReview(): SystemsReviewData {
   const data: SystemsReviewData = {};
   for (const sys of SYSTEMS) {
+    const defaultOpen = DEFAULT_OPEN_SYSTEMS.has(sys.id);
     const subcats: Record<string, SystemStatus> = {};
     for (const sub of SUBCATEGORIES[sys.id] ?? []) {
-      subcats[sub.id] = '';
+      subcats[sub.id] = defaultOpen ? 'impaired' : '';
     }
     data[sys.id] = {
-      status: '',
+      status: defaultOpen ? 'impaired' : '',
       subcategories: subcats,
       deferReason: '',
       deferReasons: {},

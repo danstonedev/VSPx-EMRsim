@@ -392,6 +392,9 @@
     <!-- Title bar -->
     <div
       class="vspx-chat__titlebar"
+      role="toolbar"
+      tabindex="0"
+      aria-label="Chat window controls"
       aria-roledescription="draggable region"
       onpointerdown={onTitlebarPointerDown}
       onpointermove={onTitlebarPointerMove}
@@ -491,8 +494,10 @@
 
     <!-- Resize handles (desktop only) -->
     {#if !mobile}
-      <div
+      <button
+        type="button"
         class="vspx-chat__resize vspx-chat__resize--br"
+        aria-label="Resize chat window from bottom right"
         onpointerdown={(e) => onResizePointerDown(e, 'br')}
         onpointermove={onResizePointerMove}
         onpointerup={onResizePointerUp}
@@ -510,9 +515,11 @@
             r="1.2"
           />
         </svg>
-      </div>
-      <div
+      </button>
+      <button
+        type="button"
         class="vspx-chat__resize vspx-chat__resize--bl"
+        aria-label="Resize chat window from bottom left"
         onpointerdown={(e) => onResizePointerDown(e, 'bl')}
         onpointermove={onResizePointerMove}
         onpointerup={onResizePointerUp}
@@ -531,7 +538,7 @@
             r="1.2"
           />
         </svg>
-      </div>
+      </button>
     {/if}
   </div>
 {/if}
@@ -736,6 +743,9 @@
     width: 20px;
     height: 20px;
     z-index: 2;
+    padding: 0;
+    border: none;
+    background: transparent;
   }
 
   .vspx-chat__resize--br {
@@ -771,32 +781,6 @@
     opacity: 0.5;
   }
 
-  /* ─── Entry/Exit Animations ─── */
-  .vspx-chat--enter {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-
-  .vspx-chat--enter-active {
-    opacity: 1;
-    transform: scale(1) translate(var(--vspx-tx, 0px), var(--vspx-ty, 0px));
-    transition:
-      opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .vspx-chat--exit {
-    opacity: 1;
-  }
-
-  .vspx-chat--exit-active {
-    opacity: 0;
-    transform: scale(0.3);
-    transition:
-      opacity 250ms cubic-bezier(0.55, 0, 1, 0.45),
-      transform 250ms cubic-bezier(0.55, 0, 1, 0.45);
-  }
-
   /* ─── Responsive — fullscreen on mobile ─── */
   @media (max-width: 768px) {
     .vspx-chat--panel {
@@ -827,18 +811,6 @@
     .vspx-chat--panel {
       --vspx-w: 360px;
       --vspx-h: 480px;
-    }
-  }
-
-  /* ─── Reduced Motion ─── */
-  @media (prefers-reduced-motion: reduce) {
-    .vspx-chat--enter,
-    .vspx-chat--enter-active,
-    .vspx-chat--exit,
-    .vspx-chat--exit-active {
-      transition: none !important;
-      transform: none !important;
-      opacity: 1 !important;
     }
   }
 

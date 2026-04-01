@@ -1026,6 +1026,20 @@ html:not([data-theme='dark']) .billing-row-add-btn:hover {
   min-height: 2rem;
 }
 
+.vitals-cell-group--bp {
+  display: inline-grid;
+  grid-template-columns: 3.25rem auto 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  width: auto;
+  margin: 0 auto;
+}
+
+.vitals-cell-group--bp .text-muted {
+  line-height: 1;
+}
+
 .vitals-measurement-chip {
   border: 1px solid var(--color-border, #d0d5dd);
   background: var(--surface, #fff);

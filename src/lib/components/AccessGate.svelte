@@ -18,6 +18,7 @@
   let loading = $state(false);
   let error = $state('');
   let codeInput = $state('');
+  let codeInputEl = $state<HTMLInputElement | null>(null);
 
   function isAccessGranted(): boolean {
     return !!sessionStorage.getItem(SESSION_ROLE_KEY);
@@ -48,7 +49,10 @@
     if (isAccessGranted()) {
       verified = true;
       onGranted?.(getAccessRole(), getAccessCapability());
+      return;
     }
+
+    queueMicrotask(() => codeInputEl?.focus());
   });
 
   async function verify() {
@@ -96,13 +100,13 @@
 
       <div class="access-gate__field">
         <input
+          bind:this={codeInputEl}
           type="text"
           class="access-gate__input"
           bind:value={codeInput}
           onkeydown={handleKeydown}
           placeholder="Access code"
           disabled={loading}
-          autofocus
         />
         <button
           type="button"
